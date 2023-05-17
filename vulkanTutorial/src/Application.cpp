@@ -33,6 +33,7 @@ void Application::InitVulkan()
 	CreatePipeLine();
 	CreateCommandPool();
 	CreateCommandBuffer();
+	CreateVertexBuffer();
 	CreateAsyncObjects();
 }
 
@@ -332,12 +333,14 @@ void Application::CreateRenderPass()
 void Application::CreatePipeLine()
 {
 	//1.
+	auto bindings = Vertex::GetBindingDescription();
+	auto attributes = Vertex::GetAttributes();
 	vk::PipelineVertexInputStateCreateInfo vertexInput;
 	vertexInput.sType = vk::StructureType::ePipelineVertexInputStateCreateInfo;
-	vertexInput.setVertexAttributeDescriptionCount(0)
-			   .setPVertexAttributeDescriptions(nullptr)
-			   .setVertexBindingDescriptionCount(0)
-			   .setPVertexBindingDescriptions(nullptr);
+	vertexInput.setVertexAttributeDescriptionCount(static_cast<uint32_t>(attributes.size()))
+			   .setPVertexAttributeDescriptions(attributes.data())
+			   .setVertexBindingDescriptionCount(1)
+			   .setPVertexBindingDescriptions(&bindings);
 
 	//2.
 	vk::PipelineInputAssemblyStateCreateInfo assemblyInfo;
@@ -546,6 +549,8 @@ void Application::RecordCommandBuffer(vk::CommandBuffer buffer, uint32_t imageIn
 				   .setExtent(extent);
 			buffer.setViewport(0, 1, &viewport);
 			buffer.setScissor(0, 1, &scissor);
+			vk::DeviceSize size(0);
+			buffer.bindVertexBuffers(0, 1, &m_VertexBuffer, &size);
 			buffer.draw(3, 1, 0, 0);
 		buffer.endRenderPass();
 	buffer.end();
@@ -595,5 +600,101 @@ void Application::CreateAsyncObjects()
 	if (m_Device.createFence(&fenceInfo, nullptr, &m_InFlightFence) != vk::Result::eSuccess || m_Device.createSemaphore(&semaphoreInfo, nullptr, &m_WaitAcquireImageSemaphore) != vk::Result::eSuccess || m_Device.createSemaphore(&semaphoreInfo, nullptr, &m_WaitFinishDrawSemaphore) != vk::Result::eSuccess)
 	{
 		throw std::runtime_error("create asyncObjects failed!");
+	}
+}
+
+void Application::CreateVertexBuffer()
+{
+	vk::DeviceSize size = sizeof(m_VertexData[0]) * m_VertexData.size();
+	vk::Buffer stagingBuffer;
+	vk::DeviceMemory stagingMemory;
+	vk::BufferCreateInfo bufferInfo;
+	bufferInfo.sType = vk::StructureType::eBufferCreateInfo;
+	bufferInfo.setSharingMode(vk::SharingMode::eExclusive)
+			  .setUsage(vk::BufferUsageFlagBits::eTransferSrc)
+			  .setSize(size);
+	if (m_Device.createBuffer(&bufferInfo, nullptr, &stagingBuffer) != vk::Result::eSuccess)
+	{
+		throw std::runtime_error("buffer Create failed!");
+	}
+
+	vk::MemoryRequirements requirement;
+	m_Device.getBufferMemoryRequirements(stagingBuffer, &requirement);
+	vk::MemoryAllocateInfo memoryInfo;
+	memoryInfo.sType = vk::StructureType::eMemoryAllocateInfo;
+	memoryInfo.setAllocationSize(requirement.size)
+			  .setMemoryTypeIndex(FindMemoryPropertyType(requirement.memoryTypeBits, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent));
+	m_Device.allocateMemory(&memoryInfo, nullptr, &stagingMemory);
+	m_Device.bindBufferMemory(stagingBuffer, stagingMemory, { 0 });
+	void* data;
+	m_Device.mapMemory(stagingMemory, { 0 }, size, {}, &data);
+	memcpy(data, m_VertexData.data(), size);
+	m_Device.unmapMemory(stagingMemory);
+
+	vk::BufferCreateInfo vertexBufferInfo;
+	vertexBufferInfo.sType = vk::StructureType::eBufferCreateInfo;
+	vertexBufferInfo.setSharingMode(vk::SharingMode::eExclusive)
+					.setSize(size)
+					.setUsage(vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer);
+	if (m_Device.createBuffer(&vertexBufferInfo, nullptr, &m_VertexBuffer) != vk::Result::eSuccess)
+	{
+		throw std::runtime_error("vertexbuffer create failed!");
+	}
+
+	vk::MemoryRequirements re;
+	m_Device.getBufferMemoryRequirements(m_VertexBuffer, &re);
+	vk::MemoryAllocateInfo mi;
+	mi.sType = vk::StructureType::eMemoryAllocateInfo;
+	mi.setAllocationSize(re.size)
+	  .setMemoryTypeIndex(FindMemoryPropertyType(re.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal));
+	if (m_Device.allocateMemory(&mi, nullptr, &m_VertexMemory) != vk::Result::eSuccess)
+	{
+		throw std::runtime_error("allocate memory failed!");
+	}
+	m_Device.bindBufferMemory(m_VertexBuffer, m_VertexMemory, { 0 });
+
+	vk::CommandBuffer copyBuffer;
+	vk::CommandBufferAllocateInfo copyBufferInfo;
+	copyBufferInfo.sType = vk::StructureType::eCommandBufferAllocateInfo;
+	copyBufferInfo.setCommandBufferCount(1)
+				  .setCommandPool(m_CommandPool)
+				  .setLevel(vk::CommandBufferLevel::ePrimary);
+	if (m_Device.allocateCommandBuffers(&copyBufferInfo, &copyBuffer) != vk::Result::eSuccess)
+	{
+		throw std::runtime_error("allocate buffer failed!");
+	}
+	vk::CommandBufferBeginInfo commandBeginInfo;
+	commandBeginInfo.sType = vk::StructureType::eCommandBufferBeginInfo;
+	commandBeginInfo.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit)
+					.setPInheritanceInfo(nullptr);
+	copyBuffer.begin(&commandBeginInfo);
+	vk::BufferCopy region;
+	region.setDstOffset({ 0 })
+		  .setSrcOffset({ 0 })
+		  .setSize(size);
+	copyBuffer.copyBuffer(stagingBuffer, m_VertexBuffer, 1, &region);
+	copyBuffer.end();
+
+	vk::SubmitInfo submitInfo;
+	submitInfo.sType = vk::StructureType::eSubmitInfo;
+	submitInfo.setCommandBufferCount(1)
+			  .setPCommandBuffers(&copyBuffer);
+
+	m_GraphicQueue.submit(1, &submitInfo, VK_NULL_HANDLE);
+	m_GraphicQueue.waitIdle();
+	
+	m_Device.destroyBuffer(stagingBuffer);
+	m_Device.freeMemory(stagingMemory);
+}
+
+uint32_t Application::FindMemoryPropertyType(uint32_t memoryType, vk::MemoryPropertyFlags flags)
+{
+	auto memoryProperties = m_PhysicalDevice.getMemoryProperties();
+	for (size_t i = 0; i < memoryProperties.memoryTypeCount; i++)
+	{
+		if ((memoryType &  (1 << i)) && ((memoryProperties.memoryTypes[i].propertyFlags & flags) == flags))
+		{
+			return i;
+		}
 	}
 }

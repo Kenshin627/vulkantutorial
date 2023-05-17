@@ -6,6 +6,7 @@
 #include <GLFW/glfw3native.h>
 #include <vector>
 #include <optional>
+#include <glm.hpp>
 
 class Application
 {
@@ -42,6 +43,40 @@ private:
 		std::vector<vk::Image> Images;
 		std::vector<vk::ImageView> ImageViews;
 	};
+
+	struct Vertex
+	{
+		glm::vec2 Position;
+		glm::vec3 Color;
+
+		static vk::VertexInputBindingDescription GetBindingDescription()
+		{
+			vk::VertexInputBindingDescription desc;
+			desc.setBinding(0)
+				.setStride(sizeof(Vertex))
+				.setInputRate(vk::VertexInputRate::eVertex);
+			return desc;
+		}
+
+		static std::vector<vk::VertexInputAttributeDescription> GetAttributes()
+		{
+			std::vector<vk::VertexInputAttributeDescription> result;
+			vk::VertexInputAttributeDescription positionAttribute;
+			positionAttribute.setBinding(0)
+						     .setFormat(vk::Format::eR32G32Sfloat)
+						     .setLocation(0)
+						     .setOffset(offsetof(Vertex, Position));
+			result.push_back(positionAttribute);
+
+			vk::VertexInputAttributeDescription colorAttribute;
+			colorAttribute.setBinding(0)
+						  .setFormat(vk::Format::eR32G32B32Sfloat)
+						  .setLocation(1)
+						  .setOffset(offsetof(Vertex, Color));
+			result.push_back(colorAttribute);
+			return result;
+		}
+	};
 private:
 	void CreateInstance();
 	void PickupPhysicalDevice();
@@ -54,11 +89,13 @@ private:
 	void CreateFrameBuffer();
 	void CreateCommandPool();
 	void CreateCommandBuffer();
+	void CreateVertexBuffer();
 	void RecordCommandBuffer(vk::CommandBuffer buffer, uint32_t imageIndex);
 	void CreateAsyncObjects();
 	void DrawFrame();
 	vk::ShaderModule CompilerShader(const std::string& path);
 	SwapchainProperties QuerySwapchainSupport(const vk::PhysicalDevice& device);
+	uint32_t FindMemoryPropertyType(uint32_t memoryType, vk::MemoryPropertyFlags flags);
 
 private:
 	GLFWwindow* m_Window;
@@ -80,4 +117,12 @@ private:
 	vk::Semaphore m_WaitAcquireImageSemaphore;
 	vk::Semaphore m_WaitFinishDrawSemaphore;
 	std::vector<const char*> m_DeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+
+	std::vector<Vertex> m_VertexData = {
+		{glm::vec2( 0.0, -0.5), glm::vec3(1.0, 0.0, 0.0)},
+		{glm::vec2( 0.5,  0.5), glm::vec3(0.0, 1.0, 0.0)},
+		{glm::vec2(-0.5,  0.5), glm::vec3(0.0, 0.0, 1.0)},
+	};
+	vk::Buffer m_VertexBuffer;
+	vk::DeviceMemory m_VertexMemory;
 };
