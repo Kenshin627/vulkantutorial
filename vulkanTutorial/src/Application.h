@@ -97,6 +97,8 @@ private:
 	SwapchainProperties QuerySwapchainSupport(const vk::PhysicalDevice& device);
 	uint32_t FindMemoryPropertyType(uint32_t memoryType, vk::MemoryPropertyFlags flags);
 	void CreateBuffer(vk::Buffer& buffer, vk::DeviceMemory& memory, vk::DeviceSize size, vk::BufferUsageFlags flags, vk::SharingMode sharingMode, vk::MemoryPropertyFlags memoryPropertyFlags);
+	vk::CommandBuffer OneTimeSubmitCommandBegin();
+	void OneTimeSubmitCommandEnd(vk::CommandBuffer command);
 
 private:
 	GLFWwindow* m_Window;

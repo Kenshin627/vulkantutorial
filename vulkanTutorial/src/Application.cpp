@@ -618,36 +618,15 @@ void Application::CreateVertexBuffer()
 
 	CreateBuffer(m_VertexBuffer, m_VertexMemory, size, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eDeviceLocal);
 
-	vk::CommandBuffer copyBuffer;
-	vk::CommandBufferAllocateInfo copyBufferInfo;
-	copyBufferInfo.sType = vk::StructureType::eCommandBufferAllocateInfo;
-	copyBufferInfo.setCommandBufferCount(1)
-				  .setCommandPool(m_CommandPool)
-				  .setLevel(vk::CommandBufferLevel::ePrimary);
-	if (m_Device.allocateCommandBuffers(&copyBufferInfo, &copyBuffer) != vk::Result::eSuccess)
-	{
-		throw std::runtime_error("allocate buffer failed!");
-	}
-	vk::CommandBufferBeginInfo commandBeginInfo;
-	commandBeginInfo.sType = vk::StructureType::eCommandBufferBeginInfo;
-	commandBeginInfo.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit)
-					.setPInheritanceInfo(nullptr);
-	copyBuffer.begin(&commandBeginInfo);
+	auto command = OneTimeSubmitCommandBegin();
+
 	vk::BufferCopy region;
 	region.setDstOffset({ 0 })
 		  .setSrcOffset({ 0 })
 		  .setSize(size);
-	copyBuffer.copyBuffer(stagingBuffer, m_VertexBuffer, 1, &region);
-	copyBuffer.end();
+	command.copyBuffer(stagingBuffer, m_VertexBuffer, 1, &region);
 
-	vk::SubmitInfo submitInfo;
-	submitInfo.sType = vk::StructureType::eSubmitInfo;
-	submitInfo.setCommandBufferCount(1)
-			  .setPCommandBuffers(&copyBuffer);
-
-	m_GraphicQueue.submit(1, &submitInfo, VK_NULL_HANDLE);
-	m_GraphicQueue.waitIdle();
-	
+	OneTimeSubmitCommandEnd(command);	
 	m_Device.destroyBuffer(stagingBuffer);
 	m_Device.freeMemory(stagingMemory);
 }
@@ -687,4 +666,41 @@ void Application::CreateBuffer(vk::Buffer& buffer, vk::DeviceMemory& memory, vk:
 		throw std::runtime_error("allocate memory failed!");
 	}
 	m_Device.bindBufferMemory(buffer, memory, 0);
+}
+
+vk::CommandBuffer Application::OneTimeSubmitCommandBegin()
+{
+	vk::CommandBuffer commandBuffer;
+	vk::CommandBufferAllocateInfo allocateInfo;
+	allocateInfo.sType = vk::StructureType::eCommandBufferAllocateInfo;
+	allocateInfo.setCommandBufferCount(1)
+				.setCommandPool(m_CommandPool)
+				.setLevel(vk::CommandBufferLevel::ePrimary);
+	if (m_Device.allocateCommandBuffers(&allocateInfo, &commandBuffer) != vk::Result::eSuccess)
+	{
+		throw std::runtime_error("commandBuffer allocate failed!");
+	}
+	vk::CommandBufferBeginInfo beginInfo;
+	beginInfo.sType = vk::StructureType::eCommandBufferBeginInfo;
+	beginInfo.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit)
+			 .setPInheritanceInfo(nullptr);
+	if (commandBuffer.begin(&beginInfo) != vk::Result::eSuccess)
+	{
+		throw std::runtime_error("commandBuffer begin failed!");
+	}
+	return commandBuffer;
+}
+
+void Application::OneTimeSubmitCommandEnd(vk::CommandBuffer command)
+{
+	command.end();
+	vk::SubmitInfo submitInfo;
+	submitInfo.sType = vk::StructureType::eSubmitInfo;
+	submitInfo.setCommandBufferCount(1)
+			  .setPCommandBuffers(&command);
+	if (m_GraphicQueue.submit(1, &submitInfo, VK_NULL_HANDLE) != vk::Result::eSuccess)
+	{
+		throw std::runtime_error("submit command failed!");
+	}
+	m_GraphicQueue.waitIdle();
 }
