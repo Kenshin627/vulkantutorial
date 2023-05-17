@@ -34,6 +34,7 @@ void Application::InitVulkan()
 	CreateCommandPool();
 	CreateCommandBuffer();
 	CreateVertexBuffer();
+	CreateIndexBuffer();
 	CreateAsyncObjects();
 }
 
@@ -551,7 +552,8 @@ void Application::RecordCommandBuffer(vk::CommandBuffer buffer, uint32_t imageIn
 			buffer.setScissor(0, 1, &scissor);
 			vk::DeviceSize size(0);
 			buffer.bindVertexBuffers(0, 1, &m_VertexBuffer, &size);
-			buffer.draw(3, 1, 0, 0);
+			buffer.bindIndexBuffer(m_IndexBuffer, 0, vk::IndexType::eUint16);
+			buffer.drawIndexed(m_Indices.size(), 1, 0, 0, 0);
 		buffer.endRenderPass();
 	buffer.end();
 }				
@@ -629,6 +631,28 @@ void Application::CreateVertexBuffer()
 	OneTimeSubmitCommandEnd(command);	
 	m_Device.destroyBuffer(stagingBuffer);
 	m_Device.freeMemory(stagingMemory);
+}
+
+void Application::CreateIndexBuffer()
+{
+	vk::DeviceSize size = sizeof(uint16_t) * m_Indices.size();
+	vk::Buffer stagingBuffer;
+	vk::DeviceMemory stagingMemory;
+	CreateBuffer(stagingBuffer, stagingMemory, size, vk::BufferUsageFlagBits::eTransferSrc, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eHostVisible |		vk::MemoryPropertyFlagBits::eHostCoherent);
+	void* data;
+	m_Device.mapMemory(stagingMemory, 0, size, {}, &data);
+	memcpy(data, m_Indices.data(), size);
+	m_Device.unmapMemory(stagingMemory);
+
+	CreateBuffer(m_IndexBuffer, m_IndexMemory, size, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eDeviceLocal);
+
+	auto command = OneTimeSubmitCommandBegin();
+	vk::BufferCopy region;
+	region.setDstOffset(0)
+		  .setSrcOffset(0)
+		  .setSize(size);
+	command.copyBuffer(stagingBuffer, m_IndexBuffer, 1, &region);
+	OneTimeSubmitCommandEnd(command);
 }
 
 uint32_t Application::FindMemoryPropertyType(uint32_t memoryType, vk::MemoryPropertyFlags flags)

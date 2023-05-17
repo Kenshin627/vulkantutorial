@@ -90,6 +90,7 @@ private:
 	void CreateCommandPool();
 	void CreateCommandBuffer();
 	void CreateVertexBuffer();
+	void CreateIndexBuffer();
 	void RecordCommandBuffer(vk::CommandBuffer buffer, uint32_t imageIndex);
 	void CreateAsyncObjects();
 	void DrawFrame();
@@ -122,10 +123,17 @@ private:
 	std::vector<const char*> m_DeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
 	std::vector<Vertex> m_VertexData = {
-		{glm::vec2( 0.0, -0.5), glm::vec3(1.0, 0.0, 0.0)},
+		{glm::vec2(-0.5, -0.5), glm::vec3(1.0, 0.0, 0.0)},
+		{glm::vec2( 0.5, -0.5), glm::vec3(0.0, 1.0, 0.0)},
 		{glm::vec2( 0.5,  0.5), glm::vec3(0.0, 1.0, 0.0)},
 		{glm::vec2(-0.5,  0.5), glm::vec3(0.0, 0.0, 1.0)},
 	};
+	std::vector<uint16_t> m_Indices = {
+		0, 1, 2,
+		2, 3, 0
+	};
 	vk::Buffer m_VertexBuffer;
 	vk::DeviceMemory m_VertexMemory;
+	vk::Buffer m_IndexBuffer;
+	vk::DeviceMemory m_IndexMemory;
 };
