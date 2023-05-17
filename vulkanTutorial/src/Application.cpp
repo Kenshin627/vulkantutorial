@@ -608,50 +608,15 @@ void Application::CreateVertexBuffer()
 	vk::DeviceSize size = sizeof(m_VertexData[0]) * m_VertexData.size();
 	vk::Buffer stagingBuffer;
 	vk::DeviceMemory stagingMemory;
-	vk::BufferCreateInfo bufferInfo;
-	bufferInfo.sType = vk::StructureType::eBufferCreateInfo;
-	bufferInfo.setSharingMode(vk::SharingMode::eExclusive)
-			  .setUsage(vk::BufferUsageFlagBits::eTransferSrc)
-			  .setSize(size);
-	if (m_Device.createBuffer(&bufferInfo, nullptr, &stagingBuffer) != vk::Result::eSuccess)
-	{
-		throw std::runtime_error("buffer Create failed!");
-	}
+	
+	CreateBuffer(stagingBuffer, stagingMemory, size, vk::BufferUsageFlagBits::eTransferSrc, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
 
-	vk::MemoryRequirements requirement;
-	m_Device.getBufferMemoryRequirements(stagingBuffer, &requirement);
-	vk::MemoryAllocateInfo memoryInfo;
-	memoryInfo.sType = vk::StructureType::eMemoryAllocateInfo;
-	memoryInfo.setAllocationSize(requirement.size)
-			  .setMemoryTypeIndex(FindMemoryPropertyType(requirement.memoryTypeBits, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent));
-	m_Device.allocateMemory(&memoryInfo, nullptr, &stagingMemory);
-	m_Device.bindBufferMemory(stagingBuffer, stagingMemory, { 0 });
 	void* data;
 	m_Device.mapMemory(stagingMemory, { 0 }, size, {}, &data);
 	memcpy(data, m_VertexData.data(), size);
 	m_Device.unmapMemory(stagingMemory);
 
-	vk::BufferCreateInfo vertexBufferInfo;
-	vertexBufferInfo.sType = vk::StructureType::eBufferCreateInfo;
-	vertexBufferInfo.setSharingMode(vk::SharingMode::eExclusive)
-					.setSize(size)
-					.setUsage(vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer);
-	if (m_Device.createBuffer(&vertexBufferInfo, nullptr, &m_VertexBuffer) != vk::Result::eSuccess)
-	{
-		throw std::runtime_error("vertexbuffer create failed!");
-	}
-
-	vk::MemoryRequirements re;
-	m_Device.getBufferMemoryRequirements(m_VertexBuffer, &re);
-	vk::MemoryAllocateInfo mi;
-	mi.sType = vk::StructureType::eMemoryAllocateInfo;
-	mi.setAllocationSize(re.size)
-	  .setMemoryTypeIndex(FindMemoryPropertyType(re.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal));
-	if (m_Device.allocateMemory(&mi, nullptr, &m_VertexMemory) != vk::Result::eSuccess)
-	{
-		throw std::runtime_error("allocate memory failed!");
-	}
-	m_Device.bindBufferMemory(m_VertexBuffer, m_VertexMemory, { 0 });
+	CreateBuffer(m_VertexBuffer, m_VertexMemory, size, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eDeviceLocal);
 
 	vk::CommandBuffer copyBuffer;
 	vk::CommandBufferAllocateInfo copyBufferInfo;
@@ -697,4 +662,29 @@ uint32_t Application::FindMemoryPropertyType(uint32_t memoryType, vk::MemoryProp
 			return i;
 		}
 	}
+}
+
+void Application::CreateBuffer(vk::Buffer& buffer, vk::DeviceMemory& memory, vk::DeviceSize size, vk::BufferUsageFlags usage, vk::SharingMode sharingMode, vk::MemoryPropertyFlags memoryPropertyFlags)
+{
+	vk::BufferCreateInfo bufferInfo;
+	bufferInfo.sType = vk::StructureType::eBufferCreateInfo;
+	bufferInfo.setSharingMode(sharingMode)
+			  .setSize(size)
+			  .setUsage(usage);
+	if (m_Device.createBuffer(&bufferInfo, nullptr, &buffer) != vk::Result::eSuccess)
+	{
+		throw std::runtime_error("buffer create failed!");
+	}
+
+	vk::MemoryRequirements requirement;
+	m_Device.getBufferMemoryRequirements(buffer, &requirement);
+	vk::MemoryAllocateInfo memoryInfo;
+	memoryInfo.sType = vk::StructureType::eMemoryAllocateInfo;
+	memoryInfo.setAllocationSize(requirement.size)
+			  .setMemoryTypeIndex(FindMemoryPropertyType(requirement.memoryTypeBits, memoryPropertyFlags));
+	if (m_Device.allocateMemory(&memoryInfo, nullptr, &memory) != vk::Result::eSuccess)
+	{
+		throw std::runtime_error("allocate memory failed!");
+	}
+	m_Device.bindBufferMemory(buffer, memory, 0);
 }

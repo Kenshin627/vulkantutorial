@@ -96,6 +96,7 @@ private:
 	vk::ShaderModule CompilerShader(const std::string& path);
 	SwapchainProperties QuerySwapchainSupport(const vk::PhysicalDevice& device);
 	uint32_t FindMemoryPropertyType(uint32_t memoryType, vk::MemoryPropertyFlags flags);
+	void CreateBuffer(vk::Buffer& buffer, vk::DeviceMemory& memory, vk::DeviceSize size, vk::BufferUsageFlags flags, vk::SharingMode sharingMode, vk::MemoryPropertyFlags memoryPropertyFlags);
 
 private:
 	GLFWwindow* m_Window;
