@@ -37,7 +37,8 @@ private:
 		vk::SwapchainKHR vk_SwapChain;
 		vk::SurfaceCapabilitiesKHR vk_Capabilities;
 		vk::SurfaceFormatKHR vk_Format;
-		vk::PresentModeKHR vk__Present;
+		vk::PresentModeKHR vk_Present;
+		vk::Extent2D Extent;
 		std::vector<vk::Image> Images;
 		std::vector<vk::ImageView> ImageViews;
 	};
@@ -50,6 +51,13 @@ private:
 	void CreateSwapchain();
 	void CreateRenderPass();
 	void CreatePipeLine();
+	void CreateFrameBuffer();
+	void CreateCommandPool();
+	void CreateCommandBuffer();
+	void RecordCommandBuffer(vk::CommandBuffer buffer, uint32_t imageIndex);
+	void CreateAsyncObjects();
+	void DrawFrame();
+	vk::ShaderModule CompilerShader(const std::string& path);
 	SwapchainProperties QuerySwapchainSupport(const vk::PhysicalDevice& device);
 
 private:
@@ -63,5 +71,13 @@ private:
 
 	SwapChain m_SwapChain;
 	vk::RenderPass m_RenderPass;
+	vk::PipelineLayout m_Layout;
+	vk::Pipeline m_Pipeline;
+	std::vector<vk::Framebuffer> m_FrameBuffers;
+	vk::CommandPool m_CommandPool;
+	vk::CommandBuffer m_CommandBuffer;
+	vk::Fence m_InFlightFence;
+	vk::Semaphore m_WaitAcquireImageSemaphore;
+	vk::Semaphore m_WaitFinishDrawSemaphore;
 	std::vector<const char*> m_DeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 };

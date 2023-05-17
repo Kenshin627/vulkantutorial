@@ -30,4 +30,8 @@
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="resource\shaders\triangle.vert" />
+    <None Include="resource\shaders\triangle.frag" />
+  </ItemGroup>
 </Project>

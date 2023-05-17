@@ -141,6 +141,10 @@
     <ClInclude Include="src\Application.h" />
     <ClInclude Include="utils\readFile.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="resource\shaders\triangle.frag" />
+    <None Include="resource\shaders\triangle.vert" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
