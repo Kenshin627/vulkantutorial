@@ -71,7 +71,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(projectDir)\vendor\GLFW\include;$(projectDir)\vendor\glm;$(projectDir)\vendor\stbimage;C:\VulkanSDK\1.3.231.1\Include;$(IncludePath)</IncludePath>
+    <IncludePath>$(projectDir)vendor\GLFW\include;$(projectDir)vendor\glm;$(projectDir)vendor\stbimage;C:\VulkanSDK\1.3.231.1\Include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

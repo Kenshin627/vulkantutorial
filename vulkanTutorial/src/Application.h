@@ -48,7 +48,7 @@ private:
 	{
 		glm::vec2 Position;
 		glm::vec3 Color;
-
+		glm::vec2 Coord;
 		static vk::VertexInputBindingDescription GetBindingDescription()
 		{
 			vk::VertexInputBindingDescription desc;
@@ -74,6 +74,13 @@ private:
 						  .setLocation(1)
 						  .setOffset(offsetof(Vertex, Color));
 			result.push_back(colorAttribute);
+
+			vk::VertexInputAttributeDescription coordAttribute;
+			coordAttribute.setBinding(0)
+				.setFormat(vk::Format::eR32G32Sfloat)
+				.setLocation(2)
+				.setOffset(offsetof(Vertex, Coord));
+			result.push_back(coordAttribute);
 			return result;
 		}
 	};
@@ -113,6 +120,11 @@ private:
 	vk::CommandBuffer OneTimeSubmitCommandBegin();
 	void OneTimeSubmitCommandEnd(vk::CommandBuffer command);
 	void UpdateUniformBuffers();
+	void CreateImage(vk::Extent2D extent, vk::Format format);
+	void CreateImageTexture();
+	void CopyBufferToImage(vk::Buffer srcBuffer, vk::Image dstImage, vk::Extent3D extent);
+	void TransiationImageLayout(vk::Image image, vk::PipelineStageFlags srcStage, vk::AccessFlags srcAccess, vk::ImageLayout srcLayout, vk::PipelineStageFlags dstStage, vk::AccessFlags dstAccess, vk::ImageLayout dstLayout);
+	void CreateSampler();
 
 private:
 	GLFWwindow* m_Window;
@@ -136,10 +148,10 @@ private:
 	std::vector<const char*> m_DeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
 	std::vector<Vertex> m_VertexData = {
-		{glm::vec2(-0.5, -0.5), glm::vec3(1.0, 0.0, 0.0)},
-		{glm::vec2( 0.5, -0.5), glm::vec3(0.0, 1.0, 0.0)},
-		{glm::vec2( 0.5,  0.5), glm::vec3(0.0, 1.0, 0.0)},
-		{glm::vec2(-0.5,  0.5), glm::vec3(0.0, 0.0, 1.0)},
+		{glm::vec2(-0.5, -0.5), glm::vec3(1.0, 0.0, 0.0), glm::vec2(0, 1)},
+		{glm::vec2( 0.5, -0.5), glm::vec3(0.0, 1.0, 0.0), glm::vec2(1, 1)},
+		{glm::vec2( 0.5,  0.5), glm::vec3(0.0, 1.0, 0.0), glm::vec2(1, 0)},
+		{glm::vec2(-0.5,  0.5), glm::vec3(0.0, 0.0, 1.0), glm::vec2(0, 0)},
 	};
 	std::vector<uint16_t> m_Indices = {
 		0, 1, 2,
@@ -157,4 +169,9 @@ private:
 	vk::DescriptorSetLayout m_SetLayout;
 	vk::DescriptorPool m_DescriptorPool;
 	vk::DescriptorSet m_DescriptorSet;
+
+	vk::Image m_Image;
+	vk::DeviceMemory m_ImageMemory;
+	vk::ImageView m_ImageView;
+	vk::Sampler m_Sampler;
 };
