@@ -1,6 +1,8 @@
 #include "Application.h"
 #include <set>
 #include <limits>
+#include <chrono>
+#include <gtc/matrix_transform.hpp>
 #include "../utils/readFile.h"
 
 const static uint32_t WIDTH = 1024, HEIGHT = 728;
@@ -30,11 +32,16 @@ void Application::InitVulkan()
 	CreateSwapchain();
 	CreateRenderPass();
 	CreateFrameBuffer();
+	CreateSetLayout();
 	CreatePipeLine();
 	CreateCommandPool();
 	CreateCommandBuffer();
 	CreateVertexBuffer();
 	CreateIndexBuffer();
+	CreateUniformBuffer();
+	CreateDescriptorPool();
+	CreateDescriptorSet();
+	UpdateDescriptorSet();
 	CreateAsyncObjects();
 }
 
@@ -373,7 +380,7 @@ void Application::CreatePipeLine()
 					 .setDepthBiasEnable(VK_FALSE)
 					 .setDepthBiasSlopeFactor(0.0f)
 					 .setDepthClampEnable(VK_FALSE)
-					 .setFrontFace(vk::FrontFace::eClockwise)
+					 .setFrontFace(vk::FrontFace::eCounterClockwise)
 					 .setLineWidth(1.0f)
 					 .setPolygonMode(vk::PolygonMode::eFill)
 					 .setRasterizerDiscardEnable(VK_FALSE);
@@ -396,8 +403,8 @@ void Application::CreatePipeLine()
 	//7.
 	vk::PipelineLayoutCreateInfo layoutInfo;
 	layoutInfo.sType = vk::StructureType::ePipelineLayoutCreateInfo;
-	layoutInfo.setSetLayoutCount(0)
-			  .setPSetLayouts(nullptr)
+	layoutInfo.setSetLayoutCount(1)
+			  .setPSetLayouts(&m_SetLayout)
 			  .setPushConstantRangeCount(0)
 			  .setPPushConstantRanges(nullptr);  
 	if (m_Device.createPipelineLayout(&layoutInfo, nullptr, &m_Layout) != vk::Result::eSuccess)
@@ -541,8 +548,8 @@ void Application::RecordCommandBuffer(vk::CommandBuffer buffer, uint32_t imageIn
 			vk::Viewport viewport;
 			viewport.setX(0.0f)
 					.setY(0.0f)
-					.setWidth(extent.width)
-					.setHeight(extent.height)
+					.setWidth((float)extent.width)
+					.setHeight((float)extent.height)
 					.setMinDepth(0.0f)
 					.setMaxDepth(1.0f);
 			vk::Rect2D scissor;
@@ -553,6 +560,7 @@ void Application::RecordCommandBuffer(vk::CommandBuffer buffer, uint32_t imageIn
 			vk::DeviceSize size(0);
 			buffer.bindVertexBuffers(0, 1, &m_VertexBuffer, &size);
 			buffer.bindIndexBuffer(m_IndexBuffer, 0, vk::IndexType::eUint16);
+			buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_Layout, 0, 1, &m_DescriptorSet, 0, nullptr);
 			buffer.drawIndexed(m_Indices.size(), 1, 0, 0, 0);
 		buffer.endRenderPass();
 	buffer.end();
@@ -567,6 +575,9 @@ void Application::DrawFrame()
 	m_Device.acquireNextImageKHR(m_SwapChain.vk_SwapChain, (std::numeric_limits<uint64_t>::max)(), m_WaitAcquireImageSemaphore, VK_NULL_HANDLE, &imageIndex);
 	m_CommandBuffer.reset();
 	RecordCommandBuffer(m_CommandBuffer, imageIndex);
+
+	UpdateUniformBuffers();
+
 	vk::PipelineStageFlags waitStages[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
 	vk::SubmitInfo submitInfo;
 	submitInfo.sType = vk::StructureType::eSubmitInfo;
@@ -727,4 +738,96 @@ void Application::OneTimeSubmitCommandEnd(vk::CommandBuffer command)
 		throw std::runtime_error("submit command failed!");
 	}
 	m_GraphicQueue.waitIdle();
+}
+
+void Application::CreateSetLayout()
+{
+	vk::DescriptorSetLayoutBinding binding;
+	binding.setBinding(0)
+		   .setDescriptorCount(1)
+		   .setDescriptorType(vk::DescriptorType::eUniformBuffer)
+		   .setPImmutableSamplers(nullptr)
+		   .setStageFlags(vk::ShaderStageFlagBits::eVertex);
+
+	vk::DescriptorSetLayoutCreateInfo setlayoutInfo;
+	setlayoutInfo.sType = vk::StructureType::eDescriptorSetLayoutCreateInfo;
+	setlayoutInfo.setBindingCount(1)
+				 .setPBindings(&binding);
+	if (m_Device.createDescriptorSetLayout(&setlayoutInfo, nullptr, &m_SetLayout) != vk::Result::eSuccess)
+	{
+		throw std::runtime_error("descriptor setlayout create failed!");
+	}
+}
+
+void Application::CreateUniformBuffer()
+{
+	vk::DeviceSize size = sizeof(UniformBufferObject);
+	CreateBuffer(m_UniformBuffer, m_UniformMemory, size, vk::BufferUsageFlagBits::eUniformBuffer, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+	if (m_Device.mapMemory(m_UniformMemory, 0, size, {}, &m_UniformMappedData) != vk::Result::eSuccess)
+	{
+		throw std::runtime_error("map uniformBuffer memory failed!");
+	}
+}
+
+void Application::UpdateUniformBuffers()
+{
+	static auto startTime = std::chrono::high_resolution_clock::now();
+	auto currentTime = std::chrono::high_resolution_clock::now();
+	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+	UniformBufferObject ubo{};
+	ubo.Proj = glm::perspective(glm::radians(45.0f), m_SwapChain.Extent.width / (float)m_SwapChain.Extent.height, 0.1f, 10.0f);
+	ubo.Proj[1][1] *= -1;
+	ubo.View = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.Model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+	memcpy(m_UniformMappedData, &ubo, sizeof(UniformBufferObject));
+}
+
+void Application::CreateDescriptorPool()
+{
+	vk::DescriptorPoolSize poolSize;
+	poolSize.setDescriptorCount(1)
+			.setType(vk::DescriptorType::eUniformBuffer);
+
+	vk::DescriptorPoolCreateInfo descriptorPoolInfo;
+	descriptorPoolInfo.sType = vk::StructureType::eDescriptorPoolCreateInfo;
+	descriptorPoolInfo.setMaxSets(1)
+					  .setPoolSizeCount(1)
+					  .setPPoolSizes(&poolSize);
+	if (m_Device.createDescriptorPool(&descriptorPoolInfo, nullptr, &m_DescriptorPool) != vk::Result::eSuccess)
+	{
+		throw std::runtime_error("create descriptorPool failed!");
+	}
+}
+
+void Application::CreateDescriptorSet()
+{
+	vk::DescriptorSetAllocateInfo setInfo;
+	setInfo.sType = vk::StructureType::eDescriptorSetAllocateInfo;
+	setInfo.setDescriptorPool(m_DescriptorPool)
+		   .setDescriptorSetCount(1)
+		   .setPSetLayouts(&m_SetLayout);
+	if (m_Device.allocateDescriptorSets(&setInfo, &m_DescriptorSet) != vk::Result::eSuccess)
+	{
+		throw std::runtime_error("descriptorSet allocate failed!");
+	}
+}
+
+void Application::UpdateDescriptorSet()
+{
+	vk::DescriptorBufferInfo bufferInfo;
+	bufferInfo.setBuffer(m_UniformBuffer)
+			  .setOffset(0)
+			  .setRange(sizeof(UniformBufferObject));
+
+	vk::WriteDescriptorSet writeSet;
+	writeSet.sType = vk::StructureType::eWriteDescriptorSet;
+	writeSet.setDescriptorCount(1)
+			.setDescriptorType(vk::DescriptorType::eUniformBuffer)
+			.setDstArrayElement(0)
+			.setDstBinding(0)
+			.setDstSet(m_DescriptorSet)
+			.setPBufferInfo(&bufferInfo);
+	m_Device.updateDescriptorSets(1, &writeSet, 0, nullptr);
 }

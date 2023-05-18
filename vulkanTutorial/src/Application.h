@@ -77,6 +77,13 @@ private:
 			return result;
 		}
 	};
+
+	struct UniformBufferObject
+	{
+		glm::mat4 Proj;
+		glm::mat4 View;
+		glm::mat4 Model;
+	};
 private:
 	void CreateInstance();
 	void PickupPhysicalDevice();
@@ -85,14 +92,19 @@ private:
 	void CreateLogicDevice();
 	void CreateSwapchain();
 	void CreateRenderPass();
+	void CreateSetLayout();
 	void CreatePipeLine();
 	void CreateFrameBuffer();
 	void CreateCommandPool();
 	void CreateCommandBuffer();
 	void CreateVertexBuffer();
 	void CreateIndexBuffer();
+	void CreateUniformBuffer();
 	void RecordCommandBuffer(vk::CommandBuffer buffer, uint32_t imageIndex);
 	void CreateAsyncObjects();
+	void CreateDescriptorPool();
+	void CreateDescriptorSet();
+	void UpdateDescriptorSet();
 	void DrawFrame();
 	vk::ShaderModule CompilerShader(const std::string& path);
 	SwapchainProperties QuerySwapchainSupport(const vk::PhysicalDevice& device);
@@ -100,6 +112,7 @@ private:
 	void CreateBuffer(vk::Buffer& buffer, vk::DeviceMemory& memory, vk::DeviceSize size, vk::BufferUsageFlags flags, vk::SharingMode sharingMode, vk::MemoryPropertyFlags memoryPropertyFlags);
 	vk::CommandBuffer OneTimeSubmitCommandBegin();
 	void OneTimeSubmitCommandEnd(vk::CommandBuffer command);
+	void UpdateUniformBuffers();
 
 private:
 	GLFWwindow* m_Window;
@@ -134,6 +147,14 @@ private:
 	};
 	vk::Buffer m_VertexBuffer;
 	vk::DeviceMemory m_VertexMemory;
+
 	vk::Buffer m_IndexBuffer;
 	vk::DeviceMemory m_IndexMemory;
+
+	vk::Buffer m_UniformBuffer;
+	vk::DeviceMemory m_UniformMemory;
+	void* m_UniformMappedData;
+	vk::DescriptorSetLayout m_SetLayout;
+	vk::DescriptorPool m_DescriptorPool;
+	vk::DescriptorSet m_DescriptorSet;
 };
