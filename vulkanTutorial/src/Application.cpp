@@ -2,6 +2,7 @@
 #include <set>
 #include <limits>
 #include <chrono>
+
 #include <gtc/matrix_transform.hpp>
 #include "../utils/readFile.h"
 
@@ -33,11 +34,13 @@ void Application::InitVulkan()
 	PickupPhysicalDevice();
 	CreateLogicDevice();
 	CreateSwapchain();
+	CreateCommandPool();
+	CreateDepthSources();
 	CreateRenderPass();
 	CreateFrameBuffer();
 	CreateSetLayout();
 	CreatePipeLine();
-	CreateCommandPool();
+	
 	CreateCommandBuffer();
 	CreateVertexBuffer();
 	CreateIndexBuffer();
@@ -305,34 +308,49 @@ void Application::CreateSwapchain()
 
 void Application::CreateRenderPass()
 {
-	vk::AttachmentDescription attachment;
-	attachment.setFormat(m_SwapChain.vk_Format.format)
-			  .setSamples(vk::SampleCountFlagBits::e1)
-			  .setInitialLayout(vk::ImageLayout::eUndefined)
-			  .setFinalLayout(vk::ImageLayout::ePresentSrcKHR)		
-			  .setLoadOp(vk::AttachmentLoadOp::eClear)
-			  .setStoreOp(vk::AttachmentStoreOp::eStore)
-			  .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
-			  .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare);
+	vk::AttachmentDescription colorAttachment;
+	colorAttachment.setFormat(m_SwapChain.vk_Format.format)
+				   .setSamples(vk::SampleCountFlagBits::e1)
+				   .setInitialLayout(vk::ImageLayout::eUndefined)
+				   .setFinalLayout(vk::ImageLayout::ePresentSrcKHR)		
+				   .setLoadOp(vk::AttachmentLoadOp::eClear)
+				   .setStoreOp(vk::AttachmentStoreOp::eStore)
+				   .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
+				   .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare);
 
-	vk::AttachmentReference reference;
-	reference.setAttachment(0)
-			 .setLayout(vk::ImageLayout::eColorAttachmentOptimal);
+	vk::AttachmentDescription depthAttachment;
+	depthAttachment.setFormat(vk::Format::eD32Sfloat)
+				   .setSamples(vk::SampleCountFlagBits::e1)
+				   .setInitialLayout(vk::ImageLayout::eUndefined)
+				   .setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
+				   .setLoadOp(vk::AttachmentLoadOp::eClear)
+				   .setStoreOp(vk::AttachmentStoreOp::eDontCare)
+				   .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
+				   .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare);
+	std::array<vk::AttachmentDescription, 2> attachments = { colorAttachment, depthAttachment };
+	vk::AttachmentReference colorReference;
+	colorReference.setAttachment(0)
+				  .setLayout(vk::ImageLayout::eColorAttachmentOptimal);
+	vk::AttachmentReference depthReference;
+	depthReference.setAttachment(1)
+			      .setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
+	
 	vk::SubpassDescription subpassInfo;
 	subpassInfo.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
 			   .setColorAttachmentCount(1)
-			   .setPColorAttachments(&reference);
+			   .setPColorAttachments(&colorReference)
+			   .setPDepthStencilAttachment(&depthReference);
 	vk::SubpassDependency dependency;
 	dependency.setSrcSubpass(VK_SUBPASS_EXTERNAL)
 			  .setDstSubpass(0)
-			  .setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput)
+			  .setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests)
 			  .setSrcAccessMask(vk::AccessFlagBits::eNone)
-			  .setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput)
-			  .setDstAccessMask(vk::AccessFlagBits::eColorAttachmentWrite);
+			  .setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests)
+			  .setDstAccessMask(vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite);
 	vk::RenderPassCreateInfo renderPassInfo;
 	renderPassInfo.sType = vk::StructureType::eRenderPassCreateInfo;
-	renderPassInfo.setAttachmentCount(1)
-				  .setPAttachments(&attachment)
+	renderPassInfo.setAttachmentCount(attachments.size())
+				  .setPAttachments(attachments.data())
 				  .setPSubpasses(&subpassInfo)
 				  .setSubpassCount(1)
 				  .setDependencyCount(1)
@@ -403,7 +421,15 @@ void Application::CreatePipeLine()
 	//6.
 	vk::PipelineDepthStencilStateCreateInfo depthStencilInfo;
 	depthStencilInfo.sType = vk::StructureType::ePipelineDepthStencilStateCreateInfo;
-	depthStencilInfo.setDepthTestEnable(VK_FALSE);
+	depthStencilInfo.setDepthTestEnable(VK_TRUE)
+		.setBack({})
+		.setDepthBoundsTestEnable(VK_FALSE)
+		.setDepthCompareOp(vk::CompareOp::eLess)
+		.setDepthWriteEnable(VK_TRUE)
+		.setFront({})
+		.setMaxDepthBounds(1.0f)
+		.setMinDepthBounds(0.0f)
+		.setStencilTestEnable(VK_FALSE);
 
 	//7.
 	vk::PipelineLayoutCreateInfo layoutInfo;
@@ -484,11 +510,11 @@ void Application::CreateFrameBuffer()
 	uint32_t index = 0;
 	for (auto& view : m_SwapChain.ImageViews)
 	{
-		vk::ImageView attachments[] = {view};
+		std::array<vk::ImageView, 2> attachments = { view, m_DepthImageView };
 		vk::FramebufferCreateInfo framebufferInfo;
 		framebufferInfo.sType = vk::StructureType::eFramebufferCreateInfo;
-		framebufferInfo.setAttachmentCount(1)
-					   .setPAttachments(&view)
+		framebufferInfo.setAttachmentCount(attachments.size())
+					   .setPAttachments(attachments.data())
 					   .setWidth(m_SwapChain.Extent.width)
 					   .setHeight(m_SwapChain.Extent.height)
 					   .setLayers(1)
@@ -535,7 +561,10 @@ void Application::RecordCommandBuffer(vk::CommandBuffer buffer, uint32_t imageIn
 					  //.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
 	buffer.begin(&commandBufferBegin);
-		vk::ClearValue clearColor;
+		std::array<vk::ClearValue, 2> clearValues{};
+		clearValues[0].color = vk::ClearColorValue();
+		clearValues[1].depthStencil = vk::ClearDepthStencilValue(1.0f, 0.0f);
+		
 		
 		vk::Extent2D extent = m_SwapChain.Extent;
 		vk::Rect2D renderArea;
@@ -543,8 +572,8 @@ void Application::RecordCommandBuffer(vk::CommandBuffer buffer, uint32_t imageIn
 				  .setExtent(extent);
 		vk::RenderPassBeginInfo renderPassBegin;
 		renderPassBegin.sType = vk::StructureType::eRenderPassBeginInfo;
-		renderPassBegin.setClearValueCount(1)
-					   .setPClearValues(&clearColor)
+		renderPassBegin.setClearValueCount(clearValues.size())
+					   .setPClearValues(clearValues.data())
 					   .setFramebuffer(m_FrameBuffers[imageIndex])
 					   .setRenderPass(m_RenderPass)
 					   .setRenderArea(renderArea);
@@ -890,14 +919,13 @@ void Application::CreateImageTexture()
 		memcpy(data, pixels, size);
 		m_Device.unmapMemory(stagingMemory);
 	}
-	
-	CreateImage(vk::Extent2D(width, height), vk::Format::eR8G8B8A8Srgb);
-	TransiationImageLayout(m_Image, vk::PipelineStageFlagBits::eTopOfPipe, vk::AccessFlagBits::eNone, vk::ImageLayout::eUndefined, vk::PipelineStageFlagBits::eTransfer, vk::AccessFlagBits::eTransferWrite, vk::ImageLayout::eTransferDstOptimal);
+	CreateImage(m_Image, m_ImageMemory, m_ImageView, vk::Extent2D(width, height), vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::ImageAspectFlagBits::eColor, vk::MemoryPropertyFlagBits::eDeviceLocal);
+	TransiationImageLayout(m_Image, vk::PipelineStageFlagBits::eTopOfPipe, vk::AccessFlagBits::eNone, vk::ImageLayout::eUndefined, vk::PipelineStageFlagBits::eTransfer, vk::AccessFlagBits::eTransferWrite, vk::ImageLayout::eTransferDstOptimal, vk::ImageAspectFlagBits::eColor);
 	CopyBufferToImage(stagingBuffer, m_Image, vk::Extent3D(width, height, 1));
-	TransiationImageLayout(m_Image, vk::PipelineStageFlagBits::eTransfer, vk::AccessFlagBits::eTransferWrite, vk::ImageLayout::eTransferDstOptimal, vk::PipelineStageFlagBits::eFragmentShader, vk::AccessFlagBits::eShaderRead, vk::ImageLayout::eShaderReadOnlyOptimal);
+	TransiationImageLayout(m_Image, vk::PipelineStageFlagBits::eTransfer, vk::AccessFlagBits::eTransferWrite, vk::ImageLayout::eTransferDstOptimal, vk::PipelineStageFlagBits::eFragmentShader, vk::AccessFlagBits::eShaderRead, vk::ImageLayout::eShaderReadOnlyOptimal, vk::ImageAspectFlagBits::eColor);
 }
 
-void Application::CreateImage(vk::Extent2D extent, vk::Format format)
+void Application::CreateImage(vk::Image& image, vk::DeviceMemory& memory, vk::ImageView& imageView, vk::Extent2D extent, vk::Format format, vk::ImageUsageFlags usage, vk::ImageTiling tiling, vk::ImageAspectFlags aspectFlags, vk::MemoryPropertyFlags memoryPropertyFlags)
 {
 	vk::ImageCreateInfo imageInfo;
 	imageInfo.sType = vk::StructureType::eImageCreateInfo;
@@ -909,27 +937,27 @@ void Application::CreateImage(vk::Extent2D extent, vk::Format format)
 			 .setMipLevels(0)
 			 .setSamples(vk::SampleCountFlagBits::e1)
 			 .setSharingMode(vk::SharingMode::eExclusive)
-			 .setTiling(vk::ImageTiling::eOptimal)
-			 .setUsage(vk::ImageUsageFlagBits::eSampled);
-	if (m_Device.createImage(&imageInfo, nullptr, &m_Image) != vk::Result::eSuccess)
+			 .setTiling(tiling)
+			 .setUsage(usage);
+	if (m_Device.createImage(&imageInfo, nullptr, &image) != vk::Result::eSuccess)
 	{
 		throw std::runtime_error("image create failed!");
 	}
 
 	vk::MemoryRequirements requirement;
-	m_Device.getImageMemoryRequirements(m_Image, &requirement);
+	m_Device.getImageMemoryRequirements(image, &requirement);
 	vk::MemoryAllocateInfo memoryInfo;
 	memoryInfo.sType = vk::StructureType::eMemoryAllocateInfo;
 	memoryInfo.setAllocationSize(requirement.size)
-			  .setMemoryTypeIndex(FindMemoryPropertyType(requirement.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal));
-	if (m_Device.allocateMemory(&memoryInfo, nullptr, &m_ImageMemory) != vk::Result::eSuccess)
+			  .setMemoryTypeIndex(FindMemoryPropertyType(requirement.memoryTypeBits, memoryPropertyFlags));
+	if (m_Device.allocateMemory(&memoryInfo, nullptr, &memory) != vk::Result::eSuccess)
 	{
 		throw std::runtime_error("imageMemory allocate failed!");
 	}
-	m_Device.bindImageMemory(m_Image, m_ImageMemory, 0);
+	m_Device.bindImageMemory(image, memory, 0);
 
 	vk::ImageSubresourceRange region;
-	region.setAspectMask(vk::ImageAspectFlagBits::eColor)
+	region.setAspectMask(aspectFlags)
 		  .setBaseArrayLayer(0)
 		  .setBaseMipLevel(0)
 		  .setLayerCount(1)
@@ -937,11 +965,11 @@ void Application::CreateImage(vk::Extent2D extent, vk::Format format)
 	vk::ImageViewCreateInfo imageViewInfo;
 	imageViewInfo.sType = vk::StructureType::eImageViewCreateInfo;
 	imageViewInfo.setComponents(vk::ComponentMapping())
-				 .setFormat(vk::Format::eR8G8B8A8Srgb)
-				 .setImage(m_Image)
+				 .setFormat(format)
+				 .setImage(image)
 				 .setSubresourceRange(region)
 				 .setViewType(vk::ImageViewType::e2D);
-	if (m_Device.createImageView(&imageViewInfo, nullptr, &m_ImageView) != vk::Result::eSuccess)
+	if (m_Device.createImageView(&imageViewInfo, nullptr, &imageView) != vk::Result::eSuccess)
 	{
 		throw std::runtime_error("imageView create failed!");
 	}
@@ -968,12 +996,12 @@ void Application::CopyBufferToImage(vk::Buffer srcBuffer, vk::Image dstImage, vk
 	OneTimeSubmitCommandEnd(command);
 }
 
-void Application::TransiationImageLayout(vk::Image image, vk::PipelineStageFlags srcStage, vk::AccessFlags srcAccess, vk::ImageLayout srcLayout, vk::PipelineStageFlags dstStage,  vk::AccessFlags dstAccess, vk::ImageLayout dstLayout)
+void Application::TransiationImageLayout(vk::Image image, vk::PipelineStageFlags srcStage, vk::AccessFlags srcAccess, vk::ImageLayout srcLayout, vk::PipelineStageFlags dstStage,  vk::AccessFlags dstAccess, vk::ImageLayout dstLayout, vk::ImageAspectFlags aspectFlags)
 {
 	auto command = OneTimeSubmitCommandBegin();
 
 	vk::ImageSubresourceRange range;
-	range.setAspectMask(vk::ImageAspectFlagBits::eColor)
+	range.setAspectMask(aspectFlags)
 		 .setBaseArrayLayer(0)
 		 .setBaseMipLevel(0)
 		 .setLayerCount(1)
@@ -1013,4 +1041,10 @@ void Application::CreateSampler()
 	{
 		throw std::runtime_error("sampler create failed!");
 	}
+}
+
+void Application::CreateDepthSources()
+{
+	CreateImage(m_DepthImage, m_DepthMemory, m_DepthImageView, m_SwapChain.Extent, vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::ImageTiling::eOptimal, vk::ImageAspectFlagBits::eDepth, vk::MemoryPropertyFlagBits::eDeviceLocal);
+	TransiationImageLayout(m_DepthImage, vk::PipelineStageFlagBits::eTopOfPipe, vk::AccessFlagBits::eNone, vk::ImageLayout::eUndefined, vk::PipelineStageFlagBits::eEarlyFragmentTests, vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite, vk::ImageLayout::eDepthStencilAttachmentOptimal, vk::ImageAspectFlagBits::eDepth);
 }

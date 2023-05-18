@@ -6,6 +6,7 @@
 #include <GLFW/glfw3native.h>
 #include <vector>
 #include <optional>
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm.hpp>
 
 class Application
@@ -46,7 +47,7 @@ private:
 
 	struct Vertex
 	{
-		glm::vec2 Position;
+		glm::vec3 Position;
 		glm::vec3 Color;
 		glm::vec2 Coord;
 		static vk::VertexInputBindingDescription GetBindingDescription()
@@ -63,7 +64,7 @@ private:
 			std::vector<vk::VertexInputAttributeDescription> result;
 			vk::VertexInputAttributeDescription positionAttribute;
 			positionAttribute.setBinding(0)
-						     .setFormat(vk::Format::eR32G32Sfloat)
+						     .setFormat(vk::Format::eR32G32B32Sfloat)
 						     .setLocation(0)
 						     .setOffset(offsetof(Vertex, Position));
 			result.push_back(positionAttribute);
@@ -107,6 +108,7 @@ private:
 	void CreateVertexBuffer();
 	void CreateIndexBuffer();
 	void CreateUniformBuffer();
+	void CreateDepthSources();
 	void RecordCommandBuffer(vk::CommandBuffer buffer, uint32_t imageIndex);
 	void CreateAsyncObjects();
 	void CreateDescriptorPool();
@@ -120,10 +122,10 @@ private:
 	vk::CommandBuffer OneTimeSubmitCommandBegin();
 	void OneTimeSubmitCommandEnd(vk::CommandBuffer command);
 	void UpdateUniformBuffers();
-	void CreateImage(vk::Extent2D extent, vk::Format format);
+	void CreateImage(vk::Image& image, vk::DeviceMemory& memory, vk::ImageView& imageView, vk::Extent2D extent, vk::Format format, vk::ImageUsageFlags usage, vk::ImageTiling tiling, vk::ImageAspectFlags aspectFlags, vk::MemoryPropertyFlags memoryPropertyFlags);
 	void CreateImageTexture();
 	void CopyBufferToImage(vk::Buffer srcBuffer, vk::Image dstImage, vk::Extent3D extent);
-	void TransiationImageLayout(vk::Image image, vk::PipelineStageFlags srcStage, vk::AccessFlags srcAccess, vk::ImageLayout srcLayout, vk::PipelineStageFlags dstStage, vk::AccessFlags dstAccess, vk::ImageLayout dstLayout);
+	void TransiationImageLayout(vk::Image image, vk::PipelineStageFlags srcStage, vk::AccessFlags srcAccess, vk::ImageLayout srcLayout, vk::PipelineStageFlags dstStage, vk::AccessFlags dstAccess, vk::ImageLayout dstLayout, vk::ImageAspectFlags aspectFlags);
 	void CreateSampler();
 
 private:
@@ -148,14 +150,21 @@ private:
 	std::vector<const char*> m_DeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
 	std::vector<Vertex> m_VertexData = {
-		{glm::vec2(-0.5, -0.5), glm::vec3(1.0, 0.0, 0.0), glm::vec2(0, 1)},
-		{glm::vec2( 0.5, -0.5), glm::vec3(0.0, 1.0, 0.0), glm::vec2(1, 1)},
-		{glm::vec2( 0.5,  0.5), glm::vec3(0.0, 1.0, 0.0), glm::vec2(1, 0)},
-		{glm::vec2(-0.5,  0.5), glm::vec3(0.0, 0.0, 1.0), glm::vec2(0, 0)},
+		{glm::vec3(-0.5, -0.5, 0.0), glm::vec3(1.0, 0.0, 0.0), glm::vec2(0, 1)},
+		{glm::vec3( 0.5, -0.5, 0.0), glm::vec3(0.0, 1.0, 0.0), glm::vec2(1, 1)},
+		{glm::vec3( 0.5,  0.5, 0.0), glm::vec3(0.0, 1.0, 0.0), glm::vec2(1, 0)},
+		{glm::vec3(-0.5,  0.5, 0.0), glm::vec3(0.0, 0.0, 1.0), glm::vec2(0, 0)},
+
+		{glm::vec3(-0.5, -0.5, 0.5), glm::vec3(1.0, 0.0, 0.0), glm::vec2(0, 1)},
+		{glm::vec3(0.5, -0.5, 0.5), glm::vec3(0.0, 1.0, 0.0), glm::vec2(1, 1)},
+		{glm::vec3(0.5,  0.5, 0.5), glm::vec3(0.0, 1.0, 0.0), glm::vec2(1, 0)},
+		{glm::vec3(-0.5,  0.5, 0.5), glm::vec3(0.0, 0.0, 1.0), glm::vec2(0, 0)},
 	};
 	std::vector<uint16_t> m_Indices = {
 		0, 1, 2,
-		2, 3, 0
+		2, 3, 0,
+		4, 5, 6,
+		6, 7, 4
 	};
 	vk::Buffer m_VertexBuffer;
 	vk::DeviceMemory m_VertexMemory;
@@ -174,4 +183,8 @@ private:
 	vk::DeviceMemory m_ImageMemory;
 	vk::ImageView m_ImageView;
 	vk::Sampler m_Sampler;
+
+	vk::Image m_DepthImage;
+	vk::DeviceMemory m_DepthMemory;
+	vk::ImageView m_DepthImageView;
 };
