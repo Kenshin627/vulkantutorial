@@ -11,6 +11,12 @@
 
 const static uint32_t WIDTH = 1024, HEIGHT = 728;
 
+static void frameBufferResizeCallback(GLFWwindow* window, int width, int height)
+{
+	auto app = static_cast<Application*>(glfwGetWindowUserPointer(window));
+	app->SetFrameBufferSizeChanged(true);
+}
+
 void Application::Run()
 {
 	InitWindow();
@@ -23,8 +29,10 @@ void Application::InitWindow()
 {
 	glfwInit();
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+	//glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 	m_Window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
+	glfwSetWindowUserPointer(m_Window, this);
+	glfwSetFramebufferSizeCallback(m_Window, frameBufferResizeCallback);
 }
 
 void Application::InitVulkan()
@@ -588,10 +596,16 @@ void Application::RecordCommandBuffer(vk::CommandBuffer buffer, uint32_t imageIn
 void Application::DrawFrame()
 {
 	m_Device.waitForFences(1, &m_InFlightFence, VK_TRUE, (std::numeric_limits<uint64_t>::max)());
-	m_Device.resetFences(1, &m_InFlightFence);
 
 	uint32_t imageIndex;
-	m_Device.acquireNextImageKHR(m_SwapChain.vk_SwapChain, (std::numeric_limits<uint64_t>::max)(), m_WaitAcquireImageSemaphore, VK_NULL_HANDLE, &imageIndex);
+	auto acquireImageResult = m_Device.acquireNextImageKHR(m_SwapChain.vk_SwapChain, (std::numeric_limits<uint64_t>::max)(), m_WaitAcquireImageSemaphore, VK_NULL_HANDLE, &imageIndex);
+	if (acquireImageResult == vk::Result::eErrorOutOfDateKHR || acquireImageResult == vk::Result::eSuboptimalKHR ||FrameBufferSizeChanged)
+	{
+		FrameBufferSizeChanged = false;
+		ReCreateSwapchain();
+		return;
+	}
+	m_Device.resetFences(1, &m_InFlightFence);
 	m_CommandBuffer.reset();
 	RecordCommandBuffer(m_CommandBuffer, imageIndex);
 
@@ -618,7 +632,12 @@ void Application::DrawFrame()
 			   .setPWaitSemaphores(&m_WaitFinishDrawSemaphore)
 			   .setSwapchainCount(1)
 			   .setPSwapchains(&m_SwapChain.vk_SwapChain);
-	m_PresentQueue.presentKHR(&presentInfo);
+	auto presentResult = m_PresentQueue.presentKHR(&presentInfo);
+	if (presentResult == vk::Result::eErrorOutOfDateKHR || presentResult == vk::Result::eSuboptimalKHR || FrameBufferSizeChanged)
+	{
+		FrameBufferSizeChanged = false;
+		ReCreateSwapchain();
+	}
 }
 
 void Application::CreateAsyncObjects()
@@ -1070,4 +1089,39 @@ bool Application::HasStencil(vk::Format format)
 		return true;
 	}
 	return false;
+}
+
+void Application::ClearSwapchain()
+{
+	for (auto& frameBuffer : m_FrameBuffers)
+	{
+		m_Device.destroyFramebuffer(frameBuffer);
+	}
+
+	for (auto& imageView : m_SwapChain.ImageViews)
+	{
+		m_Device.destroyImageView(imageView);
+	}
+
+	m_Device.destroySwapchainKHR(m_SwapChain.vk_SwapChain);
+
+	m_Device.destroyImageView(m_DepthImageView);
+	m_Device.destroyImage(m_DepthImage);
+	m_Device.freeMemory(m_DepthMemory);
+}
+
+void Application::ReCreateSwapchain()
+{
+	int width, height;
+	glfwGetFramebufferSize(m_Window, &width, &height);
+	while (width ==0 || height == 0)
+	{
+		glfwGetFramebufferSize(m_Window, &width, &height);
+		glfwWaitEvents();
+	}
+	m_Device.waitIdle();
+	ClearSwapchain();
+	CreateSwapchain();
+	CreateDepthSources();
+	CreateFrameBuffer();
 }

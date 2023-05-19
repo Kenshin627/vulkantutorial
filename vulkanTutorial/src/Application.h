@@ -99,6 +99,8 @@ private:
 	QueueFamilyIndices QueryQueueFmily(const vk::PhysicalDevice& device);
 	void CreateLogicDevice();
 	void CreateSwapchain();
+	void ReCreateSwapchain();
+	void ClearSwapchain();
 	void CreateRenderPass();
 	void CreateSetLayout();
 	void CreatePipeLine();
@@ -130,9 +132,12 @@ private:
 	void CreateImageView(vk::Image image, vk::ImageView& imageView, vk::Format format, vk::ImageAspectFlags aspectFlags, vk::ImageViewType viewType = vk::ImageViewType::e2D, vk::ComponentMapping mapping = {});
 	vk::Format FindImageFormatDeviceSupport(const std::vector<vk::Format> formats, vk::ImageTiling tiling, vk::FormatFeatureFlags featureFlags);
 	bool HasStencil(vk::Format format);
+	public:
+	void SetFrameBufferSizeChanged(bool changed) { FrameBufferSizeChanged = changed; }
 
 private:
 	GLFWwindow* m_Window;
+	bool FrameBufferSizeChanged = false;
 	vk::Instance m_VKInstance;
 	vk::PhysicalDevice m_PhysicalDevice;
 	vk::SurfaceKHR m_Surface;
