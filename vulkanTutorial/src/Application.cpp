@@ -2,12 +2,16 @@
 #include <set>
 #include <limits>
 #include <chrono>
+#include <unordered_map>
 
 #include <gtc/matrix_transform.hpp>
 #include "../utils/readFile.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+
+#define TINYOBJLOADER_IMPLEMENTATION
+#include "../vendor/tiny_obj_loader/tiny_obj_loader.h"
 
 const static uint32_t WIDTH = 1024, HEIGHT = 728;
 
@@ -48,12 +52,14 @@ void Application::InitVulkan()
 	CreateFrameBuffer();
 	CreateSetLayout();
 	CreatePipeLine();
+
+	CreateImageTexture("resource/textures/vikingRoom.png");
+	LoadModel("resource/models/vikingRoom.obj");
 	
 	CreateCommandBuffer();
 	CreateVertexBuffer();
 	CreateIndexBuffer();
 	CreateUniformBuffer();
-	CreateImageTexture();
 	CreateSampler();
 	CreateDescriptorPool();
 	CreateDescriptorSet();
@@ -139,7 +145,7 @@ void Application::CreateSurface()
 	}
 }
 
-Application::QueueFamilyIndices Application::QueryQueueFmily(const vk::PhysicalDevice& device)
+QueueFamilyIndices Application::QueryQueueFmily(const vk::PhysicalDevice& device)
 {
 	QueueFamilyIndices indices;
 	auto queueFamilies = device.getQueueFamilyProperties();
@@ -196,7 +202,7 @@ void Application::CreateLogicDevice()
 	m_PresentQueue = m_Device.getQueue(queueIndices.PresentFamily.value(), 0);
 }
 
-Application::SwapchainProperties Application::QuerySwapchainSupport(const vk::PhysicalDevice& device)
+SwapchainProperties Application::QuerySwapchainSupport(const vk::PhysicalDevice& device)
 {
 	SwapchainProperties properties;
 	properties.capabilities = device.getSurfaceCapabilitiesKHR(m_Surface);
@@ -586,7 +592,7 @@ void Application::RecordCommandBuffer(vk::CommandBuffer buffer, uint32_t imageIn
 			buffer.setScissor(0, 1, &scissor);
 			vk::DeviceSize size(0);
 			buffer.bindVertexBuffers(0, 1, &m_VertexBuffer, &size);
-			buffer.bindIndexBuffer(m_IndexBuffer, 0, vk::IndexType::eUint16);
+			buffer.bindIndexBuffer(m_IndexBuffer, 0, vk::IndexType::eUint32);
 			buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_Layout, 0, 1, &m_DescriptorSet, 0, nullptr);
 			buffer.drawIndexed(static_cast<uint32_t>(m_Indices.size()), 1, 0, 0, 0);
 		buffer.endRenderPass();
@@ -684,7 +690,7 @@ void Application::CreateVertexBuffer()
 
 void Application::CreateIndexBuffer()
 {
-	vk::DeviceSize size = sizeof(uint16_t) * m_Indices.size();
+	vk::DeviceSize size = sizeof(uint32_t) * m_Indices.size();
 	vk::Buffer stagingBuffer;
 	vk::DeviceMemory stagingMemory;
 	CreateBuffer(stagingBuffer, stagingMemory, size, vk::BufferUsageFlagBits::eTransferSrc, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eHostVisible |		vk::MemoryPropertyFlagBits::eHostCoherent);
@@ -824,10 +830,10 @@ void Application::UpdateUniformBuffers()
 	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
 	UniformBufferObject ubo{};
-	ubo.Proj = glm::perspective(glm::radians(45.0f), m_SwapChain.Extent.width / (float)m_SwapChain.Extent.height, 0.1f, 10.0f);
+	ubo.Proj = glm::perspective(glm::radians(45.0f), m_SwapChain.Extent.width / (float)m_SwapChain.Extent.height, 0.1f, 100.0f);
 	ubo.Proj[1][1] *= -1;
 	ubo.View = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	ubo.Model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.Model = glm::rotate(glm::mat4(1.0f), time * glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
 	memcpy(m_UniformMappedData, &ubo, sizeof(UniformBufferObject));
 }
@@ -901,10 +907,10 @@ void Application::UpdateDescriptorSet()
 	m_Device.updateDescriptorSets(static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 }
 
-void Application::CreateImageTexture()
+void Application::CreateImageTexture(const char* path)
 {
 	int width, height, channel;
-	stbi_uc* pixels = stbi_load("resource/textures/texture.jpg", &width, &height, &channel, STBI_rgb_alpha);
+	stbi_uc* pixels = stbi_load(path, &width, &height, &channel, STBI_rgb_alpha);
 	if (!pixels)
 	{
 		throw std::runtime_error("read imagefile failed!");
@@ -1125,4 +1131,44 @@ void Application::ReCreateSwapchain()
 	CreateSwapchain();
 	CreateDepthSources();
 	CreateFrameBuffer();
+}
+
+void Application::LoadModel(const char* path)
+{
+	tinyobj::attrib_t attris;
+	std::vector<tinyobj::shape_t> shapes;
+	std::vector<tinyobj::material_t> materials;
+	std::string warn;
+	std::string error;
+	bool res = tinyobj::LoadObj(&attris, &shapes, &materials, &warn, &error, path);
+	if (!res)
+	{
+		throw std::runtime_error("load model failed!");
+	}
+	std::unordered_map<Vertex, uint32_t> uniqueVertices{};
+	for (auto& shape : shapes)
+	{
+		for (auto& index : shape.mesh.indices)
+		{
+			Vertex vertex{};
+			vertex.Position = {
+				attris.vertices[3 * index.vertex_index + 0],
+				attris.vertices[3 * index.vertex_index + 1],
+				attris.vertices[3 * index.vertex_index + 2]
+			};
+
+			vertex.Coord = {
+				attris.texcoords[2 * index.texcoord_index + 0],
+				1.0f - attris.texcoords[2 * index.texcoord_index + 1]
+			};
+
+			vertex.Color = { 1.0f, 1.0f, 1.0f };
+			if (uniqueVertices.count(vertex) == 0)
+			{
+				uniqueVertices[vertex] = static_cast<uint32_t>(m_VertexData.size());
+				m_VertexData.push_back(vertex);
+			}
+			m_Indices.push_back(uniqueVertices[vertex]);
+		}
+	}
 }
