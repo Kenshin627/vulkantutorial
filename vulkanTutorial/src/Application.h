@@ -122,11 +122,14 @@ private:
 	vk::CommandBuffer OneTimeSubmitCommandBegin();
 	void OneTimeSubmitCommandEnd(vk::CommandBuffer command);
 	void UpdateUniformBuffers();
-	void CreateImage(vk::Image& image, vk::DeviceMemory& memory, vk::ImageView& imageView, vk::Extent2D extent, vk::Format format, vk::ImageUsageFlags usage, vk::ImageTiling tiling, vk::ImageAspectFlags aspectFlags, vk::MemoryPropertyFlags memoryPropertyFlags);
+	void CreateImage(vk::Image& image, vk::DeviceMemory& memory, vk::Extent2D extent, vk::Format format, vk::ImageUsageFlags usage, vk::ImageTiling tiling, vk::MemoryPropertyFlags memoryPropertyFlags);
 	void CreateImageTexture();
 	void CopyBufferToImage(vk::Buffer srcBuffer, vk::Image dstImage, vk::Extent3D extent);
 	void TransiationImageLayout(vk::Image image, vk::PipelineStageFlags srcStage, vk::AccessFlags srcAccess, vk::ImageLayout srcLayout, vk::PipelineStageFlags dstStage, vk::AccessFlags dstAccess, vk::ImageLayout dstLayout, vk::ImageAspectFlags aspectFlags);
 	void CreateSampler();
+	void CreateImageView(vk::Image image, vk::ImageView& imageView, vk::Format format, vk::ImageAspectFlags aspectFlags, vk::ImageViewType viewType = vk::ImageViewType::e2D, vk::ComponentMapping mapping = {});
+	vk::Format FindImageFormatDeviceSupport(const std::vector<vk::Format> formats, vk::ImageTiling tiling, vk::FormatFeatureFlags featureFlags);
+	bool HasStencil(vk::Format format);
 
 private:
 	GLFWwindow* m_Window;

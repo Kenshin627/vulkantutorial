@@ -279,26 +279,10 @@ void Application::CreateSwapchain()
 	m_SwapChain.Images = m_Device.getSwapchainImagesKHR(m_SwapChain.vk_SwapChain);
 	m_SwapChain.ImageViews.resize(m_SwapChain.Images.size());
 
-	vk::ImageSubresourceRange region;
-	region.setAspectMask(vk::ImageAspectFlagBits::eColor)
-		  .setBaseArrayLayer(0)
-		  .setBaseMipLevel(0)
-		  .setLayerCount(1)
-		  .setLevelCount(1);
 	uint32_t index = 0;
 	for (auto& image : m_SwapChain.Images)
 	{
-		vk::ImageViewCreateInfo viewInfo;
-		viewInfo.sType = vk::StructureType::eImageViewCreateInfo;
-		viewInfo.setComponents(vk::ComponentMapping())
-				.setFormat(format.format)
-				.setImage(image)
-				.setViewType(vk::ImageViewType::e2D)
-				.setSubresourceRange(region);
-		if (m_Device.createImageView(&viewInfo, nullptr, &m_SwapChain.ImageViews[index++]) != vk::Result::eSuccess)
-		{
-			throw std::runtime_error("create imageView failed!");
-		}
+		CreateImageView(image, m_SwapChain.ImageViews[index++], format.format, vk::ImageAspectFlagBits::eColor);
 	}
 	m_SwapChain.vk_Capabilities = capability;
 	m_SwapChain.vk_Format = format;
@@ -318,8 +302,9 @@ void Application::CreateRenderPass()
 				   .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
 				   .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare);
 
+	vk::Format depthFormat = FindImageFormatDeviceSupport({ vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint, vk::Format::eD24UnormS8Uint }, vk::ImageTiling::eOptimal, vk::FormatFeatureFlagBits::eDepthStencilAttachment);
 	vk::AttachmentDescription depthAttachment;
-	depthAttachment.setFormat(vk::Format::eD32Sfloat)
+	depthAttachment.setFormat(depthFormat)
 				   .setSamples(vk::SampleCountFlagBits::e1)
 				   .setInitialLayout(vk::ImageLayout::eUndefined)
 				   .setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
@@ -919,13 +904,14 @@ void Application::CreateImageTexture()
 		memcpy(data, pixels, size);
 		m_Device.unmapMemory(stagingMemory);
 	}
-	CreateImage(m_Image, m_ImageMemory, m_ImageView, vk::Extent2D(width, height), vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::ImageAspectFlagBits::eColor, vk::MemoryPropertyFlagBits::eDeviceLocal);
+	CreateImage(m_Image, m_ImageMemory, vk::Extent2D(width, height), vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
+	CreateImageView(m_Image, m_ImageView, vk::Format::eR8G8B8A8Srgb, vk::ImageAspectFlagBits::eColor);
 	TransiationImageLayout(m_Image, vk::PipelineStageFlagBits::eTopOfPipe, vk::AccessFlagBits::eNone, vk::ImageLayout::eUndefined, vk::PipelineStageFlagBits::eTransfer, vk::AccessFlagBits::eTransferWrite, vk::ImageLayout::eTransferDstOptimal, vk::ImageAspectFlagBits::eColor);
 	CopyBufferToImage(stagingBuffer, m_Image, vk::Extent3D(width, height, 1));
 	TransiationImageLayout(m_Image, vk::PipelineStageFlagBits::eTransfer, vk::AccessFlagBits::eTransferWrite, vk::ImageLayout::eTransferDstOptimal, vk::PipelineStageFlagBits::eFragmentShader, vk::AccessFlagBits::eShaderRead, vk::ImageLayout::eShaderReadOnlyOptimal, vk::ImageAspectFlagBits::eColor);
 }
 
-void Application::CreateImage(vk::Image& image, vk::DeviceMemory& memory, vk::ImageView& imageView, vk::Extent2D extent, vk::Format format, vk::ImageUsageFlags usage, vk::ImageTiling tiling, vk::ImageAspectFlags aspectFlags, vk::MemoryPropertyFlags memoryPropertyFlags)
+void Application::CreateImage(vk::Image& image, vk::DeviceMemory& memory, vk::Extent2D extent, vk::Format format, vk::ImageUsageFlags usage, vk::ImageTiling tiling, vk::MemoryPropertyFlags memoryPropertyFlags)
 {
 	vk::ImageCreateInfo imageInfo;
 	imageInfo.sType = vk::StructureType::eImageCreateInfo;
@@ -955,24 +941,6 @@ void Application::CreateImage(vk::Image& image, vk::DeviceMemory& memory, vk::Im
 		throw std::runtime_error("imageMemory allocate failed!");
 	}
 	m_Device.bindImageMemory(image, memory, 0);
-
-	vk::ImageSubresourceRange region;
-	region.setAspectMask(aspectFlags)
-		  .setBaseArrayLayer(0)
-		  .setBaseMipLevel(0)
-		  .setLayerCount(1)
-		  .setLevelCount(1);
-	vk::ImageViewCreateInfo imageViewInfo;
-	imageViewInfo.sType = vk::StructureType::eImageViewCreateInfo;
-	imageViewInfo.setComponents(vk::ComponentMapping())
-				 .setFormat(format)
-				 .setImage(image)
-				 .setSubresourceRange(region)
-				 .setViewType(vk::ImageViewType::e2D);
-	if (m_Device.createImageView(&imageViewInfo, nullptr, &imageView) != vk::Result::eSuccess)
-	{
-		throw std::runtime_error("imageView create failed!");
-	}
 }
 
 void Application::CopyBufferToImage(vk::Buffer srcBuffer, vk::Image dstImage, vk::Extent3D extent)
@@ -1045,6 +1013,61 @@ void Application::CreateSampler()
 
 void Application::CreateDepthSources()
 {
-	CreateImage(m_DepthImage, m_DepthMemory, m_DepthImageView, m_SwapChain.Extent, vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::ImageTiling::eOptimal, vk::ImageAspectFlagBits::eDepth, vk::MemoryPropertyFlagBits::eDeviceLocal);
-	TransiationImageLayout(m_DepthImage, vk::PipelineStageFlagBits::eTopOfPipe, vk::AccessFlagBits::eNone, vk::ImageLayout::eUndefined, vk::PipelineStageFlagBits::eEarlyFragmentTests, vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite, vk::ImageLayout::eDepthStencilAttachmentOptimal, vk::ImageAspectFlagBits::eDepth);
+	vk::Format depthFormat = FindImageFormatDeviceSupport({ vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint, vk::Format::eD24UnormS8Uint }, vk::ImageTiling::eOptimal, vk::FormatFeatureFlagBits::eDepthStencilAttachment);
+	
+	CreateImage(m_DepthImage, m_DepthMemory, m_SwapChain.Extent, depthFormat, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
+	vk::ImageAspectFlags aspectFlags = vk::ImageAspectFlagBits::eDepth;
+	if (HasStencil(depthFormat))
+	{
+		aspectFlags |= vk::ImageAspectFlagBits::eStencil;
+	}
+	CreateImageView(m_DepthImage, m_DepthImageView, depthFormat, aspectFlags);
+	TransiationImageLayout(m_DepthImage, vk::PipelineStageFlagBits::eTopOfPipe, vk::AccessFlagBits::eNone, vk::ImageLayout::eUndefined, vk::PipelineStageFlagBits::eEarlyFragmentTests, vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite, vk::ImageLayout::eDepthStencilAttachmentOptimal, aspectFlags);
+}
+
+void Application::CreateImageView(vk::Image image, vk::ImageView& imageView, vk::Format format, vk::ImageAspectFlags aspectFlags, vk::ImageViewType viewType, vk::ComponentMapping mapping)
+{
+	vk::ImageSubresourceRange subresourceRange;
+	subresourceRange.setAspectMask(aspectFlags)
+					.setBaseArrayLayer(0)
+					.setBaseMipLevel(0)
+					.setLayerCount(1)
+					.setLevelCount(1);
+	vk::ImageViewCreateInfo imageViewInfo;
+	imageViewInfo.sType = vk::StructureType::eImageViewCreateInfo;
+	imageViewInfo.setComponents(mapping)
+				 .setFormat(format)
+				 .setImage(image)
+				 .setViewType(viewType)
+				 .setSubresourceRange(subresourceRange);
+	if (m_Device.createImageView(&imageViewInfo, nullptr, &imageView) != vk::Result::eSuccess)
+	{
+		throw std::runtime_error("ImageView Create failed!");
+	}
+}
+
+vk::Format Application::FindImageFormatDeviceSupport(const std::vector<vk::Format> formats, vk::ImageTiling tiling, vk::FormatFeatureFlags featureFlags)
+{
+	for (auto& format : formats)
+	{
+		auto formatProperties = m_PhysicalDevice.getFormatProperties(format);
+		if (tiling == vk::ImageTiling::eLinear && ((formatProperties.linearTilingFeatures & featureFlags) == featureFlags))
+		{
+			return format;
+		}
+		else if (tiling == vk::ImageTiling::eOptimal && ((formatProperties.optimalTilingFeatures & featureFlags) == featureFlags))
+		{
+			return format;
+		}
+	}
+	throw std::runtime_error("image Format not found!");
+}
+
+bool Application::HasStencil(vk::Format format)
+{
+	if (format == vk::Format::eD32SfloatS8Uint || format == vk::Format::eD24UnormS8Uint)
+	{
+		return true;
+	}
+	return false;
 }
