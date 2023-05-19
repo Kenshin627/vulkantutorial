@@ -143,14 +143,14 @@ Application::QueueFamilyIndices Application::QueryQueueFmily(const vk::PhysicalD
 {
 	QueueFamilyIndices indices;
 	auto queueFamilies = device.getQueueFamilyProperties();
-	for (size_t i = 0; i < queueFamilies.size(); i++)
+	for (uint32_t i = 0; i < queueFamilies.size(); i++)
 	{
 		if (queueFamilies[i].queueFlags & vk::QueueFlagBits::eGraphics)
 		{
 			indices.GraphicFamily = i;
 		}
 		vk::Bool32 supportPresent = false;
-		device.getSurfaceSupportKHR(i, m_Surface, &supportPresent);
+		auto surfaceSupportRes =device.getSurfaceSupportKHR(static_cast<uint32_t>(i), m_Surface, &supportPresent);
 		if (supportPresent)
 		{
 			indices.PresentFamily = i;
@@ -342,7 +342,7 @@ void Application::CreateRenderPass()
 			  .setDstAccessMask(vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite);
 	vk::RenderPassCreateInfo renderPassInfo;
 	renderPassInfo.sType = vk::StructureType::eRenderPassCreateInfo;
-	renderPassInfo.setAttachmentCount(attachments.size())
+	renderPassInfo.setAttachmentCount(static_cast<uint32_t>(attachments.size()))
 				  .setPAttachments(attachments.data())
 				  .setPSubpasses(&subpassInfo)
 				  .setSubpassCount(1)
@@ -446,7 +446,7 @@ void Application::CreatePipeLine()
 	std::vector<vk::DynamicState> dynamicStates = { vk::DynamicState::eViewport, vk::DynamicState::eScissor };
 	vk::PipelineDynamicStateCreateInfo dynamicState;
 	dynamicState.sType = vk::StructureType::ePipelineDynamicStateCreateInfo;
-	dynamicState.setDynamicStateCount(dynamicStates.size())
+	dynamicState.setDynamicStateCount(static_cast<uint32_t>(dynamicStates.size()))
 		.setPDynamicStates(dynamicStates.data());
 
 	//10.
@@ -506,7 +506,7 @@ void Application::CreateFrameBuffer()
 		std::array<vk::ImageView, 2> attachments = { view, m_DepthImageView };
 		vk::FramebufferCreateInfo framebufferInfo;
 		framebufferInfo.sType = vk::StructureType::eFramebufferCreateInfo;
-		framebufferInfo.setAttachmentCount(attachments.size())
+		framebufferInfo.setAttachmentCount(static_cast<uint32_t>(attachments.size()))
 					   .setPAttachments(attachments.data())
 					   .setWidth(m_SwapChain.Extent.width)
 					   .setHeight(m_SwapChain.Extent.height)
@@ -553,10 +553,10 @@ void Application::RecordCommandBuffer(vk::CommandBuffer buffer, uint32_t imageIn
 	commandBufferBegin.setPInheritanceInfo(nullptr);
 					  //.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
-	buffer.begin(&commandBufferBegin);
+	auto beginRes = buffer.begin(&commandBufferBegin);
 		std::array<vk::ClearValue, 2> clearValues{};
 		clearValues[0].color = vk::ClearColorValue();
-		clearValues[1].depthStencil = vk::ClearDepthStencilValue(1.0f, 0.0f);
+		clearValues[1].depthStencil = vk::ClearDepthStencilValue(1.0f, 0);
 		
 		
 		vk::Extent2D extent = m_SwapChain.Extent;
@@ -565,7 +565,7 @@ void Application::RecordCommandBuffer(vk::CommandBuffer buffer, uint32_t imageIn
 				  .setExtent(extent);
 		vk::RenderPassBeginInfo renderPassBegin;
 		renderPassBegin.sType = vk::StructureType::eRenderPassBeginInfo;
-		renderPassBegin.setClearValueCount(clearValues.size())
+		renderPassBegin.setClearValueCount(static_cast<uint32_t>(clearValues.size()))
 					   .setPClearValues(clearValues.data())
 					   .setFramebuffer(m_FrameBuffers[imageIndex])
 					   .setRenderPass(m_RenderPass)
@@ -588,14 +588,14 @@ void Application::RecordCommandBuffer(vk::CommandBuffer buffer, uint32_t imageIn
 			buffer.bindVertexBuffers(0, 1, &m_VertexBuffer, &size);
 			buffer.bindIndexBuffer(m_IndexBuffer, 0, vk::IndexType::eUint16);
 			buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_Layout, 0, 1, &m_DescriptorSet, 0, nullptr);
-			buffer.drawIndexed(m_Indices.size(), 1, 0, 0, 0);
+			buffer.drawIndexed(static_cast<uint32_t>(m_Indices.size()), 1, 0, 0, 0);
 		buffer.endRenderPass();
 	buffer.end();
 }				
 
 void Application::DrawFrame()
 {
-	m_Device.waitForFences(1, &m_InFlightFence, VK_TRUE, (std::numeric_limits<uint64_t>::max)());
+	auto fenceResult = m_Device.waitForFences(1, &m_InFlightFence, VK_TRUE, (std::numeric_limits<uint64_t>::max)());
 
 	uint32_t imageIndex;
 	auto acquireImageResult = m_Device.acquireNextImageKHR(m_SwapChain.vk_SwapChain, (std::numeric_limits<uint64_t>::max)(), m_WaitAcquireImageSemaphore, VK_NULL_HANDLE, &imageIndex);
@@ -605,7 +605,7 @@ void Application::DrawFrame()
 		ReCreateSwapchain();
 		return;
 	}
-	m_Device.resetFences(1, &m_InFlightFence);
+	auto resetFenceRes = m_Device.resetFences(1, &m_InFlightFence);
 	m_CommandBuffer.reset();
 	RecordCommandBuffer(m_CommandBuffer, imageIndex);
 
@@ -622,7 +622,7 @@ void Application::DrawFrame()
 			  .setSignalSemaphoreCount(1)
 			  .setPSignalSemaphores(&m_WaitFinishDrawSemaphore)
 			  .setPWaitDstStageMask(waitStages);
-	m_GraphicQueue.submit(1, &submitInfo, m_InFlightFence);
+	auto submitRes = m_GraphicQueue.submit(1, &submitInfo, m_InFlightFence);
 
 	vk::PresentInfoKHR presentInfo;
 	presentInfo.sType = vk::StructureType::ePresentInfoKHR;
@@ -663,7 +663,7 @@ void Application::CreateVertexBuffer()
 	CreateBuffer(stagingBuffer, stagingMemory, size, vk::BufferUsageFlagBits::eTransferSrc, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
 
 	void* data;
-	m_Device.mapMemory(stagingMemory, { 0 }, size, {}, &data);
+	auto mapRes = m_Device.mapMemory(stagingMemory, { 0 }, size, {}, &data);
 	memcpy(data, m_VertexData.data(), size);
 	m_Device.unmapMemory(stagingMemory);
 
@@ -689,7 +689,7 @@ void Application::CreateIndexBuffer()
 	vk::DeviceMemory stagingMemory;
 	CreateBuffer(stagingBuffer, stagingMemory, size, vk::BufferUsageFlagBits::eTransferSrc, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eHostVisible |		vk::MemoryPropertyFlagBits::eHostCoherent);
 	void* data;
-	m_Device.mapMemory(stagingMemory, 0, size, {}, &data);
+	auto mapRes = m_Device.mapMemory(stagingMemory, 0, size, {}, &data);
 	memcpy(data, m_Indices.data(), size);
 	m_Device.unmapMemory(stagingMemory);
 
@@ -707,13 +707,14 @@ void Application::CreateIndexBuffer()
 uint32_t Application::FindMemoryPropertyType(uint32_t memoryType, vk::MemoryPropertyFlags flags)
 {
 	auto memoryProperties = m_PhysicalDevice.getMemoryProperties();
-	for (size_t i = 0; i < memoryProperties.memoryTypeCount; i++)
+	for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++)
 	{
 		if ((memoryType &  (1 << i)) && ((memoryProperties.memoryTypes[i].propertyFlags & flags) == flags))
 		{
 			return i;
 		}
 	}
+	throw std::runtime_error("not found memoryType");
 }
 
 void Application::CreateBuffer(vk::Buffer& buffer, vk::DeviceMemory& memory, vk::DeviceSize size, vk::BufferUsageFlags usage, vk::SharingMode sharingMode, vk::MemoryPropertyFlags memoryPropertyFlags)
@@ -798,7 +799,7 @@ void Application::CreateSetLayout()
 
 	vk::DescriptorSetLayoutCreateInfo setlayoutInfo;
 	setlayoutInfo.sType = vk::StructureType::eDescriptorSetLayoutCreateInfo;
-	setlayoutInfo.setBindingCount(bindings.size())
+	setlayoutInfo.setBindingCount(static_cast<uint32_t>(bindings.size()))
 				 .setPBindings(bindings.data());
 	if (m_Device.createDescriptorSetLayout(&setlayoutInfo, nullptr, &m_SetLayout) != vk::Result::eSuccess)
 	{
@@ -846,7 +847,7 @@ void Application::CreateDescriptorPool()
 	vk::DescriptorPoolCreateInfo descriptorPoolInfo;
 	descriptorPoolInfo.sType = vk::StructureType::eDescriptorPoolCreateInfo;
 	descriptorPoolInfo.setMaxSets(1)
-					  .setPoolSizeCount(poolSize.size())
+					  .setPoolSizeCount(static_cast<uint32_t>(poolSize.size()))
 					  .setPPoolSizes(poolSize.data());
 	if (m_Device.createDescriptorPool(&descriptorPoolInfo, nullptr, &m_DescriptorPool) != vk::Result::eSuccess)
 	{
@@ -897,7 +898,7 @@ void Application::UpdateDescriptorSet()
 		.setDstSet(m_DescriptorSet)
 		.setPImageInfo(&imageInfo);
 	std::array<vk::WriteDescriptorSet, 2> writes = { uniformWriteSet, samplerWrite };
-	m_Device.updateDescriptorSets(writes.size(), writes.data(), 0, nullptr);
+	m_Device.updateDescriptorSets(static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 }
 
 void Application::CreateImageTexture()
