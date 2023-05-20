@@ -133,17 +133,18 @@ private:
 	vk::CommandBuffer OneTimeSubmitCommandBegin();
 	void OneTimeSubmitCommandEnd(vk::CommandBuffer command);
 	void UpdateUniformBuffers();
-	void CreateImage(vk::Image& image, vk::DeviceMemory& memory, vk::Extent2D extent, vk::Format format, vk::ImageUsageFlags usage, vk::ImageTiling tiling, vk::MemoryPropertyFlags memoryPropertyFlags);
+	void CreateImage(vk::Image& image, vk::DeviceMemory& memory, uint32_t mipLevels, vk::Extent2D extent, vk::Format format, vk::ImageUsageFlags usage, vk::ImageTiling tiling, vk::MemoryPropertyFlags memoryPropertyFlags);
 	void CreateImageTexture(const char* path);
 	void CopyBufferToImage(vk::Buffer srcBuffer, vk::Image dstImage, vk::Extent3D extent);
-	void TransiationImageLayout(vk::Image image, vk::PipelineStageFlags srcStage, vk::AccessFlags srcAccess, vk::ImageLayout srcLayout, vk::PipelineStageFlags dstStage, vk::AccessFlags dstAccess, vk::ImageLayout dstLayout, vk::ImageAspectFlags aspectFlags);
+	void TransiationImageLayout(vk::Image image, vk::PipelineStageFlags srcStage, vk::AccessFlags srcAccess, vk::ImageLayout srcLayout, vk::PipelineStageFlags dstStage, vk::AccessFlags dstAccess, vk::ImageLayout dstLayout, vk::ImageAspectFlags aspectFlags, uint32_t mipLevels);
 	void CreateSampler();
-	void CreateImageView(vk::Image image, vk::ImageView& imageView, vk::Format format, vk::ImageAspectFlags aspectFlags, vk::ImageViewType viewType = vk::ImageViewType::e2D, vk::ComponentMapping mapping = {});
+	void CreateImageView(vk::Image image, vk::ImageView& imageView, uint32_t mipLevels, vk::Format format, vk::ImageAspectFlags aspectFlags, vk::ImageViewType viewType = vk::ImageViewType::e2D, vk::ComponentMapping mapping = {});
 	vk::Format FindImageFormatDeviceSupport(const std::vector<vk::Format> formats, vk::ImageTiling tiling, vk::FormatFeatureFlags featureFlags);
 	bool HasStencil(vk::Format format);
 	public:
 	void SetFrameBufferSizeChanged(bool changed) { FrameBufferSizeChanged = changed; }
 	void LoadModel(const char* path);
+	void GenerateMipmaps(vk::Image image, uint32_t texWidth, uint32_t texHeight, uint32_t mipLevels);
 
 private:
 	GLFWwindow* m_Window;
@@ -198,6 +199,7 @@ private:
 	vk::DescriptorSet m_DescriptorSet;
 
 	vk::Image m_Image;
+	uint32_t m_MipmapLevels;
 	vk::DeviceMemory m_ImageMemory;
 	vk::ImageView m_ImageView;
 	vk::Sampler m_Sampler;
