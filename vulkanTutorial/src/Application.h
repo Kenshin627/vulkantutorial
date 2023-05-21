@@ -119,6 +119,7 @@ private:
 	void CreateVertexBuffer();
 	void CreateIndexBuffer();
 	void CreateUniformBuffer();
+	void CreateColorSources();
 	void CreateDepthSources();
 	void RecordCommandBuffer(vk::CommandBuffer buffer, uint32_t imageIndex);
 	void CreateAsyncObjects();
@@ -133,7 +134,7 @@ private:
 	vk::CommandBuffer OneTimeSubmitCommandBegin();
 	void OneTimeSubmitCommandEnd(vk::CommandBuffer command);
 	void UpdateUniformBuffers();
-	void CreateImage(vk::Image& image, vk::DeviceMemory& memory, uint32_t mipLevels, vk::Extent2D extent, vk::Format format, vk::ImageUsageFlags usage, vk::ImageTiling tiling, vk::MemoryPropertyFlags memoryPropertyFlags);
+	void CreateImage(vk::Image& image, vk::DeviceMemory& memory, uint32_t mipLevels, vk::SampleCountFlagBits sampleCount, vk::Extent2D extent, vk::Format format, vk::ImageUsageFlags usage, vk::ImageTiling tiling, vk::MemoryPropertyFlags memoryPropertyFlags);
 	void CreateImageTexture(const char* path);
 	void CopyBufferToImage(vk::Buffer srcBuffer, vk::Image dstImage, vk::Extent3D extent);
 	void TransiationImageLayout(vk::Image image, vk::PipelineStageFlags srcStage, vk::AccessFlags srcAccess, vk::ImageLayout srcLayout, vk::PipelineStageFlags dstStage, vk::AccessFlags dstAccess, vk::ImageLayout dstLayout, vk::ImageAspectFlags aspectFlags, uint32_t mipLevels);
@@ -145,6 +146,7 @@ private:
 	void SetFrameBufferSizeChanged(bool changed) { FrameBufferSizeChanged = changed; }
 	void LoadModel(const char* path);
 	void GenerateMipmaps(vk::Image image, uint32_t texWidth, uint32_t texHeight, uint32_t mipLevels);
+	vk::SampleCountFlagBits GetMaxUsableSampleCount();
 
 private:
 	GLFWwindow* m_Window;
@@ -207,6 +209,11 @@ private:
 	vk::Image m_DepthImage;
 	vk::DeviceMemory m_DepthMemory;
 	vk::ImageView m_DepthImageView;
+
+	vk::SampleCountFlagBits m_SamplerCount = vk::SampleCountFlagBits::e1;
+	vk::Image m_ColorImage;
+	vk::DeviceMemory m_ColorMemory;
+	vk::ImageView m_ColorView;
 };
 
 namespace std
