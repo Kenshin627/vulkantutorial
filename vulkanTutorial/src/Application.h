@@ -1,15 +1,14 @@
 #pragma once
 #define VK_USE_PLATFORM_WIN32_KHR
 #include <vulkan/vulkan.hpp>
-#include <GLFW/glfw3.h>
-#define GLFW_EXPOSE_NATIVE_WIN32
-#include <GLFW/glfw3native.h>
+
 #include <vector>
 #include <optional>
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm.hpp>
 #include <gtx/hash.hpp>
+#include "Window.h"
 
 struct QueueFamilyIndices
 {
@@ -92,15 +91,13 @@ struct UniformBufferObject
 class Application
 {
 public:
-	Application() = default;
-	~Application() = default;
+	Application(int width, int height, const char* title) : m_Window(width, height, title) {}
+
 	void Run();
-	void InitWindow();
+	void InitWindow(int width, int height, const char* title);
 	void InitVulkan();
 	void RenderLoop();
 	void Clear();
-private:
-	
 private:
 	void CreateInstance();
 	void PickupPhysicalDevice();
@@ -143,14 +140,12 @@ private:
 	vk::Format FindImageFormatDeviceSupport(const std::vector<vk::Format> formats, vk::ImageTiling tiling, vk::FormatFeatureFlags featureFlags);
 	bool HasStencil(vk::Format format);
 	public:
-	void SetFrameBufferSizeChanged(bool changed) { FrameBufferSizeChanged = changed; }
 	void LoadModel(const char* path);
 	void GenerateMipmaps(vk::Image image, uint32_t texWidth, uint32_t texHeight, uint32_t mipLevels);
 	vk::SampleCountFlagBits GetMaxUsableSampleCount();
 
 private:
-	GLFWwindow* m_Window;
-	bool FrameBufferSizeChanged = false;
+	Window m_Window;
 	vk::Instance m_VKInstance;
 	vk::PhysicalDevice m_PhysicalDevice;
 	vk::SurfaceKHR m_Surface;

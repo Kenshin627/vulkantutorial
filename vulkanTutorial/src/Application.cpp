@@ -7,36 +7,26 @@
 #include <gtc/matrix_transform.hpp>
 #include "../utils/readFile.h"
 
+#include <GLFW/glfw3.h>
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
+
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "../vendor/tiny_obj_loader/tiny_obj_loader.h"
 
-const static uint32_t WIDTH = 1024, HEIGHT = 728;
-
-static void frameBufferResizeCallback(GLFWwindow* window, int width, int height)
-{
-	auto app = static_cast<Application*>(glfwGetWindowUserPointer(window));
-	app->SetFrameBufferSizeChanged(true);
-}
-
 void Application::Run()
 {
-	InitWindow();
 	InitVulkan();
 	RenderLoop();
 	Clear();
 }
 
-void Application::InitWindow()
+void Application::InitWindow(int width, int height, const char* title)
 {
-	glfwInit();
-	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	//glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-	m_Window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
-	glfwSetWindowUserPointer(m_Window, this);
-	glfwSetFramebufferSizeCallback(m_Window, frameBufferResizeCallback);
+	m_Window = Window(width, height, title);
 }
 
 void Application::InitVulkan()
@@ -70,9 +60,9 @@ void Application::InitVulkan()
 
 void Application::RenderLoop()
 {
-	while (!glfwWindowShouldClose(m_Window))
+	while (!m_Window.ShouldClose())
 	{
-		glfwPollEvents();
+		m_Window.PollEvents();
 		DrawFrame();
 	}
 	m_Device.waitIdle();
@@ -80,8 +70,7 @@ void Application::RenderLoop()
 
 void Application::Clear()
 {
-	glfwDestroyWindow(m_Window);
-	glfwTerminate();
+	
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -98,10 +87,10 @@ void Application::CreateInstance()
 	vk::InstanceCreateInfo instanceInfo;
 	instanceInfo.sType = vk::StructureType::eInstanceCreateInfo;
 	instanceInfo.setPApplicationInfo(&appInfo)
-		.setEnabledExtensionCount(extensionCount)
-		.setPpEnabledExtensionNames(extensions)
-		.setEnabledLayerCount(0)
-		.setPpEnabledLayerNames(nullptr);
+				.setEnabledExtensionCount(extensionCount)
+				.setPpEnabledExtensionNames(extensions)
+				.setEnabledLayerCount(0)
+				.setPpEnabledLayerNames(nullptr);
 	if (vk::createInstance(&instanceInfo, nullptr, &m_VKInstance) != vk::Result::eSuccess)
 	{
 		throw std::runtime_error("vk instance create failed!");
@@ -137,7 +126,7 @@ void Application::CreateSurface()
 {
 	vk::Win32SurfaceCreateInfoKHR surfaceInfo;
 	surfaceInfo.sType = vk::StructureType::eWin32SurfaceCreateInfoKHR;
-	surfaceInfo.setHwnd(glfwGetWin32Window(m_Window))
+	surfaceInfo.setHwnd(glfwGetWin32Window(m_Window.GetNativeWindow()))
 			   .setHinstance(GetModuleHandle(nullptr));
 	if (m_VKInstance.createWin32SurfaceKHR(&surfaceInfo, nullptr, &m_Surface) != vk::Result::eSuccess)
 	{
@@ -223,7 +212,7 @@ void Application::CreateSwapchain()
 	else
 	{
 		int width, height;
-		glfwGetFramebufferSize(m_Window, &width, &height);
+		m_Window.GetFrameBufferSize(&width, &height);
 		extent.width = static_cast<uint32_t>(width);
 		extent.height = static_cast<uint32_t>(height);
 		extent.width = std::clamp(extent.width, capability.minImageExtent.width, capability.maxImageExtent.width);
@@ -619,9 +608,9 @@ void Application::DrawFrame()
 
 	uint32_t imageIndex;
 	auto acquireImageResult = m_Device.acquireNextImageKHR(m_SwapChain.vk_SwapChain, (std::numeric_limits<uint64_t>::max)(), m_WaitAcquireImageSemaphore, VK_NULL_HANDLE, &imageIndex);
-	if (acquireImageResult == vk::Result::eErrorOutOfDateKHR || acquireImageResult == vk::Result::eSuboptimalKHR ||FrameBufferSizeChanged)
+	if (acquireImageResult == vk::Result::eErrorOutOfDateKHR || acquireImageResult == vk::Result::eSuboptimalKHR || m_Window.GetWindowResized())
 	{
-		FrameBufferSizeChanged = false;
+		m_Window.SetWindowResized(false);
 		ReCreateSwapchain();
 		return;
 	}
@@ -653,9 +642,9 @@ void Application::DrawFrame()
 			   .setSwapchainCount(1)
 			   .setPSwapchains(&m_SwapChain.vk_SwapChain);
 	auto presentResult = m_PresentQueue.presentKHR(&presentInfo);
-	if (presentResult == vk::Result::eErrorOutOfDateKHR || presentResult == vk::Result::eSuboptimalKHR || FrameBufferSizeChanged)
+	if (presentResult == vk::Result::eErrorOutOfDateKHR || presentResult == vk::Result::eSuboptimalKHR || m_Window.GetWindowResized())
 	{
-		FrameBufferSizeChanged = false;
+		m_Window.SetWindowResized(false);
 		ReCreateSwapchain();
 	}
 }
@@ -1141,10 +1130,10 @@ void Application::ClearSwapchain()
 void Application::ReCreateSwapchain()
 {
 	int width, height;
-	glfwGetFramebufferSize(m_Window, &width, &height);
+	m_Window.GetFrameBufferSize(&width, &height);
 	while (width ==0 || height == 0)
 	{
-		glfwGetFramebufferSize(m_Window, &width, &height);
+		m_Window.GetFrameBufferSize(&width, &height);
 		glfwWaitEvents();
 	}
 	m_Device.waitIdle();
