@@ -1,22 +1,15 @@
 #pragma once
 #define VK_USE_PLATFORM_WIN32_KHR
 #include <vulkan/vulkan.hpp>
-#include <GLFW/glfw3.h>
-#define GLFW_EXPOSE_NATIVE_WIN32
-#include <GLFW/glfw3native.h>
+
 #include <vector>
 #include <optional>
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm.hpp>
 #include <gtx/hash.hpp>
-
-struct QueueFamilyIndices
-{
-	std::optional<uint32_t> GraphicFamily;
-	std::optional<uint32_t> PresentFamily;
-	operator bool() { return GraphicFamily.has_value() && PresentFamily.has_value(); }
-};
+#include "Window.h"
+#include "vulkan/Device.h"
 
 struct SwapchainProperties
 {
@@ -92,21 +85,16 @@ struct UniformBufferObject
 class Application
 {
 public:
-	Application() = default;
-	~Application() = default;
+	Application(int width, int height, const char* title) : m_Window(width, height, title)  {}
+
 	void Run();
-	void InitWindow();
+	void InitWindow(int width, int height, const char* title);
 	void InitVulkan();
 	void RenderLoop();
 	void Clear();
 private:
-	
-private:
 	void CreateInstance();
-	void PickupPhysicalDevice();
-	void CreateSurface();
-	QueueFamilyIndices QueryQueueFmily(const vk::PhysicalDevice& device);
-	void CreateLogicDevice();
+	void InitDevice(Window& window);
 	void CreateSwapchain();
 	void ReCreateSwapchain();
 	void ClearSwapchain();
@@ -114,7 +102,6 @@ private:
 	void CreateSetLayout();
 	void CreatePipeLine();
 	void CreateFrameBuffer();
-	void CreateCommandPool();
 	void CreateCommandBuffer();
 	void CreateVertexBuffer();
 	void CreateIndexBuffer();
@@ -129,10 +116,8 @@ private:
 	void DrawFrame();
 	vk::ShaderModule CompilerShader(const std::string& path);
 	SwapchainProperties QuerySwapchainSupport(const vk::PhysicalDevice& device);
-	uint32_t FindMemoryPropertyType(uint32_t memoryType, vk::MemoryPropertyFlags flags);
 	void CreateBuffer(vk::Buffer& buffer, vk::DeviceMemory& memory, vk::DeviceSize size, vk::BufferUsageFlags flags, vk::SharingMode sharingMode, vk::MemoryPropertyFlags memoryPropertyFlags);
-	vk::CommandBuffer OneTimeSubmitCommandBegin();
-	void OneTimeSubmitCommandEnd(vk::CommandBuffer command);
+
 	void UpdateUniformBuffers();
 	void CreateImage(vk::Image& image, vk::DeviceMemory& memory, uint32_t mipLevels, vk::SampleCountFlagBits sampleCount, vk::Extent2D extent, vk::Format format, vk::ImageUsageFlags usage, vk::ImageTiling tiling, vk::MemoryPropertyFlags memoryPropertyFlags);
 	void CreateImageTexture(const char* path);
@@ -143,27 +128,21 @@ private:
 	vk::Format FindImageFormatDeviceSupport(const std::vector<vk::Format> formats, vk::ImageTiling tiling, vk::FormatFeatureFlags featureFlags);
 	bool HasStencil(vk::Format format);
 	public:
-	void SetFrameBufferSizeChanged(bool changed) { FrameBufferSizeChanged = changed; }
 	void LoadModel(const char* path);
 	void GenerateMipmaps(vk::Image image, uint32_t texWidth, uint32_t texHeight, uint32_t mipLevels);
 	vk::SampleCountFlagBits GetMaxUsableSampleCount();
 
 private:
-	GLFWwindow* m_Window;
-	bool FrameBufferSizeChanged = false;
+	Window m_Window;
 	vk::Instance m_VKInstance;
-	vk::PhysicalDevice m_PhysicalDevice;
-	vk::SurfaceKHR m_Surface;
-	vk::Device m_Device;
-	vk::Queue m_GraphicQueue;
-	vk::Queue m_PresentQueue;
+	Device m_Device;
 
 	SwapChain m_SwapChain;
 	vk::RenderPass m_RenderPass;
 	vk::PipelineLayout m_Layout;
 	vk::Pipeline m_Pipeline;
 	std::vector<vk::Framebuffer> m_FrameBuffers;
-	vk::CommandPool m_CommandPool;
+	
 	vk::CommandBuffer m_CommandBuffer;
 	vk::Fence m_InFlightFence;
 	vk::Semaphore m_WaitAcquireImageSemaphore;
