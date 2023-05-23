@@ -11,6 +11,7 @@ Device::Device(Window& window, vk::Instance vkInstance)
 	CreateSurface(window, vkInstance);
 	PickPhysicalDevice(vkInstance);
 	CreateLogicDevice();
+	CreateCommandPool();
 }
 
 Device::~Device() {}
@@ -34,14 +35,17 @@ void Device::PickPhysicalDevice(vk::Instance vkInstance)
 		auto property = device.getProperties();
 		auto feature = device.getFeatures();
 		auto extensions = device.enumerateDeviceExtensionProperties();
+
 		std::set<std::string> supportExtensions(m_DeviceExtensions.begin(), m_DeviceExtensions.end());
 		for (auto& extension : extensions)
 		{
 			supportExtensions.erase(extension.extensionName);
 		}
-		if (property.deviceType == vk::PhysicalDeviceType::eDiscreteGpu && feature.geometryShader && supportExtensions.empty() && QuerySwapchainASupport(device) && QueryQueueFamilyIndices(device))
+		auto queueFamilyIndices = QueryQueueFamilyIndices(device);
+		if (property.deviceType == vk::PhysicalDeviceType::eDiscreteGpu && feature.geometryShader && supportExtensions.empty() && QuerySwapchainASupport(device) && queueFamilyIndices)
 		{
 			m_PhysicalDevice = device;
+			m_QueueFamilyIndices = queueFamilyIndices;
 			m_MemoryProperties = device.getMemoryProperties();
 			m_MaxSamplerCount = CalcMaxSamplerCount(property);
 		}
@@ -55,7 +59,7 @@ bool Device::QuerySwapchainASupport(const vk::PhysicalDevice& device)
 	return !formats.empty() && !presents.empty();
 }
 
-Device::QueueFamilyIndices Device::QueryQueueFamilyIndices(const vk::PhysicalDevice& device)
+QueueFamilyIndices Device::QueryQueueFamilyIndices(const vk::PhysicalDevice& device)
 {
 	QueueFamilyIndices indices;
 	auto queueFamilies = device.getQueueFamilyProperties();
@@ -134,4 +138,76 @@ uint32_t Device::FindMemoryType(uint32_t memoryTypeBits, vk::MemoryPropertyFlags
 			return i;
 		}
 	}
+}
+
+void Device::CreateCommandPool(uint32_t queueFamilyIndex)
+{
+	vk::CommandPoolCreateInfo poolInfo;
+	poolInfo.sType = vk::StructureType::eCommandPoolCreateInfo;
+	poolInfo.setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer)
+			.setQueueFamilyIndex(queueFamilyIndex);
+	VK_CHECK_RESULT(m_LogicDevice.createCommandPool(&poolInfo, nullptr, &m_DefaultCommandPool));
+}
+
+void Device::CreateCommandPool()
+{
+	CreateCommandPool(m_QueueFamilyIndices.GraphicQueueIndex.value());
+}
+
+vk::CommandBuffer Device::AllocateCommandBuffer(vk::CommandPool commandPool, vk::CommandBufferLevel level, bool begin)
+{
+	vk::CommandBuffer buffer;
+
+	vk::CommandBufferAllocateInfo bufferAllocInfo;
+	bufferAllocInfo.sType = vk::StructureType::eCommandBufferAllocateInfo;
+	bufferAllocInfo.setCommandBufferCount(1)
+				   .setCommandPool(commandPool)
+				   .setLevel(level);
+	VK_CHECK_RESULT(m_LogicDevice.allocateCommandBuffers(&bufferAllocInfo, &buffer));
+	if (begin)
+	{
+		vk::CommandBufferBeginInfo beginInfo;
+		beginInfo.sType = vk::StructureType::eCommandBufferBeginInfo;
+		beginInfo.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit)
+				 .setPInheritanceInfo(nullptr)
+				 .setPNext(nullptr);
+		VK_CHECK_RESULT(buffer.begin(&beginInfo));
+	}
+	return buffer;
+}
+
+vk::CommandBuffer Device::AllocateCommandBuffer(vk::CommandBufferLevel level, bool begin)
+{
+	return AllocateCommandBuffer(m_DefaultCommandPool, level, begin);
+}
+
+void Device::FlushCommandBuffer(vk::CommandBuffer commandBuffer, vk::Queue queue, vk::CommandPool commandPool, bool free)
+{
+	commandBuffer.end();
+	vk::SubmitInfo submitInfo;
+	submitInfo.sType = vk::StructureType::eSubmitInfo;
+	submitInfo.setCommandBufferCount(1)
+		      .setPCommandBuffers(&commandBuffer);
+	vk::Fence fence = CreateFence(vk::FenceCreateFlags());
+	VK_CHECK_RESULT(queue.submit(1, &submitInfo, fence));
+	VK_CHECK_RESULT(m_LogicDevice.waitForFences(1, &fence, true, UINT64_MAX));
+	m_LogicDevice.destroyFence(fence, nullptr);
+	if (free)
+	{
+		m_LogicDevice.freeCommandBuffers(commandPool, 1, &commandBuffer);
+	}
+}
+void Device::FlushCommandBuffer(vk::CommandBuffer commandBuffer, vk::Queue queue, bool free)
+{
+	FlushCommandBuffer(commandBuffer, queue, m_DefaultCommandPool, free);
+}
+
+vk::Fence Device::CreateFence(vk::FenceCreateFlags flags)
+{
+	vk::Fence fence;
+	vk::FenceCreateInfo fenceInfo;
+	fenceInfo.sType = vk::StructureType::eFenceCreateInfo;
+	fenceInfo.setFlags(flags);
+	VK_CHECK_RESULT(m_LogicDevice.createFence(&fenceInfo, nullptr, &fence));
+	return fence;
 }

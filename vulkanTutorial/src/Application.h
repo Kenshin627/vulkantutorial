@@ -11,13 +11,6 @@
 #include "Window.h"
 #include "vulkan/Device.h"
 
-struct QueueFamilyIndices
-{
-	std::optional<uint32_t> GraphicFamily;
-	std::optional<uint32_t> PresentFamily;
-	operator bool() { return GraphicFamily.has_value() && PresentFamily.has_value(); }
-};
-
 struct SwapchainProperties
 {
 	vk::SurfaceCapabilitiesKHR capabilities;
@@ -97,12 +90,11 @@ public:
 	void Run();
 	void InitWindow(int width, int height, const char* title);
 	void InitVulkan();
-	void InitDevice(Window& window);
 	void RenderLoop();
 	void Clear();
 private:
 	void CreateInstance();
-	QueueFamilyIndices QueryQueueFmily(const vk::PhysicalDevice& device);
+	void InitDevice(Window& window);
 	void CreateSwapchain();
 	void ReCreateSwapchain();
 	void ClearSwapchain();
@@ -110,7 +102,6 @@ private:
 	void CreateSetLayout();
 	void CreatePipeLine();
 	void CreateFrameBuffer();
-	void CreateCommandPool();
 	void CreateCommandBuffer();
 	void CreateVertexBuffer();
 	void CreateIndexBuffer();
@@ -126,8 +117,7 @@ private:
 	vk::ShaderModule CompilerShader(const std::string& path);
 	SwapchainProperties QuerySwapchainSupport(const vk::PhysicalDevice& device);
 	void CreateBuffer(vk::Buffer& buffer, vk::DeviceMemory& memory, vk::DeviceSize size, vk::BufferUsageFlags flags, vk::SharingMode sharingMode, vk::MemoryPropertyFlags memoryPropertyFlags);
-	vk::CommandBuffer OneTimeSubmitCommandBegin();
-	void OneTimeSubmitCommandEnd(vk::CommandBuffer command);
+
 	void UpdateUniformBuffers();
 	void CreateImage(vk::Image& image, vk::DeviceMemory& memory, uint32_t mipLevels, vk::SampleCountFlagBits sampleCount, vk::Extent2D extent, vk::Format format, vk::ImageUsageFlags usage, vk::ImageTiling tiling, vk::MemoryPropertyFlags memoryPropertyFlags);
 	void CreateImageTexture(const char* path);
@@ -152,7 +142,7 @@ private:
 	vk::PipelineLayout m_Layout;
 	vk::Pipeline m_Pipeline;
 	std::vector<vk::Framebuffer> m_FrameBuffers;
-	vk::CommandPool m_CommandPool;
+	
 	vk::CommandBuffer m_CommandBuffer;
 	vk::Fence m_InFlightFence;
 	vk::Semaphore m_WaitAcquireImageSemaphore;
