@@ -211,3 +211,86 @@ vk::Fence Device::CreateFence(vk::FenceCreateFlags flags)
 	VK_CHECK_RESULT(m_LogicDevice.createFence(&fenceInfo, nullptr, &fence));
 	return fence;
 }
+
+void Device::CreateBuffer(vk::BufferUsageFlags usage, vk::DeviceSize size, vk::SharingMode sharingMode, vk::MemoryPropertyFlags memoryFlags, vk::Buffer* buffer, vk::DeviceMemory* memory, void* data)
+{
+	vk::BufferCreateInfo bufferInfo;
+	bufferInfo.sType = vk::StructureType::eBufferCreateInfo;
+	bufferInfo.setSharingMode(sharingMode)
+			  .setSize(size)
+			  .setUsage(usage);
+	VK_CHECK_RESULT(m_LogicDevice.createBuffer(&bufferInfo, nullptr, buffer));
+
+	vk::MemoryRequirements req = m_LogicDevice.getBufferMemoryRequirements(*buffer);
+	vk::MemoryAllocateInfo memoryInfo;
+	memoryInfo.sType = vk::StructureType::eMemoryAllocateInfo;
+	memoryInfo.setAllocationSize(req.size)
+			  .setMemoryTypeIndex(FindMemoryType(req.memoryTypeBits, memoryFlags));
+	VK_CHECK_RESULT(m_LogicDevice.allocateMemory(&memoryInfo, nullptr, memory));
+
+	if (data)
+	{
+		void* mapped;
+		VK_CHECK_RESULT(m_LogicDevice.mapMemory(*memory, 0, size, {}, &mapped));
+		memcpy(mapped, data, size);
+		if ((memoryFlags & vk::MemoryPropertyFlagBits::eHostCoherent) != vk::MemoryPropertyFlagBits::eHostCoherent)
+		{
+			vk::MappedMemoryRange region;
+			region.sType = vk::StructureType::eMappedMemoryRange;
+			region.setMemory(*memory)
+				  .setOffset(0)
+				  .setSize(size);
+			m_LogicDevice.flushMappedMemoryRanges(1, &region);
+		}
+		m_LogicDevice.unmapMemory(*memory);
+	}
+	m_LogicDevice.bindBufferMemory(*buffer, *memory, 0);
+}
+
+void Device::CreateBuffer(vk::BufferUsageFlags usage, vk::DeviceSize size, vk::SharingMode sharingMode, vk::MemoryPropertyFlags memoryFlags, Buffer* buffer, void* data)
+{
+	vk::BufferCreateInfo bufferInfo;
+	bufferInfo.sType = vk::StructureType::eBufferCreateInfo;
+	bufferInfo.setSharingMode(sharingMode)
+		      .setSize(size)
+		      .setUsage(usage);
+	VK_CHECK_RESULT(m_LogicDevice.createBuffer(&bufferInfo, nullptr, &buffer->m_Buffer));
+
+	vk::MemoryRequirements req = m_LogicDevice.getBufferMemoryRequirements(buffer->m_Buffer);
+	vk::MemoryAllocateInfo memoryInfo;
+	memoryInfo.sType = vk::StructureType::eMemoryAllocateInfo;
+	memoryInfo.setAllocationSize(req.size)
+			  .setMemoryTypeIndex(FindMemoryType(req.memoryTypeBits, memoryFlags));
+	VK_CHECK_RESULT(m_LogicDevice.allocateMemory(&memoryInfo, nullptr, &buffer->m_Memory));
+	buffer->SetDescriptor();
+	buffer->m_Alignment = req.alignment;
+	buffer->m_Device = m_LogicDevice;
+	buffer->m_MemoryPropertyFlags = memoryFlags;
+	buffer->m_SharingMode = sharingMode;
+	buffer->m_Size = size;
+	buffer->m_Usage = usage;
+	if (data)
+	{
+		buffer->Map();
+		buffer->CopyFrom(data, size);
+		if ((memoryFlags & vk::MemoryPropertyFlagBits::eHostCoherent) != vk::MemoryPropertyFlagBits::eHostCoherent)
+		{
+			buffer->Flush();
+		}
+		buffer->Unmap();
+	}
+	buffer->Bind();
+}
+
+void Device::CopyBuffer(vk::Buffer src, vk::DeviceSize srcOffset, vk::Buffer dst, vk::DeviceSize dstOffset, vk::DeviceSize size, vk::Queue queue)
+{
+	auto command = AllocateCommandBuffer(vk::CommandBufferLevel::ePrimary);
+
+	vk::BufferCopy region;
+	region.setDstOffset(dstOffset)
+		  .setSrcOffset(srcOffset)
+		  .setSize(size);
+	command.copyBuffer(src, dst, 1, &region);
+
+	FlushCommandBuffer(command, queue);
+}

@@ -1,9 +1,11 @@
 #pragma once
+#define VK_USE_PLATFORM_WIN32_KHR
+
 #include "../Window.h"
+#include "Buffer.h"
+
 #include <vector>
 #include <optional>
-#define VK_USE_PLATFORM_WIN32_KHR
-#include <vulkan/vulkan.hpp>
 
 struct QueueFamilyIndices
 {
@@ -32,6 +34,9 @@ public:
 	void FlushCommandBuffer(vk::CommandBuffer commandBuffer, vk::Queue queue, vk::CommandPool commandPool, bool free = true);
 	void FlushCommandBuffer(vk::CommandBuffer commandBuffer, vk::Queue queue, bool free = true);
 	vk::Fence CreateFence(vk::FenceCreateFlags flags);
+	void CreateBuffer(vk::BufferUsageFlags usage, vk::DeviceSize size, vk::SharingMode sharingMode, vk::MemoryPropertyFlags memoryFlags, vk::Buffer* buffer, vk::DeviceMemory* memory, void* data);
+	void CreateBuffer(vk::BufferUsageFlags usage, vk::DeviceSize size, vk::SharingMode sharingMode, vk::MemoryPropertyFlags memoryFlags, Buffer* buffer, void* data);
+	void CopyBuffer(vk::Buffer src, vk::DeviceSize srcOffset, vk::Buffer dst, vk::DeviceSize dstOffset, vk::DeviceSize size, vk::Queue queue);
 private:
 	void CreateSurface(Window& window, vk::Instance vkInstance);
 	void PickPhysicalDevice(vk::Instance vkInstance);

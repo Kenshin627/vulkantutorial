@@ -116,7 +116,6 @@ private:
 	void DrawFrame();
 	vk::ShaderModule CompilerShader(const std::string& path);
 	SwapchainProperties QuerySwapchainSupport(const vk::PhysicalDevice& device);
-	void CreateBuffer(vk::Buffer& buffer, vk::DeviceMemory& memory, vk::DeviceSize size, vk::BufferUsageFlags flags, vk::SharingMode sharingMode, vk::MemoryPropertyFlags memoryPropertyFlags);
 
 	void UpdateUniformBuffers();
 	void CreateImage(vk::Image& image, vk::DeviceMemory& memory, uint32_t mipLevels, vk::SampleCountFlagBits sampleCount, vk::Extent2D extent, vk::Format format, vk::ImageUsageFlags usage, vk::ImageTiling tiling, vk::MemoryPropertyFlags memoryPropertyFlags);
@@ -166,15 +165,10 @@ private:
 		4, 5, 6,
 		6, 7, 4
 	}*/;
-	vk::Buffer m_VertexBuffer;
-	vk::DeviceMemory m_VertexMemory;
-
-	vk::Buffer m_IndexBuffer;
-	vk::DeviceMemory m_IndexMemory;
-
-	vk::Buffer m_UniformBuffer;
-	vk::DeviceMemory m_UniformMemory;
-	void* m_UniformMappedData;
+	Buffer m_VertexBuffer;
+	Buffer m_IndexBuffer;
+	Buffer m_UniformBuffer;
+	
 	vk::DescriptorSetLayout m_SetLayout;
 	vk::DescriptorPool m_DescriptorPool;
 	vk::DescriptorSet m_DescriptorSet;

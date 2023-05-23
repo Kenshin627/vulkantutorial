@@ -491,8 +491,8 @@ void Application::RecordCommandBuffer(vk::CommandBuffer buffer, uint32_t imageIn
 			buffer.setViewport(0, 1, &viewport);
 			buffer.setScissor(0, 1, &scissor);
 			vk::DeviceSize size(0);
-			buffer.bindVertexBuffers(0, 1, &m_VertexBuffer, &size);
-			buffer.bindIndexBuffer(m_IndexBuffer, 0, vk::IndexType::eUint32);
+			buffer.bindVertexBuffers(0, 1, &m_VertexBuffer.m_Buffer, &size);
+			buffer.bindIndexBuffer(m_IndexBuffer.m_Buffer, 0, vk::IndexType::eUint32);
 			buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_Layout, 0, 1, &m_DescriptorSet, 0, nullptr);
 			buffer.drawIndexed(static_cast<uint32_t>(m_Indices.size()), 1, 0, 0, 0);
 		buffer.endRenderPass();
@@ -563,77 +563,21 @@ void Application::CreateAsyncObjects()
 void Application::CreateVertexBuffer()
 {
 	vk::DeviceSize size = sizeof(m_VertexData[0]) * m_VertexData.size();
-	vk::Buffer stagingBuffer;
-	vk::DeviceMemory stagingMemory;
-	
-	CreateBuffer(stagingBuffer, stagingMemory, size, vk::BufferUsageFlagBits::eTransferSrc, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+	Buffer stagingBuffer;
+	m_Device.CreateBuffer(vk::BufferUsageFlagBits::eTransferSrc, size, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, &stagingBuffer, m_VertexData.data());
 
-	void* data;
-	auto mapRes = m_Device.GetLogicDevice().mapMemory(stagingMemory, { 0 }, size, {}, &data);
-	memcpy(data, m_VertexData.data(), size);
-	m_Device.GetLogicDevice().unmapMemory(stagingMemory);
+	m_Device.CreateBuffer(vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer, size, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eDeviceLocal, &m_VertexBuffer, nullptr);
 
-	CreateBuffer(m_VertexBuffer, m_VertexMemory, size, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eDeviceLocal);
-
-	auto command = m_Device.AllocateCommandBuffer(vk::CommandBufferLevel::ePrimary);
-
-	vk::BufferCopy region;
-	region.setDstOffset({ 0 })
-		  .setSrcOffset({ 0 })
-		  .setSize(size);
-	command.copyBuffer(stagingBuffer, m_VertexBuffer, 1, &region);
-
-	m_Device.FlushCommandBuffer(command, m_Device.GetGraphicQueue());
-	m_Device.GetLogicDevice().destroyBuffer(stagingBuffer);
-	m_Device.GetLogicDevice().freeMemory(stagingMemory);
+	m_Device.CopyBuffer(stagingBuffer.m_Buffer, 0, m_VertexBuffer.m_Buffer, 0, size, m_Device.GetGraphicQueue());
 }
 
 void Application::CreateIndexBuffer()
 {
 	vk::DeviceSize size = sizeof(uint32_t) * m_Indices.size();
-	vk::Buffer stagingBuffer;
-	vk::DeviceMemory stagingMemory;
-	CreateBuffer(stagingBuffer, stagingMemory, size, vk::BufferUsageFlagBits::eTransferSrc, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eHostVisible |		vk::MemoryPropertyFlagBits::eHostCoherent);
-	void* data;
-	auto mapRes = m_Device.GetLogicDevice().mapMemory(stagingMemory, 0, size, {}, &data);
-	memcpy(data, m_Indices.data(), size);
-	m_Device.GetLogicDevice().unmapMemory(stagingMemory);
-
-	CreateBuffer(m_IndexBuffer, m_IndexMemory, size, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eDeviceLocal);
-
-	auto command = m_Device.AllocateCommandBuffer(vk::CommandBufferLevel::ePrimary);
-	vk::BufferCopy region;
-	region.setDstOffset(0)
-		  .setSrcOffset(0)
-		  .setSize(size);
-	command.copyBuffer(stagingBuffer, m_IndexBuffer, 1, &region);
-	m_Device.FlushCommandBuffer(command, m_Device.GetGraphicQueue());
-}
-
-
-void Application::CreateBuffer(vk::Buffer& buffer, vk::DeviceMemory& memory, vk::DeviceSize size, vk::BufferUsageFlags usage, vk::SharingMode sharingMode, vk::MemoryPropertyFlags memoryPropertyFlags)
-{
-	vk::BufferCreateInfo bufferInfo;
-	bufferInfo.sType = vk::StructureType::eBufferCreateInfo;
-	bufferInfo.setSharingMode(sharingMode)
-			  .setSize(size)
-			  .setUsage(usage);
-	if (m_Device.GetLogicDevice().createBuffer(&bufferInfo, nullptr, &buffer) != vk::Result::eSuccess)
-	{
-		throw std::runtime_error("buffer create failed!");
-	}
-
-	vk::MemoryRequirements requirement;
-	m_Device.GetLogicDevice().getBufferMemoryRequirements(buffer, &requirement);
-	vk::MemoryAllocateInfo memoryInfo;
-	memoryInfo.sType = vk::StructureType::eMemoryAllocateInfo;
-	memoryInfo.setAllocationSize(requirement.size)
-			  .setMemoryTypeIndex(m_Device.FindMemoryType(requirement.memoryTypeBits, memoryPropertyFlags));
-	if (m_Device.GetLogicDevice().allocateMemory(&memoryInfo, nullptr, &memory) != vk::Result::eSuccess)
-	{
-		throw std::runtime_error("allocate memory failed!");
-	}
-	m_Device.GetLogicDevice().bindBufferMemory(buffer, memory, 0);
+	Buffer stagingBuffer;
+	m_Device.CreateBuffer(vk::BufferUsageFlagBits::eTransferSrc, size, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, &stagingBuffer, m_Indices.data());
+	m_Device.CreateBuffer(vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, size, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eDeviceLocal, &m_IndexBuffer, nullptr);
+	m_Device.CopyBuffer(stagingBuffer.m_Buffer, 0, m_IndexBuffer.m_Buffer, 0, size, m_Device.GetGraphicQueue());
 }
 
 void Application::CreateSetLayout()
@@ -667,11 +611,8 @@ void Application::CreateSetLayout()
 void Application::CreateUniformBuffer()
 {
 	vk::DeviceSize size = sizeof(UniformBufferObject);
-	CreateBuffer(m_UniformBuffer, m_UniformMemory, size, vk::BufferUsageFlagBits::eUniformBuffer, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
-	if (m_Device.GetLogicDevice().mapMemory(m_UniformMemory, 0, size, {}, &m_UniformMappedData) != vk::Result::eSuccess)
-	{
-		throw std::runtime_error("map uniformBuffer memory failed!");
-	}
+	m_Device.CreateBuffer(vk::BufferUsageFlagBits::eUniformBuffer, size, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, &m_UniformBuffer, nullptr);
+	m_UniformBuffer.Map();
 }
 
 void Application::UpdateUniformBuffers()
@@ -686,7 +627,8 @@ void Application::UpdateUniformBuffers()
 	ubo.View = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	ubo.Model = glm::rotate(glm::mat4(1.0f), time * glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
-	memcpy(m_UniformMappedData, &ubo, sizeof(UniformBufferObject));
+	/*memcpy(m_UniformMappedData, &ubo, sizeof(UniformBufferObject));*/
+	m_UniformBuffer.CopyFrom(&ubo, sizeof(UniformBufferObject));
 }
 
 void Application::CreateDescriptorPool()
@@ -727,11 +669,6 @@ void Application::CreateDescriptorSet()
 
 void Application::UpdateDescriptorSet()
 {
-	vk::DescriptorBufferInfo bufferInfo;
-	bufferInfo.setBuffer(m_UniformBuffer)
-			  .setOffset(0)
-			  .setRange(sizeof(UniformBufferObject));
-
 	vk::WriteDescriptorSet uniformWriteSet;
 	uniformWriteSet.sType = vk::StructureType::eWriteDescriptorSet;
 	uniformWriteSet.setDescriptorCount(1)
@@ -739,7 +676,7 @@ void Application::UpdateDescriptorSet()
 				   .setDstArrayElement(0)
 				   .setDstBinding(0)
 				   .setDstSet(m_DescriptorSet)
-				   .setPBufferInfo(&bufferInfo);
+				   .setPBufferInfo(&m_UniformBuffer.m_Descriptor);
 
 	vk::DescriptorImageInfo imageInfo;
 	imageInfo.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
@@ -768,23 +705,13 @@ void Application::CreateImageTexture(const char* path)
 	}
 	vk::DeviceSize size = width * height * 4;
 	m_MipmapLevels = std::floor(std::log2(std::max(width, height))) + 1;
-	vk::Buffer stagingBuffer;
-	vk::DeviceMemory stagingMemory;
-	CreateBuffer(stagingBuffer, stagingMemory, size, vk::BufferUsageFlagBits::eTransferSrc, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
-	void* data;
-	if (m_Device.GetLogicDevice().mapMemory(stagingMemory, 0, size, {}, &data) != vk::Result::eSuccess)
-	{
-		throw std::runtime_error("map memory failed!");
-	}
-	else
-	{
-		memcpy(data, pixels, size);
-		m_Device.GetLogicDevice().unmapMemory(stagingMemory);
-	}
+
+	Buffer stagingBuffer;
+	m_Device.CreateBuffer(vk::BufferUsageFlagBits::eTransferSrc, size, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, &stagingBuffer, pixels);
 	CreateImage(m_Image, m_ImageMemory, m_MipmapLevels, vk::SampleCountFlagBits::e1, vk::Extent2D(width, height), vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
 	CreateImageView(m_Image, m_ImageView, m_MipmapLevels, vk::Format::eR8G8B8A8Srgb, vk::ImageAspectFlagBits::eColor);
 	TransiationImageLayout(m_Image, vk::PipelineStageFlagBits::eTopOfPipe, vk::AccessFlagBits::eNone, vk::ImageLayout::eUndefined, vk::PipelineStageFlagBits::eTransfer, vk::AccessFlagBits::eTransferWrite, vk::ImageLayout::eTransferDstOptimal, vk::ImageAspectFlagBits::eColor, m_MipmapLevels);
-	CopyBufferToImage(stagingBuffer, m_Image, vk::Extent3D(width, height, 1));
+	CopyBufferToImage(stagingBuffer.m_Buffer, m_Image, vk::Extent3D(width, height, 1));
 	/*TransiationImageLayout(m_Image, vk::PipelineStageFlagBits::eTransfer, vk::AccessFlagBits::eTransferWrite, vk::ImageLayout::eTransferDstOptimal, vk::PipelineStageFlagBits::eFragmentShader, vk::AccessFlagBits::eShaderRead, vk::ImageLayout::eShaderReadOnlyOptimal, vk::ImageAspectFlagBits::eColor);*/
 	GenerateMipmaps(m_Image, width, height, m_MipmapLevels);
 }
