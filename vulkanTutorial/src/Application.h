@@ -9,6 +9,7 @@
 #include <glm.hpp>
 #include <gtx/hash.hpp>
 #include "Window.h"
+#include "vulkan/Device.h"
 
 struct QueueFamilyIndices
 {
@@ -91,19 +92,17 @@ struct UniformBufferObject
 class Application
 {
 public:
-	Application(int width, int height, const char* title) : m_Window(width, height, title) {}
+	Application(int width, int height, const char* title) : m_Window(width, height, title)  {}
 
 	void Run();
 	void InitWindow(int width, int height, const char* title);
 	void InitVulkan();
+	void InitDevice(Window& window);
 	void RenderLoop();
 	void Clear();
 private:
 	void CreateInstance();
-	void PickupPhysicalDevice();
-	void CreateSurface();
 	QueueFamilyIndices QueryQueueFmily(const vk::PhysicalDevice& device);
-	void CreateLogicDevice();
 	void CreateSwapchain();
 	void ReCreateSwapchain();
 	void ClearSwapchain();
@@ -126,7 +125,6 @@ private:
 	void DrawFrame();
 	vk::ShaderModule CompilerShader(const std::string& path);
 	SwapchainProperties QuerySwapchainSupport(const vk::PhysicalDevice& device);
-	uint32_t FindMemoryPropertyType(uint32_t memoryType, vk::MemoryPropertyFlags flags);
 	void CreateBuffer(vk::Buffer& buffer, vk::DeviceMemory& memory, vk::DeviceSize size, vk::BufferUsageFlags flags, vk::SharingMode sharingMode, vk::MemoryPropertyFlags memoryPropertyFlags);
 	vk::CommandBuffer OneTimeSubmitCommandBegin();
 	void OneTimeSubmitCommandEnd(vk::CommandBuffer command);
@@ -147,11 +145,7 @@ private:
 private:
 	Window m_Window;
 	vk::Instance m_VKInstance;
-	vk::PhysicalDevice m_PhysicalDevice;
-	vk::SurfaceKHR m_Surface;
-	vk::Device m_Device;
-	vk::Queue m_GraphicQueue;
-	vk::Queue m_PresentQueue;
+	Device m_Device;
 
 	SwapChain m_SwapChain;
 	vk::RenderPass m_RenderPass;
