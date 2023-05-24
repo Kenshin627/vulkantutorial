@@ -124,3 +124,23 @@ void SwapChain::Init(const Device& device, const Window& window, bool vSync)
 		VK_CHECK_RESULT(m_Device.GetLogicDevice().createImageView(&viewInfo, nullptr, &m_ImageViews[index++]));
 	}
 }
+
+SwapChain::~SwapChain()
+{
+	Destroy();
+}
+
+void SwapChain::Destroy()
+{
+	if (!m_ImageViews.empty())
+	{
+		for (auto& view : m_ImageViews) 
+		{
+			m_Device.GetLogicDevice().destroyImageView(view);
+		}
+	}
+	if (m_SwapChain)
+	{
+		m_Device.GetLogicDevice().destroySwapchainKHR(m_SwapChain);
+	}
+}
