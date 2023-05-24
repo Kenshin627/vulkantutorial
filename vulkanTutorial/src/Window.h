@@ -11,7 +11,7 @@ public:
 	GLFWwindow* GetNativeWindow() { return m_NativeWindow; }
 	bool GetWindowResized() const { return m_WindowResize; }
 	void SetWindowResized(bool resized) { m_WindowResize = resized; }
-	void GetFrameBufferSize(int* width, int* height);
+	void GetFrameBufferSize(int* width, int* height) const;
 private:
 	GLFWwindow* m_NativeWindow = nullptr;
 	bool m_WindowResize = false;

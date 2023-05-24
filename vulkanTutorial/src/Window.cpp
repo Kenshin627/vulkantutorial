@@ -36,7 +36,7 @@ void Window::PollEvents()
 	glfwPollEvents();
 }
 
-void Window::GetFrameBufferSize(int* width, int* height)
+void Window::GetFrameBufferSize(int* width, int* height) const
 {
 	glfwGetFramebufferSize(m_NativeWindow, width, height);
 }

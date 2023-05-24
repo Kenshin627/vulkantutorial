@@ -25,6 +25,9 @@ public:
 	vk::SurfaceKHR GetSurface() { return m_Surface; }
 	vk::Queue GetGraphicQueue() { return m_GraphicQueue; }
 	vk::Queue GetPresentQueue() { return m_PresentQueue; }
+	std::vector<vk::SurfaceFormatKHR> GetSurfaceSupportFormats() { return m_SurfaceFormats; }
+	std::vector<vk::PresentModeKHR> GetSurfaceSupportPresentModes() { return m_SurfacePresentModes; }
+	vk::SurfaceCapabilitiesKHR GetSurfaceSupportCapability() { return m_SurfaceCapability; }
 	vk::CommandPool GetCommandPool() { return m_DefaultCommandPool; }
 	uint32_t FindMemoryType(uint32_t memoryTypeBits, vk::MemoryPropertyFlags flags);
 	bool QuerySwapchainASupport(const vk::PhysicalDevice& device);
@@ -56,4 +59,7 @@ private:
 	vk::PhysicalDeviceMemoryProperties m_MemoryProperties;
 	vk::SampleCountFlags m_MaxSamplerCount;
 	vk::CommandPool m_DefaultCommandPool;
+	std::vector<vk::SurfaceFormatKHR> m_SurfaceFormats;
+	std::vector<vk::PresentModeKHR> m_SurfacePresentModes;
+	vk::SurfaceCapabilitiesKHR m_SurfaceCapability;
 };

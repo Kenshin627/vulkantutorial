@@ -48,15 +48,19 @@ void Device::PickPhysicalDevice(vk::Instance vkInstance)
 			m_QueueFamilyIndices = queueFamilyIndices;
 			m_MemoryProperties = device.getMemoryProperties();
 			m_MaxSamplerCount = CalcMaxSamplerCount(property);
+
+			m_SurfaceFormats = m_PhysicalDevice.getSurfaceFormatsKHR(m_Surface);
+			m_SurfacePresentModes = m_PhysicalDevice.getSurfacePresentModesKHR(m_Surface);
+			m_SurfaceCapability = m_PhysicalDevice.getSurfaceCapabilitiesKHR(m_Surface);
 		}
 	}
 }
 
 bool Device::QuerySwapchainASupport(const vk::PhysicalDevice& device)
 {
-	auto formats = device.getSurfaceFormatsKHR(m_Surface);
-	auto presents = device.getSurfacePresentModesKHR(m_Surface);
-	return !formats.empty() && !presents.empty();
+	auto surfaceFormats = device.getSurfaceFormatsKHR(m_Surface);
+	auto surfacePresentModes = device.getSurfacePresentModesKHR(m_Surface);
+	return !surfaceFormats.empty() && !surfacePresentModes.empty();
 }
 
 QueueFamilyIndices Device::QueryQueueFamilyIndices(const vk::PhysicalDevice& device)
