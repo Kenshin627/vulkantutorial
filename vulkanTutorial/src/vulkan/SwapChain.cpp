@@ -114,23 +114,24 @@ void SwapChain::Create()
 
 	m_Images = m_Device.GetLogicDevice().getSwapchainImagesKHR(m_SwapChain);
 	m_ImageViews.resize(m_Images.size());
-	uint32_t index = 0;
-	for (auto& image : m_Images)
+	uint32_t imageIndex = 0;
+	for (const auto& image : m_Images)
 	{
+		//m_ImageViews.emplace_back(m_Device.GetLogicDevice(), image, m_Format, vk::ImageAspectFlagBits::eColor, 1, vk::ImageViewType::e2D);
 		vk::ImageSubresourceRange region;
 		region.setAspectMask(vk::ImageAspectFlagBits::eColor)
-			.setBaseArrayLayer(0)
-			.setBaseMipLevel(0)
-			.setLayerCount(1)
-			.setLevelCount(1);
+			  .setBaseArrayLayer(0)
+			  .setBaseMipLevel(0)
+			  .setLayerCount(1)
+			  .setLevelCount(1);
 		vk::ImageViewCreateInfo viewInfo;
 		viewInfo.sType = vk::StructureType::eImageViewCreateInfo;
 		viewInfo.setComponents(vk::ComponentMapping())
-			.setFormat(m_Format)
-			.setImage(image)
-			.setSubresourceRange(region)
-			.setViewType(vk::ImageViewType::e2D);
-		VK_CHECK_RESULT(m_Device.GetLogicDevice().createImageView(&viewInfo, nullptr, &m_ImageViews[index++]));
+			    .setFormat(m_Format)
+			    .setImage(image)
+			    .setSubresourceRange(region)
+			    .setViewType(vk::ImageViewType::e2D);
+		VK_CHECK_RESULT(m_Device.GetLogicDevice().createImageView(&viewInfo, nullptr, &m_ImageViews[imageIndex++]));
 	}
 }
 
@@ -163,7 +164,9 @@ void SwapChain::Clear()
 		for (auto& view : m_ImageViews) 
 		{
 			m_Device.GetLogicDevice().destroyImageView(view);
+			/*view.Clear();*/
 		}
+		//m_ImageViews.clear();
 	}
 	if (m_SwapChain)
 	{

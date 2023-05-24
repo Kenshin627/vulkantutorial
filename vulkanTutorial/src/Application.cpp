@@ -397,9 +397,9 @@ void Application::RecordCommandBuffer(vk::CommandBuffer buffer, uint32_t imageIn
 
 void Application::DrawFrame()
 {
-	uint32_t imageIndex;
 	auto fenceResult = m_Device.GetLogicDevice().waitForFences(1, &m_InFlightFence, VK_TRUE, (std::numeric_limits<uint64_t>::max)());
 
+	uint32_t imageIndex;
 	m_SwapChain.AcquireNextImage(&imageIndex, m_WaitAcquireImageSemaphore);
 	
 	auto resetFenceRes = m_Device.GetLogicDevice().resetFences(1, &m_InFlightFence);
