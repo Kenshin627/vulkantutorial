@@ -9,6 +9,8 @@ public:
 	void Init(const Device& device, const Window& window, bool vSync);
 	void Create();
 	void ReCreate();
+	void AcquireNextImage(uint32_t* imageIndex, vk::Semaphore waitAcquireImage);
+	void PresentImage(uint32_t imageIndex, vk::Semaphore waitDrawFinish);
 	~SwapChain();
 	void Clear();
 	vk::SwapchainKHR GetSwapChain() { return m_SwapChain; }
@@ -23,11 +25,11 @@ private:
 	Window m_Window;
 	vk::SwapchainKHR m_SwapChain;
 	vk::SurfaceCapabilitiesKHR m_Capabilities;
-	vk::Format m_Format;
-	vk::ColorSpaceKHR m_ColorSpace;
-	vk::PresentModeKHR m_PresentMode;
-	vk::Extent2D m_Extent;
-	uint32_t m_ImageCount;	
+	vk::Format m_Format = vk::Format::eB8G8R8A8Srgb;
+	vk::ColorSpaceKHR m_ColorSpace = vk::ColorSpaceKHR::eSrgbNonlinear;
+	vk::PresentModeKHR m_PresentMode = vk::PresentModeKHR::eFifo;
+	vk::Extent2D m_Extent = { 0, 0 };
+	uint32_t m_ImageCount = 0;	
 	std::vector<vk::Image> m_Images;
 	std::vector<vk::ImageView> m_ImageViews;
 };

@@ -170,3 +170,32 @@ void SwapChain::Clear()
 		m_Device.GetLogicDevice().destroySwapchainKHR(m_SwapChain);
 	}
 }
+
+void SwapChain::AcquireNextImage(uint32_t* imageIndex, vk::Semaphore waitAcquireImage)
+{
+	auto acquireImageResult = m_Device.GetLogicDevice().acquireNextImageKHR(m_SwapChain, (std::numeric_limits<uint64_t>::max)(), waitAcquireImage, VK_NULL_HANDLE, imageIndex);
+	if (acquireImageResult == vk::Result::eErrorOutOfDateKHR || acquireImageResult == vk::Result::eSuboptimalKHR || m_Window.GetWindowResized())
+	{
+		m_Window.SetWindowResized(false);
+		ReCreate();
+		return;
+	}
+}
+
+void SwapChain::PresentImage(uint32_t imageIndex, vk::Semaphore waitDrawFinish)
+{
+	vk::PresentInfoKHR presentInfo;
+	presentInfo.sType = vk::StructureType::ePresentInfoKHR;
+	presentInfo.setPImageIndices(&imageIndex)
+		.setPResults(nullptr)
+		.setWaitSemaphoreCount(1)
+		.setPWaitSemaphores(&waitDrawFinish)
+		.setSwapchainCount(1)
+		.setPSwapchains(&m_SwapChain);
+	auto presentResult = m_Device.GetPresentQueue().presentKHR(&presentInfo);
+	if (presentResult == vk::Result::eErrorOutOfDateKHR || presentResult == vk::Result::eSuboptimalKHR || m_Window.GetWindowResized())
+	{
+		m_Window.SetWindowResized(false);
+		ReCreate();
+	}
+}

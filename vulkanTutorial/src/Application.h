@@ -96,9 +96,7 @@ public:
 private:
 	void CreateInstance();
 	void InitDevice(Window& window);
-	//void CreateSwapchain();
-	//void ReCreateSwapchain();
-	//void ClearSwapchain();
+
 	void CreateRenderPass();
 	void CreateSetLayout();
 	void CreatePipeLine();
@@ -116,7 +114,6 @@ private:
 	void UpdateDescriptorSet();
 	void DrawFrame();
 	vk::ShaderModule CompilerShader(const std::string& path);
-	SwapchainProperties QuerySwapchainSupport(const vk::PhysicalDevice& device);
 
 	void UpdateUniformBuffers();
 	void CreateImage(vk::Image& image, vk::DeviceMemory& memory, uint32_t mipLevels, vk::SampleCountFlagBits sampleCount, vk::Extent2D extent, vk::Format format, vk::ImageUsageFlags usage, vk::ImageTiling tiling, vk::MemoryPropertyFlags memoryPropertyFlags);
@@ -130,14 +127,13 @@ private:
 	public:
 	void LoadModel(const char* path);
 	void GenerateMipmaps(vk::Image image, uint32_t texWidth, uint32_t texHeight, uint32_t mipLevels);
-	vk::SampleCountFlagBits GetMaxUsableSampleCount();
 
 private:
 	Window m_Window;
 	vk::Instance m_VKInstance;
 	Device m_Device;
-
 	SwapChain m_SwapChain;
+
 	vk::RenderPass m_RenderPass;
 	vk::PipelineLayout m_Layout;
 	vk::Pipeline m_Pipeline;

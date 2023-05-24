@@ -38,9 +38,8 @@ void Application::InitVulkan()
 {
 	CreateInstance();
 	InitDevice(m_Window);
-	
-	//CreateSwapchain();
 	m_SwapChain.Init(m_Device, m_Window, false);
+
 	CreateColorSources();
 	CreateDepthSources();
 	CreateRenderPass();
@@ -100,109 +99,6 @@ void Application::CreateInstance()
 		throw std::runtime_error("vk instance create failed!");
 	}
 }
-
-
-SwapchainProperties Application::QuerySwapchainSupport(const vk::PhysicalDevice& device)
-{
-	SwapchainProperties properties;
-	properties.capabilities = device.getSurfaceCapabilitiesKHR(m_Device.GetSurface());
-	properties.formats = device.getSurfaceFormatsKHR(m_Device.GetSurface());
-	properties.presents = device.getSurfacePresentModesKHR(m_Device.GetSurface());
-	return properties;
-}
-
-//void Application::CreateSwapchain()
-//{
-//	SwapchainProperties swapchainproperties = QuerySwapchainSupport(m_Device.GetPhysicalDevice());
-//	vk::SurfaceCapabilitiesKHR capability = swapchainproperties.capabilities;
-//	vk::Extent2D extent;
-//	if (capability.currentExtent.width != (std::numeric_limits<uint32_t>::max)() )
-//	{
-//		extent = capability.currentExtent;
-//	}
-//	else
-//	{
-//		int width, height;
-//		m_Window.GetFrameBufferSize(&width, &height);
-//		extent.width = static_cast<uint32_t>(width);
-//		extent.height = static_cast<uint32_t>(height);
-//		extent.width = std::clamp(extent.width, capability.minImageExtent.width, capability.maxImageExtent.width);
-//		extent.height = std::clamp(extent.height, capability.minImageExtent.height, capability.maxImageExtent.height);
-//	}
-//
-//	uint32_t minImageCount = capability.minImageCount + 1;
-//	if (capability.maxImageCount > 0 && minImageCount > capability.maxImageCount)
-//	{
-//		minImageCount = capability.maxImageCount;
-//	}
-//
-//	
-//	vk::SurfaceFormatKHR format = swapchainproperties.formats[0];
-//	for (auto& f : swapchainproperties.formats)
-//	{
-//		if (f.format == vk::Format::eB8G8R8A8Srgb && f.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
-//		{
-//			format = f;
-//			break;
-//		}
-//	}
-//
-//	vk::PresentModeKHR present = vk::PresentModeKHR::eFifo;
-//	for (auto& p : swapchainproperties.presents)
-//	{
-//		if (p == vk::PresentModeKHR::eMailbox)
-//		{
-//			present = p;
-//			break;
-//		}
-//	}
-//
-//	auto queueIndices = m_Device.QueryQueueFamilyIndices(m_Device.GetPhysicalDevice());
-//	uint32_t queueFamilies[2] = { queueIndices.GraphicQueueIndex.value(), queueIndices.PresentQueueIndex.value() };
-//
-//	vk::SwapchainCreateInfoKHR swapChainInfo;
-//	swapChainInfo.sType = vk::StructureType::eSwapchainCreateInfoKHR;
-//	swapChainInfo.setClipped(true)
-//				 .setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque)
-//				 .setImageArrayLayers(1)
-//				 .setImageColorSpace(format.colorSpace)
-//				 .setImageExtent(extent)
-//				 .setImageFormat(format.format)
-//				 .setImageUsage(vk::ImageUsageFlagBits::eColorAttachment)
-//				 .setOldSwapchain(VK_NULL_HANDLE)
-//				 .setPresentMode(present)
-//				 .setPreTransform(capability.currentTransform)
-//				 .setSurface(m_Device.GetSurface())
-//				 .setMinImageCount(minImageCount);
-//	if (queueIndices.GraphicQueueIndex != queueIndices.PresentQueueIndex)
-//	{
-//		swapChainInfo.setImageSharingMode(vk::SharingMode::eConcurrent)
-//					 .setQueueFamilyIndexCount(2)
-//					 .setPQueueFamilyIndices(queueFamilies);
-//	}
-//	else
-//	{
-//		swapChainInfo.setImageSharingMode(vk::SharingMode::eExclusive);
-//	}
-//
-//	if (m_Device.GetLogicDevice().createSwapchainKHR(&swapChainInfo, nullptr, &m_SwapChain.vk_SwapChain) != vk::Result::eSuccess)
-//	{
-//		throw std::runtime_error("create Swapchain failed!");
-//	}
-//
-//	m_SwapChain.Images = m_Device.GetLogicDevice().getSwapchainImagesKHR(m_SwapChain.vk_SwapChain);
-//	m_SwapChain.ImageViews.resize(m_SwapChain.Images.size());
-//
-//	uint32_t index = 0;
-//	for (auto& image : m_SwapChain.Images)
-//	{
-//		CreateImageView(image, m_SwapChain.ImageViews[index++], 1, format.format, vk::ImageAspectFlagBits::eColor);
-//	}
-//	m_SwapChain.vk_Capabilities = capability;
-//	m_SwapChain.vk_Format = format;
-//	m_SwapChain.vk_Present = present;
-//	m_SwapChain.Extent = extent;
-//}
 
 void Application::CreateRenderPass()
 {
@@ -439,7 +335,6 @@ void Application::CreateFrameBuffer()
 	}
 }
 
-
 void Application::CreateCommandBuffer()
 {
 	vk::CommandBufferAllocateInfo commandBufferInfo;
@@ -502,17 +397,11 @@ void Application::RecordCommandBuffer(vk::CommandBuffer buffer, uint32_t imageIn
 
 void Application::DrawFrame()
 {
+	uint32_t imageIndex;
 	auto fenceResult = m_Device.GetLogicDevice().waitForFences(1, &m_InFlightFence, VK_TRUE, (std::numeric_limits<uint64_t>::max)());
 
-	uint32_t imageIndex;
-	auto acquireImageResult = m_Device.GetLogicDevice().acquireNextImageKHR(m_SwapChain.GetSwapChain(), (std::numeric_limits<uint64_t>::max)(), m_WaitAcquireImageSemaphore, VK_NULL_HANDLE, &imageIndex);
-	if (acquireImageResult == vk::Result::eErrorOutOfDateKHR || acquireImageResult == vk::Result::eSuboptimalKHR || m_Window.GetWindowResized())
-	{
-		m_Window.SetWindowResized(false);
-		//ReCreateSwapchain();
-		//m_SwapChain.ReCreate();
-		return;
-	}
+	m_SwapChain.AcquireNextImage(&imageIndex, m_WaitAcquireImageSemaphore);
+	
 	auto resetFenceRes = m_Device.GetLogicDevice().resetFences(1, &m_InFlightFence);
 	m_CommandBuffer.reset();
 	RecordCommandBuffer(m_CommandBuffer, imageIndex);
@@ -532,22 +421,7 @@ void Application::DrawFrame()
 			  .setPWaitDstStageMask(waitStages);
 	auto submitRes = m_Device.GetGraphicQueue().submit(1, &submitInfo, m_InFlightFence);
 
-	vk::PresentInfoKHR presentInfo;
-	vk::SwapchainKHR vkSwapChain = m_SwapChain.GetSwapChain();
-	presentInfo.sType = vk::StructureType::ePresentInfoKHR;
-	presentInfo.setPImageIndices(&imageIndex)
-			   .setPResults(nullptr)
-			   .setWaitSemaphoreCount(1)
-			   .setPWaitSemaphores(&m_WaitFinishDrawSemaphore)
-			   .setSwapchainCount(1)
-			   .setPSwapchains(&vkSwapChain);
-	auto presentResult = m_Device.GetPresentQueue().presentKHR(&presentInfo);
-	if (presentResult == vk::Result::eErrorOutOfDateKHR || presentResult == vk::Result::eSuboptimalKHR || m_Window.GetWindowResized())
-	{
-		m_Window.SetWindowResized(false);
-		//ReCreateSwapchain();
-		//m_SwapChain.ReCreate();
-	}
+	m_SwapChain.PresentImage(imageIndex, m_WaitFinishDrawSemaphore);
 }
 
 void Application::CreateAsyncObjects()
@@ -1038,17 +912,4 @@ void Application::CreateColorSources()
 {
 	CreateImage(m_ColorImage, m_ColorMemory, 1, m_SamplerCount, m_SwapChain.GetExtent(), m_SwapChain.GetFormat(), vk::ImageUsageFlagBits::eTransientAttachment | vk::ImageUsageFlagBits::eColorAttachment, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
 	CreateImageView(m_ColorImage, m_ColorView, 1, m_SwapChain.GetFormat(), vk::ImageAspectFlagBits::eColor, vk::ImageViewType::e2D);
-}
-
-vk::SampleCountFlagBits Application::GetMaxUsableSampleCount()
-{
-	auto physicalDeviceProperties = m_Device.GetPhysicalDevice().getProperties();
-	vk::SampleCountFlags sampleCount = physicalDeviceProperties.limits.framebufferColorSampleCounts & physicalDeviceProperties.limits.framebufferDepthSampleCounts;
-	if (sampleCount & vk::SampleCountFlagBits::e64) { return vk::SampleCountFlagBits::e64; }
-	if (sampleCount & vk::SampleCountFlagBits::e32) { return vk::SampleCountFlagBits::e32; }
-	if (sampleCount & vk::SampleCountFlagBits::e16) { return vk::SampleCountFlagBits::e16; }
-	if (sampleCount & vk::SampleCountFlagBits::e8 ) { return vk::SampleCountFlagBits::e8;  }
-	if (sampleCount & vk::SampleCountFlagBits::e4 ) { return vk::SampleCountFlagBits::e4;  }
-	if (sampleCount & vk::SampleCountFlagBits::e2 ) { return vk::SampleCountFlagBits::e2;  }
-	return vk::SampleCountFlagBits::e1;
 }
