@@ -4,6 +4,7 @@
 class Window
 {
 public:
+	Window() = default;
 	Window(int width, int height, const char* title);
 	~Window();
 	bool ShouldClose();

@@ -10,6 +10,7 @@
 #include <gtx/hash.hpp>
 #include "Window.h"
 #include "vulkan/Device.h"
+#include "vulkan/SwapChain.h"
 
 struct SwapchainProperties
 {
@@ -18,16 +19,16 @@ struct SwapchainProperties
 	std::vector<vk::PresentModeKHR> presents;
 };
 
-struct SwapChain
-{
-	vk::SwapchainKHR vk_SwapChain;
-	vk::SurfaceCapabilitiesKHR vk_Capabilities;
-	vk::SurfaceFormatKHR vk_Format;
-	vk::PresentModeKHR vk_Present;
-	vk::Extent2D Extent;
-	std::vector<vk::Image> Images;
-	std::vector<vk::ImageView> ImageViews;
-};
+//struct SwapChain
+//{
+//	vk::SwapchainKHR vk_SwapChain;
+//	vk::SurfaceCapabilitiesKHR vk_Capabilities;
+//	vk::SurfaceFormatKHR vk_Format;
+//	vk::PresentModeKHR vk_Present;
+//	vk::Extent2D Extent;
+//	std::vector<vk::Image> Images;
+//	std::vector<vk::ImageView> ImageViews;
+//};
 
 struct Vertex
 {
@@ -95,9 +96,9 @@ public:
 private:
 	void CreateInstance();
 	void InitDevice(Window& window);
-	void CreateSwapchain();
-	void ReCreateSwapchain();
-	void ClearSwapchain();
+	//void CreateSwapchain();
+	//void ReCreateSwapchain();
+	//void ClearSwapchain();
 	void CreateRenderPass();
 	void CreateSetLayout();
 	void CreatePipeLine();

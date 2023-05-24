@@ -4,7 +4,13 @@
 void SwapChain::Init(const Device& device, const Window& window, bool vSync)
 {
 	m_Device = device;
+	m_Window = window;
 	m_vSync = vSync;
+	Create();
+}
+
+void SwapChain::Create()
+{
 	auto formats = m_Device.GetSurfaceSupportFormats();
 	auto presentModes = m_Device.GetSurfaceSupportPresentModes();
 	auto capability = m_Device.GetSurfaceSupportCapability();
@@ -12,7 +18,7 @@ void SwapChain::Init(const Device& device, const Window& window, bool vSync)
 	vk::SurfaceFormatKHR surfaceFormat = formats[0];
 	for (auto& fm : formats)
 	{
-		if (fm.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear && fm.format == vk::Format::eB8G8R8A8Srgb) 
+		if (fm.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear && fm.format == vk::Format::eB8G8R8A8Srgb)
 		{
 			surfaceFormat = fm;
 			break;
@@ -24,7 +30,7 @@ void SwapChain::Init(const Device& device, const Window& window, bool vSync)
 	m_PresentMode = vk::PresentModeKHR::eFifo;
 	if (!m_vSync)
 	{
-		for (const auto& mode : presentModes) 
+		for (const auto& mode : presentModes)
 		{
 			if (mode == vk::PresentModeKHR::eMailbox)
 			{
@@ -45,7 +51,7 @@ void SwapChain::Init(const Device& device, const Window& window, bool vSync)
 	else
 	{
 		int width, height;
-		window.GetFrameBufferSize(&width, &height);
+		m_Window.GetFrameBufferSize(&width, &height);
 		width = std::clamp(static_cast<uint32_t>(width), capability.minImageExtent.width, capability.maxImageExtent.width);
 		height = std::clamp(static_cast<uint32_t>(height), capability.minImageExtent.height, capability.maxImageExtent.height);
 		m_Extent.setWidth(width).setHeight(height);
@@ -96,12 +102,15 @@ void SwapChain::Init(const Device& device, const Window& window, bool vSync)
 		.setImageUsage(usage)
 		.setMinImageCount(m_ImageCount)
 		.setPresentMode(m_PresentMode)
-		.setPreTransform(preTransform);
+		.setPreTransform(preTransform)
+		.setSurface(m_Device.GetSurface());
 	if (queueIndices.GraphicQueueIndex != queueIndices.PresentQueueIndex)
 	{
 		std::array<uint32_t, 2> indices = { queueIndices.GraphicQueueIndex.value(), queueIndices.PresentQueueIndex.value() };
 		swapChainInfo.setQueueFamilyIndexCount(indices.size()).setPQueueFamilyIndices(indices.data());
 	}
+
+	VK_CHECK_RESULT(m_Device.GetLogicDevice().createSwapchainKHR(&swapChainInfo, nullptr, &m_SwapChain));
 
 	m_Images = m_Device.GetLogicDevice().getSwapchainImagesKHR(m_SwapChain);
 	m_ImageViews.resize(m_Images.size());
@@ -110,27 +119,44 @@ void SwapChain::Init(const Device& device, const Window& window, bool vSync)
 	{
 		vk::ImageSubresourceRange region;
 		region.setAspectMask(vk::ImageAspectFlagBits::eColor)
-			  .setBaseArrayLayer(0)
-			  .setBaseMipLevel(0)
-			  .setLayerCount(1)
-			  .setLevelCount(1);
+			.setBaseArrayLayer(0)
+			.setBaseMipLevel(0)
+			.setLayerCount(1)
+			.setLevelCount(1);
 		vk::ImageViewCreateInfo viewInfo;
 		viewInfo.sType = vk::StructureType::eImageViewCreateInfo;
 		viewInfo.setComponents(vk::ComponentMapping())
-			    .setFormat(m_Format)
-			    .setImage(image)
-			    .setSubresourceRange(region)
-			    .setViewType(vk::ImageViewType::e2D);
+			.setFormat(m_Format)
+			.setImage(image)
+			.setSubresourceRange(region)
+			.setViewType(vk::ImageViewType::e2D);
 		VK_CHECK_RESULT(m_Device.GetLogicDevice().createImageView(&viewInfo, nullptr, &m_ImageViews[index++]));
 	}
 }
 
-SwapChain::~SwapChain()
+void SwapChain::ReCreate()
 {
-	Destroy();
+	int width, height;
+	m_Window.GetFrameBufferSize(&width, &height);
+	while (width == 0 || height == 0)
+	{
+		m_Window.GetFrameBufferSize(&width, &height);
+		glfwWaitEvents();
+	}
+	m_Device.GetLogicDevice().waitIdle();
+	Clear();
+	Create();
+	/*CreateColorSources();
+	CreateDepthSources();
+	CreateFrameBuffer();*/
 }
 
-void SwapChain::Destroy()
+SwapChain::~SwapChain()
+{
+	Clear();
+}
+
+void SwapChain::Clear()
 {
 	if (!m_ImageViews.empty())
 	{
