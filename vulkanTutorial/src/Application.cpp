@@ -39,7 +39,7 @@ void Application::InitVulkan()
 	CreateInstance();
 	InitDevice(m_Window);
 	m_SwapChain.Init(m_Device, m_Window, false);
-
+	commandManager.SetContext(m_Device);
 	CreateColorSources();
 	CreateDepthSources();
 	CreateRenderPass();
@@ -331,7 +331,7 @@ void Application::CreateFrameBuffer()
 
 void Application::CreateCommandBuffer()
 {
-	vk::CommandBufferAllocateInfo commandBufferInfo;
+	/*vk::CommandBufferAllocateInfo commandBufferInfo;
 	commandBufferInfo.sType = vk::StructureType::eCommandBufferAllocateInfo;
 	commandBufferInfo.setCommandBufferCount(1)
 					 .setCommandPool(m_Device.GetCommandPool())
@@ -339,7 +339,8 @@ void Application::CreateCommandBuffer()
 	if (m_Device.GetLogicDevice().allocateCommandBuffers(&commandBufferInfo, &m_CommandBuffer) != vk::Result::eSuccess)
 	{
 		throw std::runtime_error("commandBuffer create failed!");
-	}
+	}*/
+	m_CommandBuffer = commandManager.AllocateCommandBuffer(vk::CommandBufferLevel::ePrimary, false);
 }
 
 void Application::RecordCommandBuffer(vk::CommandBuffer buffer, uint32_t imageIndex)
@@ -440,7 +441,7 @@ void Application::CreateVertexBuffer()
 
 	m_Device.CreateBuffer(vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer, size, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eDeviceLocal, &m_VertexBuffer, nullptr);
 
-	m_Device.CopyBuffer(stagingBuffer.m_Buffer, 0, m_VertexBuffer.m_Buffer, 0, size, m_Device.GetGraphicQueue());
+	m_Device.CopyBuffer(stagingBuffer.m_Buffer, 0, m_VertexBuffer.m_Buffer, 0, size, m_Device.GetGraphicQueue(), commandManager);
 }
 
 void Application::CreateIndexBuffer()
@@ -449,7 +450,7 @@ void Application::CreateIndexBuffer()
 	Buffer stagingBuffer;
 	m_Device.CreateBuffer(vk::BufferUsageFlagBits::eTransferSrc, size, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, &stagingBuffer, m_Indices.data());
 	m_Device.CreateBuffer(vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, size, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eDeviceLocal, &m_IndexBuffer, nullptr);
-	m_Device.CopyBuffer(stagingBuffer.m_Buffer, 0, m_IndexBuffer.m_Buffer, 0, size, m_Device.GetGraphicQueue());
+	m_Device.CopyBuffer(stagingBuffer.m_Buffer, 0, m_IndexBuffer.m_Buffer, 0, size, m_Device.GetGraphicQueue(), commandManager);
 }
 
 void Application::CreateSetLayout()
@@ -622,7 +623,7 @@ void Application::CreateImage(vk::Image& image, vk::DeviceMemory& memory, uint32
 
 void Application::CopyBufferToImage(vk::Buffer srcBuffer, vk::Image dstImage, vk::Extent3D extent)
 {
-	auto command = m_Device.AllocateCommandBuffer(vk::CommandBufferLevel::ePrimary);
+	auto command = commandManager.AllocateCommandBuffer(vk::CommandBufferLevel::ePrimary);
 
 	vk::ImageSubresourceLayers layer;
 	layer.setAspectMask(vk::ImageAspectFlagBits::eColor)
@@ -638,12 +639,12 @@ void Application::CopyBufferToImage(vk::Buffer srcBuffer, vk::Image dstImage, vk
 		  .setImageSubresource(layer);
 	command.copyBufferToImage(srcBuffer, dstImage, vk::ImageLayout::eShaderReadOnlyOptimal, 1, &region);
 
-	m_Device.FlushCommandBuffer(command, m_Device.GetGraphicQueue());
+	commandManager.FlushCommandBuffer(command, m_Device.GetGraphicQueue(), commandManager.GetCommandPool());
 }
 
 void Application::TransiationImageLayout(vk::Image image, vk::PipelineStageFlags srcStage, vk::AccessFlags srcAccess, vk::ImageLayout srcLayout, vk::PipelineStageFlags dstStage,  vk::AccessFlags dstAccess, vk::ImageLayout dstLayout, vk::ImageAspectFlags aspectFlags, uint32_t mipLevels)
 {
-	auto command = m_Device.AllocateCommandBuffer(vk::CommandBufferLevel::ePrimary);
+	auto command = commandManager.AllocateCommandBuffer(vk::CommandBufferLevel::ePrimary);
 
 	vk::ImageSubresourceRange range;
 	range.setAspectMask(aspectFlags)
@@ -663,7 +664,7 @@ void Application::TransiationImageLayout(vk::Image image, vk::PipelineStageFlags
 		   .setSubresourceRange(range);
 	command.pipelineBarrier(srcStage, dstStage, {}, 0, nullptr, 0, nullptr, 1, &barrier);
 
-	m_Device.FlushCommandBuffer(command, m_Device.GetGraphicQueue());
+	commandManager.FlushCommandBuffer(command, m_Device.GetGraphicQueue(), commandManager.GetCommandPool());
 }
 
 void Application::CreateSampler()
@@ -836,7 +837,7 @@ void Application::GenerateMipmaps(vk::Image image, uint32_t texWidth, uint32_t t
 	uint32_t mipWidth = texWidth;
 	uint32_t mipHeight = texHeight;
 
-	auto command = m_Device.AllocateCommandBuffer(vk::CommandBufferLevel::ePrimary);
+	auto command = commandManager.AllocateCommandBuffer(vk::CommandBufferLevel::ePrimary);
 
 	vk::ImageSubresourceRange region;
 	region.setAspectMask(vk::ImageAspectFlagBits::eColor)
@@ -899,7 +900,7 @@ void Application::GenerateMipmaps(vk::Image image, uint32_t texWidth, uint32_t t
 		   .setNewLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
 	command.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader, {}, 0, nullptr, 0, nullptr, 1, &barrier);
 	
-	m_Device.FlushCommandBuffer(command, m_Device.GetGraphicQueue());
+	commandManager.FlushCommandBuffer(command, m_Device.GetGraphicQueue(), commandManager.GetCommandPool());
 }
 
 void Application::CreateColorSources()

@@ -1,5 +1,6 @@
 #include "Device.h"
 #include "../Core.h"
+#include "CommandManager.h"
 
 #include <set>
 #include <string>
@@ -11,7 +12,6 @@ Device::Device(Window& window, vk::Instance vkInstance)
 	CreateSurface(window, vkInstance);
 	PickPhysicalDevice(vkInstance);
 	CreateLogicDevice();
-	CreateCommandPool();
 }
 
 Device::~Device() {}
@@ -144,68 +144,6 @@ uint32_t Device::FindMemoryType(uint32_t memoryTypeBits, vk::MemoryPropertyFlags
 	}
 }
 
-void Device::CreateCommandPool(uint32_t queueFamilyIndex)
-{
-	vk::CommandPoolCreateInfo poolInfo;
-	poolInfo.sType = vk::StructureType::eCommandPoolCreateInfo;
-	poolInfo.setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer)
-			.setQueueFamilyIndex(queueFamilyIndex);
-	VK_CHECK_RESULT(m_LogicDevice.createCommandPool(&poolInfo, nullptr, &m_DefaultCommandPool));
-}
-
-void Device::CreateCommandPool()
-{
-	CreateCommandPool(m_QueueFamilyIndices.GraphicQueueIndex.value());
-}
-
-vk::CommandBuffer Device::AllocateCommandBuffer(vk::CommandPool commandPool, vk::CommandBufferLevel level, bool begin)
-{
-	vk::CommandBuffer buffer;
-
-	vk::CommandBufferAllocateInfo bufferAllocInfo;
-	bufferAllocInfo.sType = vk::StructureType::eCommandBufferAllocateInfo;
-	bufferAllocInfo.setCommandBufferCount(1)
-				   .setCommandPool(commandPool)
-				   .setLevel(level);
-	VK_CHECK_RESULT(m_LogicDevice.allocateCommandBuffers(&bufferAllocInfo, &buffer));
-	if (begin)
-	{
-		vk::CommandBufferBeginInfo beginInfo;
-		beginInfo.sType = vk::StructureType::eCommandBufferBeginInfo;
-		beginInfo.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit)
-				 .setPInheritanceInfo(nullptr)
-				 .setPNext(nullptr);
-		VK_CHECK_RESULT(buffer.begin(&beginInfo));
-	}
-	return buffer;
-}
-
-vk::CommandBuffer Device::AllocateCommandBuffer(vk::CommandBufferLevel level, bool begin)
-{
-	return AllocateCommandBuffer(m_DefaultCommandPool, level, begin);
-}
-
-void Device::FlushCommandBuffer(vk::CommandBuffer commandBuffer, vk::Queue queue, vk::CommandPool commandPool, bool free)
-{
-	commandBuffer.end();
-	vk::SubmitInfo submitInfo;
-	submitInfo.sType = vk::StructureType::eSubmitInfo;
-	submitInfo.setCommandBufferCount(1)
-		      .setPCommandBuffers(&commandBuffer);
-	vk::Fence fence = CreateFence(vk::FenceCreateFlags());
-	VK_CHECK_RESULT(queue.submit(1, &submitInfo, fence));
-	VK_CHECK_RESULT(m_LogicDevice.waitForFences(1, &fence, true, UINT64_MAX));
-	m_LogicDevice.destroyFence(fence, nullptr);
-	if (free)
-	{
-		m_LogicDevice.freeCommandBuffers(commandPool, 1, &commandBuffer);
-	}
-}
-void Device::FlushCommandBuffer(vk::CommandBuffer commandBuffer, vk::Queue queue, bool free)
-{
-	FlushCommandBuffer(commandBuffer, queue, m_DefaultCommandPool, free);
-}
-
 vk::Fence Device::CreateFence(vk::FenceCreateFlags flags)
 {
 	vk::Fence fence;
@@ -286,9 +224,9 @@ void Device::CreateBuffer(vk::BufferUsageFlags usage, vk::DeviceSize size, vk::S
 	buffer->Bind();
 }
 
-void Device::CopyBuffer(vk::Buffer src, vk::DeviceSize srcOffset, vk::Buffer dst, vk::DeviceSize dstOffset, vk::DeviceSize size, vk::Queue queue)
+void Device::CopyBuffer(vk::Buffer src, vk::DeviceSize srcOffset, vk::Buffer dst, vk::DeviceSize dstOffset, vk::DeviceSize size, vk::Queue queue, CommandManager& commandManager)
 {
-	auto command = AllocateCommandBuffer(vk::CommandBufferLevel::ePrimary);
+	auto command = commandManager.AllocateCommandBuffer(vk::CommandBufferLevel::ePrimary);
 
 	vk::BufferCopy region;
 	region.setDstOffset(dstOffset)
@@ -296,5 +234,5 @@ void Device::CopyBuffer(vk::Buffer src, vk::DeviceSize srcOffset, vk::Buffer dst
 		  .setSize(size);
 	command.copyBuffer(src, dst, 1, &region);
 
-	FlushCommandBuffer(command, queue);
+	commandManager.FlushCommandBuffer(command, queue, commandManager.GetCommandPool());
 }

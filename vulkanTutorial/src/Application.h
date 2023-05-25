@@ -12,6 +12,7 @@
 #include "vulkan/Device.h"
 #include "vulkan/SwapChain.h"
 #include "vulkan/FrameBuffer.h"
+#include "vulkan/CommandManager.h"
 
 struct SwapchainProperties
 {
@@ -166,6 +167,7 @@ private:
 	Buffer m_VertexBuffer;
 	Buffer m_IndexBuffer;
 	Buffer m_UniformBuffer;
+	CommandManager commandManager;
 	
 	vk::DescriptorSetLayout m_SetLayout;
 	vk::DescriptorPool m_DescriptorPool;
