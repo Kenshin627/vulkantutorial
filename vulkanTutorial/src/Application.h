@@ -11,6 +11,7 @@
 #include "Window.h"
 #include "vulkan/Device.h"
 #include "vulkan/SwapChain.h"
+#include "vulkan/FrameBuffer.h"
 
 struct SwapchainProperties
 {
@@ -133,11 +134,11 @@ private:
 	vk::Instance m_VKInstance;
 	Device m_Device;
 	SwapChain m_SwapChain;
+	std::vector<FrameBuffer> m_FrameBuffers;
 
 	vk::RenderPass m_RenderPass;
 	vk::PipelineLayout m_Layout;
 	vk::Pipeline m_Pipeline;
-	std::vector<vk::Framebuffer> m_FrameBuffers;
 	
 	vk::CommandBuffer m_CommandBuffer;
 	vk::Fence m_InFlightFence;

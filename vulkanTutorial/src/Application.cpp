@@ -315,23 +315,17 @@ vk::ShaderModule Application::CompilerShader(const std::string& path)
 
 void Application::CreateFrameBuffer()
 {
+	vk::Device device = m_Device.GetLogicDevice();
+	uint32_t width = m_SwapChain.GetExtent().width;
+	uint32_t height = m_SwapChain.GetExtent().height;
 	m_FrameBuffers.resize(m_SwapChain.GetImageViews().size());
 	uint32_t index = 0;
 	for (auto& view : m_SwapChain.GetImageViews())
 	{
-		std::array<vk::ImageView, 3> attachments = { m_ColorView, m_DepthImageView, view };
-		vk::FramebufferCreateInfo framebufferInfo;
-		framebufferInfo.sType = vk::StructureType::eFramebufferCreateInfo;
-		framebufferInfo.setAttachmentCount(static_cast<uint32_t>(attachments.size()))
-					   .setPAttachments(attachments.data())
-					   .setWidth(m_SwapChain.GetExtent().width)
-					   .setHeight(m_SwapChain.GetExtent().height)
-					   .setLayers(1)
-					   .setRenderPass(m_RenderPass);
-		if (m_Device.GetLogicDevice().createFramebuffer(&framebufferInfo, nullptr, &m_FrameBuffers[index++]) != vk::Result::eSuccess)
-		{
-			throw std::runtime_error("frameBuffer create failed!");
-		}
+		m_FrameBuffers[index].SetAttachment(m_ColorView)
+							 .SetAttachment(m_DepthImageView)
+							 .SetAttachment(view);
+		m_FrameBuffers[index++].Create(device, width, height, m_RenderPass);
 	}
 }
 
@@ -369,7 +363,7 @@ void Application::RecordCommandBuffer(vk::CommandBuffer buffer, uint32_t imageIn
 		renderPassBegin.sType = vk::StructureType::eRenderPassBeginInfo;
 		renderPassBegin.setClearValueCount(static_cast<uint32_t>(clearValues.size()))
 					   .setPClearValues(clearValues.data())
-					   .setFramebuffer(m_FrameBuffers[imageIndex])
+					   .setFramebuffer(m_FrameBuffers[imageIndex].GetVkFrameBuffer())
 					   .setRenderPass(m_RenderPass)
 					   .setRenderArea(renderArea);
 		buffer.beginRenderPass(&renderPassBegin, vk::SubpassContents::eInline);
