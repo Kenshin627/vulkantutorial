@@ -68,3 +68,8 @@ void CommandManager::FlushCommandBuffer(vk::CommandBuffer command, vk::Queue que
 		device.freeCommandBuffers(pool, 1, &command);
 	}
 }
+
+void CommandManager::FlushCommandBuffer(vk::CommandBuffer command, vk::Queue queue, bool free)
+{
+	FlushCommandBuffer(command, queue, m_DefaultPool, free);
+}

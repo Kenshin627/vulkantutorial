@@ -639,7 +639,7 @@ void Application::CopyBufferToImage(vk::Buffer srcBuffer, vk::Image dstImage, vk
 		  .setImageSubresource(layer);
 	command.copyBufferToImage(srcBuffer, dstImage, vk::ImageLayout::eShaderReadOnlyOptimal, 1, &region);
 
-	commandManager.FlushCommandBuffer(command, m_Device.GetGraphicQueue(), commandManager.GetCommandPool());
+	commandManager.FlushCommandBuffer(command, m_Device.GetGraphicQueue());
 }
 
 void Application::TransiationImageLayout(vk::Image image, vk::PipelineStageFlags srcStage, vk::AccessFlags srcAccess, vk::ImageLayout srcLayout, vk::PipelineStageFlags dstStage,  vk::AccessFlags dstAccess, vk::ImageLayout dstLayout, vk::ImageAspectFlags aspectFlags, uint32_t mipLevels)
@@ -664,7 +664,7 @@ void Application::TransiationImageLayout(vk::Image image, vk::PipelineStageFlags
 		   .setSubresourceRange(range);
 	command.pipelineBarrier(srcStage, dstStage, {}, 0, nullptr, 0, nullptr, 1, &barrier);
 
-	commandManager.FlushCommandBuffer(command, m_Device.GetGraphicQueue(), commandManager.GetCommandPool());
+	commandManager.FlushCommandBuffer(command, m_Device.GetGraphicQueue());
 }
 
 void Application::CreateSampler()
@@ -900,7 +900,7 @@ void Application::GenerateMipmaps(vk::Image image, uint32_t texWidth, uint32_t t
 		   .setNewLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
 	command.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader, {}, 0, nullptr, 0, nullptr, 1, &barrier);
 	
-	commandManager.FlushCommandBuffer(command, m_Device.GetGraphicQueue(), commandManager.GetCommandPool());
+	commandManager.FlushCommandBuffer(command, m_Device.GetGraphicQueue());
 }
 
 void Application::CreateColorSources()
