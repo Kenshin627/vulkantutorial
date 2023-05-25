@@ -47,6 +47,11 @@ void CommandManager::CommandBegin(vk::CommandBuffer command)
 	VK_CHECK_RESULT(command.begin(&beginInfo));
 }
 
+void CommandManager::CommandEnd(vk::CommandBuffer command)
+{
+	command.end();
+}
+
 void CommandManager::FlushCommandBuffer(vk::CommandBuffer command, vk::Queue queue, vk::CommandPool pool, bool free)
 {
 	command.end();

@@ -331,13 +331,13 @@ void Application::CreateFrameBuffer()
 
 void Application::RecordCommandBuffer(vk::CommandBuffer buffer, uint32_t imageIndex)
 {
-	vk::CommandBufferBeginInfo commandBufferBegin;
-	commandBufferBegin.sType = vk::StructureType::eCommandBufferBeginInfo;
-	commandBufferBegin.setPInheritanceInfo(nullptr);
-					  //.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+	//vk::CommandBufferBeginInfo commandBufferBegin;
+	//commandBufferBegin.sType = vk::StructureType::eCommandBufferBeginInfo;
+	//commandBufferBegin.setPInheritanceInfo(nullptr);
+	//				  //.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
-	auto beginRes = buffer.begin(&commandBufferBegin);
-	//commandManager.CommandBegin(buffer);
+	//auto beginRes = buffer.begin(&commandBufferBegin);
+	commandManager.CommandBegin(buffer);
 		std::array<vk::ClearValue, 2> clearValues{};
 		clearValues[0].color = vk::ClearColorValue();
 		clearValues[1].depthStencil = vk::ClearDepthStencilValue(1.0f, 0);
@@ -373,7 +373,7 @@ void Application::RecordCommandBuffer(vk::CommandBuffer buffer, uint32_t imageIn
 			buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_Layout, 0, 1, &m_DescriptorSet, 0, nullptr);
 			buffer.drawIndexed(static_cast<uint32_t>(m_Indices.size()), 1, 0, 0, 0);
 		buffer.endRenderPass();
-	buffer.end();
+	commandManager.CommandEnd(buffer);
 }				
 
 void Application::DrawFrame()
@@ -488,7 +488,6 @@ void Application::UpdateUniformBuffers()
 	ubo.View = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	ubo.Model = glm::rotate(glm::mat4(1.0f), time * glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
-	/*memcpy(m_UniformMappedData, &ubo, sizeof(UniformBufferObject));*/
 	m_UniformBuffer.CopyFrom(&ubo, sizeof(UniformBufferObject));
 }
 

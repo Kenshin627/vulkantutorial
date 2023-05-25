@@ -11,6 +11,7 @@ public:
 	vk::CommandBuffer AllocateCommandBuffer(vk::CommandBufferLevel level, vk::CommandPool pool, bool begin = true);
 	vk::CommandBuffer AllocateCommandBuffer(vk::CommandBufferLevel level, bool begin = true);
 	void CommandBegin(vk::CommandBuffer command);
+	void CommandEnd(vk::CommandBuffer command);
 	void FlushCommandBuffer(vk::CommandBuffer command, vk::Queue queue, vk::CommandPool pool, bool free = true);
 	void FlushCommandBuffer(vk::CommandBuffer command, vk::Queue queue, bool free = true);
 	vk::CommandPool GetCommandPool() { return m_DefaultPool; }
