@@ -5,7 +5,7 @@
 #include <unordered_map>
 
 #include <gtc/matrix_transform.hpp>
-#include "../utils/readFile.h"
+
 
 #include <GLFW/glfw3.h>
 #define GLFW_EXPOSE_NATIVE_WIN32
@@ -189,19 +189,11 @@ void Application::CreatePipeLine()
 			    .setPrimitiveRestartEnable(VK_FALSE);
 
 	//3.
-	vk::ShaderModule vertexShader = CompilerShader("resource/shaders/vert.spv");
-	vk::PipelineShaderStageCreateInfo vertexInfo;
-	vertexInfo.sType = vk::StructureType::ePipelineShaderStageCreateInfo;
-	vertexInfo.setModule(vertexShader)
-			  .setPName("main")
-			  .setStage(vk::ShaderStageFlagBits::eVertex);
-	vk::ShaderModule fragmentShader = CompilerShader("resource/shaders/frag.spv");
-	vk::PipelineShaderStageCreateInfo fragmentInfo;
-	fragmentInfo.sType = vk::StructureType::ePipelineShaderStageCreateInfo;
-	fragmentInfo.setModule(fragmentShader)
-				.setPName("main")
-				.setStage(vk::ShaderStageFlagBits::eFragment);
-	vk::PipelineShaderStageCreateInfo shaders[] = { vertexInfo, fragmentInfo };
+	Shader vertex(m_Device.GetLogicDevice(), "resource/shaders/vert.spv");
+	vertex.SetPipelineShaderStageInfo(vk::ShaderStageFlagBits::eVertex);
+	Shader fragment(m_Device.GetLogicDevice(), "resource/shaders/frag.spv");
+	fragment.SetPipelineShaderStageInfo(vk::ShaderStageFlagBits::eFragment);
+	vk::PipelineShaderStageCreateInfo shaders[] = { vertex.m_ShaderStage, fragment.m_ShaderStage };
 
 	//4.
 	vk::PipelineRasterizationStateCreateInfo rasterizationInfo;
@@ -296,21 +288,6 @@ void Application::CreatePipeLine()
 	{
 		throw std::runtime_error("pipeline Create failed!");
 	}
-}
-
-vk::ShaderModule Application::CompilerShader(const std::string& path)
-{
-	vk::ShaderModule result;
-	auto shaderCode = ReadFile(path);
-	vk::ShaderModuleCreateInfo shaderInfo;
-	shaderInfo.sType = vk::StructureType::eShaderModuleCreateInfo;
-	shaderInfo.setCodeSize(shaderCode.size())
-			  .setPCode(reinterpret_cast<const uint32_t*>(shaderCode.data()));
-	if (m_Device.GetLogicDevice().createShaderModule(&shaderInfo, nullptr, &result) != vk::Result::eSuccess)
-	{
-		throw std::runtime_error("shader module create failed!");
-	}
-	return result;
 }
 
 void Application::CreateFrameBuffer()

@@ -14,6 +14,7 @@
 #include "vulkan/Buffer.h"
 #include "vulkan/FrameBuffer.h"
 #include "vulkan/CommandManager.h"
+#include "vulkan/Shader.h"
 
 struct Vertex
 {
@@ -97,7 +98,6 @@ private:
 	void CreateDescriptorSet();
 	void UpdateDescriptorSet();
 	void DrawFrame();
-	vk::ShaderModule CompilerShader(const std::string& path);
 
 	void UpdateUniformBuffers();
 	void CreateImage(vk::Image& image, vk::DeviceMemory& memory, uint32_t mipLevels, vk::SampleCountFlagBits sampleCount, vk::Extent2D extent, vk::Format format, vk::ImageUsageFlags usage, vk::ImageTiling tiling, vk::MemoryPropertyFlags memoryPropertyFlags);

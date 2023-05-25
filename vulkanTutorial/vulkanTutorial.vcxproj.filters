@@ -36,6 +36,15 @@
     <ClCompile Include="src\vulkan\ImageView.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\vulkan\CommandManager.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vulkan\FrameBuffer.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vulkan\Shader.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Application.h">
@@ -60,6 +69,15 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\vulkan\ImageView.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vulkan\CommandManager.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vulkan\FrameBuffer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vulkan\Shader.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
