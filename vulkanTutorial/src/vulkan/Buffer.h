@@ -1,11 +1,11 @@
 #pragma once
+
+#include "CommandManager.h"
 #include <vulkan/vulkan.hpp>
 
 struct Buffer
 {
-
-	Buffer() = default;
-	~Buffer();
+	void Create(Device& device, vk::BufferUsageFlags usage, vk::DeviceSize size, vk::SharingMode sharingMode, vk::MemoryPropertyFlags memoryFlags, void* data);
 	vk::Result Map(vk::DeviceSize size = VK_WHOLE_SIZE, vk::DeviceSize offset = 0);
 	void Unmap();
 	void Bind(vk::DeviceSize offset = 0);
@@ -13,11 +13,11 @@ struct Buffer
 	void CopyFrom(void* data, vk::DeviceSize size);
 	vk::Result Flush(vk::DeviceSize size = VK_WHOLE_SIZE, vk::DeviceSize offset = 0);
 	vk::Result Invalidate(vk::DeviceSize size = VK_WHOLE_SIZE, vk::DeviceSize offset = 0);
-	void Destroy();
-
-	vk::Device m_Device = nullptr;
+	void Clear();
+	static void CopyBuffer(vk::Buffer src, vk::DeviceSize srcOffset, vk::Buffer dst, vk::DeviceSize dstOffset, vk::DeviceSize size, vk::Queue queue, CommandManager& commandManager);
+	Device m_Device;
 	vk::Buffer m_Buffer = nullptr;
-	vk::DeviceMemory m_Memory;
+	vk::DeviceMemory m_Memory = nullptr;
 	vk::DescriptorBufferInfo m_Descriptor;
 	vk::BufferUsageFlags m_Usage;
 	vk::DeviceSize m_Size = 0;;

@@ -1,8 +1,7 @@
 #pragma once
 #define VK_USE_PLATFORM_WIN32_KHR
-
+#include <vulkan/vulkan.hpp>
 #include "../Window.h"
-#include "Buffer.h"
 
 #include <vector>
 #include <optional>
@@ -28,14 +27,10 @@ public:
 	std::vector<vk::SurfaceFormatKHR> GetSurfaceSupportFormats() { return m_SurfaceFormats; }
 	std::vector<vk::PresentModeKHR> GetSurfaceSupportPresentModes() { return m_SurfacePresentModes; }
 	vk::SurfaceCapabilitiesKHR GetSurfaceSupportCapability() { return m_SurfaceCapability; }
-
 	uint32_t FindMemoryType(uint32_t memoryTypeBits, vk::MemoryPropertyFlags flags);
 	bool QuerySwapchainASupport(const vk::PhysicalDevice& device);
 	QueueFamilyIndices QueryQueueFamilyIndices(const vk::PhysicalDevice& device);
 
-	void CreateBuffer(vk::BufferUsageFlags usage, vk::DeviceSize size, vk::SharingMode sharingMode, vk::MemoryPropertyFlags memoryFlags, vk::Buffer* buffer, vk::DeviceMemory* memory, void* data);
-	void CreateBuffer(vk::BufferUsageFlags usage, vk::DeviceSize size, vk::SharingMode sharingMode, vk::MemoryPropertyFlags memoryFlags, Buffer* buffer, void* data);
-	void CopyBuffer(vk::Buffer src, vk::DeviceSize srcOffset, vk::Buffer dst, vk::DeviceSize dstOffset, vk::DeviceSize size, vk::Queue queue, CommandManager& commandManager);
 private:
 	vk::Fence CreateFence(vk::FenceCreateFlags flags);
 	void CreateSurface(Window& window, vk::Instance vkInstance);

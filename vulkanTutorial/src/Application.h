@@ -11,26 +11,9 @@
 #include "Window.h"
 #include "vulkan/Device.h"
 #include "vulkan/SwapChain.h"
+#include "vulkan/Buffer.h"
 #include "vulkan/FrameBuffer.h"
 #include "vulkan/CommandManager.h"
-
-struct SwapchainProperties
-{
-	vk::SurfaceCapabilitiesKHR capabilities;
-	std::vector<vk::SurfaceFormatKHR> formats;
-	std::vector<vk::PresentModeKHR> presents;
-};
-
-//struct SwapChain
-//{
-//	vk::SwapchainKHR vk_SwapChain;
-//	vk::SurfaceCapabilitiesKHR vk_Capabilities;
-//	vk::SurfaceFormatKHR vk_Format;
-//	vk::PresentModeKHR vk_Present;
-//	vk::Extent2D Extent;
-//	std::vector<vk::Image> Images;
-//	std::vector<vk::ImageView> ImageViews;
-//};
 
 struct Vertex
 {
@@ -103,7 +86,6 @@ private:
 	void CreateSetLayout();
 	void CreatePipeLine();
 	void CreateFrameBuffer();
-	void CreateCommandBuffer();
 	void CreateVertexBuffer();
 	void CreateIndexBuffer();
 	void CreateUniformBuffer();

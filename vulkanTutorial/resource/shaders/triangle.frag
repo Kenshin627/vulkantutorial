@@ -3,8 +3,8 @@
 layout(location = 0) in vec3 vColor;
 layout(location = 1) in vec2 vCoord;
 layout(location = 0) out vec4 outColor;
-layout(binding = 1) uniform sampler2D smapler;
+layout(binding = 1) uniform sampler2D imageSampler;
 
 void main() {
-    outColor = vec4(vColor, 1.0) * texture(smapler, vCoord);
+    outColor = vec4(vColor, 1.0) * texture(imageSampler, vCoord);
 }
