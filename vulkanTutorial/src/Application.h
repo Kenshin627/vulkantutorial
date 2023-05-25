@@ -15,6 +15,7 @@
 #include "vulkan/FrameBuffer.h"
 #include "vulkan/CommandManager.h"
 #include "vulkan/Shader.h"
+#include "vulkan/Image.h"
 
 struct Vertex
 {
@@ -82,7 +83,6 @@ public:
 private:
 	void CreateInstance();
 	void InitDevice(Window& window);
-
 	void CreateRenderPass();
 	void CreateSetLayout();
 	void CreatePipeLine();
@@ -98,19 +98,13 @@ private:
 	void CreateDescriptorSet();
 	void UpdateDescriptorSet();
 	void DrawFrame();
-
 	void UpdateUniformBuffers();
-	void CreateImage(vk::Image& image, vk::DeviceMemory& memory, uint32_t mipLevels, vk::SampleCountFlagBits sampleCount, vk::Extent2D extent, vk::Format format, vk::ImageUsageFlags usage, vk::ImageTiling tiling, vk::MemoryPropertyFlags memoryPropertyFlags);
 	void CreateImageTexture(const char* path);
-	void CopyBufferToImage(vk::Buffer srcBuffer, vk::Image dstImage, vk::Extent3D extent);
-	void TransiationImageLayout(vk::Image image, vk::PipelineStageFlags srcStage, vk::AccessFlags srcAccess, vk::ImageLayout srcLayout, vk::PipelineStageFlags dstStage, vk::AccessFlags dstAccess, vk::ImageLayout dstLayout, vk::ImageAspectFlags aspectFlags, uint32_t mipLevels);
-	void CreateSampler();
-	void CreateImageView(vk::Image image, vk::ImageView& imageView, uint32_t mipLevels, vk::Format format, vk::ImageAspectFlags aspectFlags, vk::ImageViewType viewType = vk::ImageViewType::e2D, vk::ComponentMapping mapping = {});
+	void CreateSampler(uint32_t mipLevel);
 	vk::Format FindImageFormatDeviceSupport(const std::vector<vk::Format> formats, vk::ImageTiling tiling, vk::FormatFeatureFlags featureFlags);
 	bool HasStencil(vk::Format format);
 	public:
 	void LoadModel(const char* path);
-	void GenerateMipmaps(vk::Image image, uint32_t texWidth, uint32_t texHeight, uint32_t mipLevels);
 
 private:
 	Window m_Window;
@@ -155,20 +149,18 @@ private:
 	vk::DescriptorPool m_DescriptorPool;
 	vk::DescriptorSet m_DescriptorSet;
 
-	vk::Image m_Image;
-	uint32_t m_MipmapLevels;
-	vk::DeviceMemory m_ImageMemory;
-	vk::ImageView m_ImageView;
+	Image m_Texture;
+	ImageView m_TextureImageView;
 	vk::Sampler m_Sampler;
 
-	vk::Image m_DepthImage;
-	vk::DeviceMemory m_DepthMemory;
-	vk::ImageView m_DepthImageView;
+	Image m_DepthImage;
+	ImageView m_DepthImageView;
 
+	Image m_ColorImage;
+	ImageView m_ColorImageView;
+
+	//TODO getSamplerCount
 	vk::SampleCountFlagBits m_SamplerCount = vk::SampleCountFlagBits::e1;
-	vk::Image m_ColorImage;
-	vk::DeviceMemory m_ColorMemory;
-	vk::ImageView m_ColorView;
 };
 
 namespace std

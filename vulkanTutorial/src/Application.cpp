@@ -54,7 +54,7 @@ void Application::InitVulkan()
 	CreateVertexBuffer();
 	CreateIndexBuffer();
 	CreateUniformBuffer();
-	CreateSampler();
+	CreateSampler(m_Texture.GetMiplevel());
 	CreateDescriptorPool();
 	CreateDescriptorSet();
 	UpdateDescriptorSet();
@@ -299,8 +299,8 @@ void Application::CreateFrameBuffer()
 	uint32_t index = 0;
 	for (auto& view : m_SwapChain.GetImageViews())
 	{
-		m_FrameBuffers[index].SetAttachment(m_ColorView)
-							 .SetAttachment(m_DepthImageView)
+		m_FrameBuffers[index].SetAttachment(m_ColorImageView.GetVkImageView())
+							 .SetAttachment(m_DepthImageView.GetVkImageView())
 							 .SetAttachment(view);
 		m_FrameBuffers[index++].Create(device, width, height, m_RenderPass);
 	}
@@ -517,7 +517,7 @@ void Application::UpdateDescriptorSet()
 
 	vk::DescriptorImageInfo imageInfo;
 	imageInfo.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
-			 .setImageView(m_ImageView)
+			 .setImageView(m_TextureImageView.GetVkImageView())
 			 .setSampler(m_Sampler);
 
 	vk::WriteDescriptorSet samplerWrite;
@@ -541,98 +541,23 @@ void Application::CreateImageTexture(const char* path)
 		throw std::runtime_error("read imagefile failed!");
 	}
 	vk::DeviceSize size = width * height * 4;
-	m_MipmapLevels = std::floor(std::log2(std::max(width, height))) + 1;
+	uint32_t mipLevel = std::floor(std::log2(std::max(width, height))) + 1;
 
 	Buffer stagingBuffer;
 	stagingBuffer.Create(m_Device, vk::BufferUsageFlagBits::eTransferSrc, size, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, pixels);
-	CreateImage(m_Image, m_ImageMemory, m_MipmapLevels, vk::SampleCountFlagBits::e1, vk::Extent2D(width, height), vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
-	CreateImageView(m_Image, m_ImageView, m_MipmapLevels, vk::Format::eR8G8B8A8Srgb, vk::ImageAspectFlagBits::eColor);
-	TransiationImageLayout(m_Image, vk::PipelineStageFlagBits::eTopOfPipe, vk::AccessFlagBits::eNone, vk::ImageLayout::eUndefined, vk::PipelineStageFlagBits::eTransfer, vk::AccessFlagBits::eTransferWrite, vk::ImageLayout::eTransferDstOptimal, vk::ImageAspectFlagBits::eColor, m_MipmapLevels);
-	CopyBufferToImage(stagingBuffer.m_Buffer, m_Image, vk::Extent3D(width, height, 1));
-	/*TransiationImageLayout(m_Image, vk::PipelineStageFlagBits::eTransfer, vk::AccessFlagBits::eTransferWrite, vk::ImageLayout::eTransferDstOptimal, vk::PipelineStageFlagBits::eFragmentShader, vk::AccessFlagBits::eShaderRead, vk::ImageLayout::eShaderReadOnlyOptimal, vk::ImageAspectFlagBits::eColor);*/
-	GenerateMipmaps(m_Image, width, height, m_MipmapLevels);
+
+	m_Texture.Create(m_Device, commandManager, mipLevel, vk::SampleCountFlagBits::e1, vk::ImageType::e2D, vk::Extent3D(width, height, 1), vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageLayout::eUndefined, vk::SharingMode::eExclusive);
+	m_TextureImageView.Create(m_Device.GetLogicDevice(), m_Texture.GetVkImage(), vk::Format::eR8G8B8A8Srgb, vk::ImageAspectFlagBits::eColor, mipLevel);
+
+	m_Texture.TransiationLayout(vk::PipelineStageFlagBits::eTopOfPipe, vk::AccessFlagBits::eNone, vk::ImageLayout::eUndefined, vk::PipelineStageFlagBits::eTransfer, vk::AccessFlagBits::eTransferWrite, vk::ImageLayout::eTransferDstOptimal, vk::ImageAspectFlagBits::eColor);
+
+	m_Texture.CopyBufferToImage(stagingBuffer.m_Buffer, vk::Extent3D(width, height, 1), vk::ImageLayout::eShaderReadOnlyOptimal);
+
+	m_Texture.GenerateMipMaps();
 	//stagingBuffer.Clear();
 }
 
-void Application::CreateImage(vk::Image& image, vk::DeviceMemory& memory, uint32_t mipLevels, vk::SampleCountFlagBits sampleCount, vk::Extent2D extent, vk::Format format, vk::ImageUsageFlags usage, vk::ImageTiling tiling, vk::MemoryPropertyFlags memoryPropertyFlags)
-{
-	vk::ImageCreateInfo imageInfo;
-	imageInfo.sType = vk::StructureType::eImageCreateInfo;
-	imageInfo.setArrayLayers(1)
-			 .setExtent(vk::Extent3D(extent.width, extent.height, 1))
-			 .setFormat(format)
-			 .setImageType(vk::ImageType::e2D)
-			 .setInitialLayout(vk::ImageLayout::eUndefined)
-			 .setMipLevels(mipLevels)
-			 .setSamples(sampleCount)
-			 .setSharingMode(vk::SharingMode::eExclusive)
-			 .setTiling(tiling)
-			 .setUsage(usage);
-	if (m_Device.GetLogicDevice().createImage(&imageInfo, nullptr, &image) != vk::Result::eSuccess)
-	{
-		throw std::runtime_error("image create failed!");
-	}
-
-	vk::MemoryRequirements requirement;
-	m_Device.GetLogicDevice().getImageMemoryRequirements(image, &requirement);
-	vk::MemoryAllocateInfo memoryInfo;
-	memoryInfo.sType = vk::StructureType::eMemoryAllocateInfo;
-	memoryInfo.setAllocationSize(requirement.size)
-			  .setMemoryTypeIndex(m_Device.FindMemoryType(requirement.memoryTypeBits, memoryPropertyFlags));
-	if (m_Device.GetLogicDevice().allocateMemory(&memoryInfo, nullptr, &memory) != vk::Result::eSuccess)
-	{
-		throw std::runtime_error("imageMemory allocate failed!");
-	}
-	m_Device.GetLogicDevice().bindImageMemory(image, memory, 0);
-}
-
-void Application::CopyBufferToImage(vk::Buffer srcBuffer, vk::Image dstImage, vk::Extent3D extent)
-{
-	auto command = commandManager.AllocateCommandBuffer(vk::CommandBufferLevel::ePrimary);
-
-	vk::ImageSubresourceLayers layer;
-	layer.setAspectMask(vk::ImageAspectFlagBits::eColor)
-		 .setBaseArrayLayer(0)
-		 .setLayerCount(1)
-		 .setMipLevel(0);
-	vk::BufferImageCopy region;
-	region.setBufferImageHeight(0)
-		  .setBufferOffset(0)
-		  .setBufferRowLength(0)
-		  .setImageExtent(extent)
-		  .setImageOffset(0)
-		  .setImageSubresource(layer);
-	command.copyBufferToImage(srcBuffer, dstImage, vk::ImageLayout::eShaderReadOnlyOptimal, 1, &region);
-
-	commandManager.FlushCommandBuffer(command, m_Device.GetGraphicQueue());
-}
-
-void Application::TransiationImageLayout(vk::Image image, vk::PipelineStageFlags srcStage, vk::AccessFlags srcAccess, vk::ImageLayout srcLayout, vk::PipelineStageFlags dstStage,  vk::AccessFlags dstAccess, vk::ImageLayout dstLayout, vk::ImageAspectFlags aspectFlags, uint32_t mipLevels)
-{
-	auto command = commandManager.AllocateCommandBuffer(vk::CommandBufferLevel::ePrimary);
-
-	vk::ImageSubresourceRange range;
-	range.setAspectMask(aspectFlags)
-		 .setBaseArrayLayer(0)
-		 .setBaseMipLevel(0)
-		 .setLayerCount(1)
-		 .setLevelCount(mipLevels);
-	vk::ImageMemoryBarrier barrier;
-	barrier.sType = vk::StructureType::eImageMemoryBarrier;
-	barrier.setImage(image)
-		   .setSrcAccessMask(srcAccess)
-		   .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-		   .setOldLayout(srcLayout)
-		   .setDstAccessMask(dstAccess)
-		   .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-		   .setNewLayout(dstLayout)
-		   .setSubresourceRange(range);
-	command.pipelineBarrier(srcStage, dstStage, {}, 0, nullptr, 0, nullptr, 1, &barrier);
-
-	commandManager.FlushCommandBuffer(command, m_Device.GetGraphicQueue());
-}
-
-void Application::CreateSampler()
+void Application::CreateSampler(uint32_t mipLevel)
 {
 	vk::SamplerCreateInfo samplerInfo;
 	samplerInfo.sType = vk::StructureType::eSamplerCreateInfo;
@@ -648,7 +573,7 @@ void Application::CreateSampler()
 			   .setMipLodBias(0.0f)
 			   .setMipmapMode(vk::SamplerMipmapMode::eLinear)
 			   .setMinLod(0.0f)
-			   .setMaxLod(static_cast<float>(m_MipmapLevels))
+			   .setMaxLod(static_cast<float>(mipLevel))
 			   .setUnnormalizedCoordinates(VK_FALSE);
 	if (m_Device.GetLogicDevice().createSampler(&samplerInfo, nullptr, &m_Sampler) != vk::Result::eSuccess)
 	{
@@ -660,36 +585,19 @@ void Application::CreateDepthSources()
 {
 	vk::Format depthFormat = FindImageFormatDeviceSupport({ vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint, vk::Format::eD24UnormS8Uint }, vk::ImageTiling::eOptimal, vk::FormatFeatureFlagBits::eDepthStencilAttachment);
 	
-	CreateImage(m_DepthImage, m_DepthMemory, 1, m_SamplerCount, m_SwapChain.GetExtent(), depthFormat, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
+	vk::Extent3D size(m_SwapChain.GetExtent().width, m_SwapChain.GetExtent().height, 1);
+	m_DepthImage.Create(m_Device, commandManager, 1, m_SamplerCount, vk::ImageType::e2D, size, depthFormat, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageLayout::eUndefined, vk::SharingMode::eExclusive);
 	vk::ImageAspectFlags aspectFlags = vk::ImageAspectFlagBits::eDepth;
 	if (HasStencil(depthFormat))
 	{
 		aspectFlags |= vk::ImageAspectFlagBits::eStencil;
 	}
-	CreateImageView(m_DepthImage, m_DepthImageView, 1, depthFormat, aspectFlags);
-	TransiationImageLayout(m_DepthImage, vk::PipelineStageFlagBits::eTopOfPipe, vk::AccessFlagBits::eNone, vk::ImageLayout::eUndefined, vk::PipelineStageFlagBits::eEarlyFragmentTests, vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite, vk::ImageLayout::eDepthStencilAttachmentOptimal, aspectFlags, 1);
+	m_DepthImageView.Create(m_Device.GetLogicDevice(), m_DepthImage.GetVkImage(), depthFormat, aspectFlags, 1, vk::ImageViewType::e2D);
+
+	//TODO remove
+	m_DepthImage.TransiationLayout(vk::PipelineStageFlagBits::eTopOfPipe, vk::AccessFlagBits::eNone, vk::ImageLayout::eUndefined, vk::PipelineStageFlagBits::eEarlyFragmentTests, vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite, vk::ImageLayout::eDepthStencilAttachmentOptimal, aspectFlags);
 }
 
-void Application::CreateImageView(vk::Image image, vk::ImageView& imageView, uint32_t mipLevels, vk::Format format, vk::ImageAspectFlags aspectFlags, vk::ImageViewType viewType, vk::ComponentMapping mapping)
-{
-	vk::ImageSubresourceRange subresourceRange;
-	subresourceRange.setAspectMask(aspectFlags)
-					.setBaseArrayLayer(0)
-					.setBaseMipLevel(0)
-					.setLayerCount(1)
-					.setLevelCount(mipLevels);
-	vk::ImageViewCreateInfo imageViewInfo;
-	imageViewInfo.sType = vk::StructureType::eImageViewCreateInfo;
-	imageViewInfo.setComponents(mapping)
-				 .setFormat(format)
-				 .setImage(image)
-				 .setViewType(viewType)
-				 .setSubresourceRange(subresourceRange);
-	if (m_Device.GetLogicDevice().createImageView(&imageViewInfo, nullptr, &imageView) != vk::Result::eSuccess)
-	{
-		throw std::runtime_error("ImageView Create failed!");
-	}
-}
 
 vk::Format Application::FindImageFormatDeviceSupport(const std::vector<vk::Format> formats, vk::ImageTiling tiling, vk::FormatFeatureFlags featureFlags)
 {
@@ -797,79 +705,10 @@ void Application::LoadModel(const char* path)
 	}
 }
 
-void Application::GenerateMipmaps(vk::Image image, uint32_t texWidth, uint32_t texHeight, uint32_t mipLevels)
-{
-	uint32_t mipWidth = texWidth;
-	uint32_t mipHeight = texHeight;
-
-	auto command = commandManager.AllocateCommandBuffer(vk::CommandBufferLevel::ePrimary);
-
-	vk::ImageSubresourceRange region;
-	region.setAspectMask(vk::ImageAspectFlagBits::eColor)
-		  .setBaseArrayLayer(0)
-		  .setLayerCount(1)
-		  .setLevelCount(1);
-
-	vk::ImageMemoryBarrier barrier;
-	barrier.sType = vk::StructureType::eImageMemoryBarrier;
-	barrier.setImage(image)
-		   .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-		   .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
-
-	for (size_t i = 1; i < mipLevels; i++)
-	{
-		region.setBaseMipLevel(i - 1);
-		barrier.setSubresourceRange(region)
-			   .setNewLayout(vk::ImageLayout::eTransferSrcOptimal)
-			   .setOldLayout(vk::ImageLayout::eTransferDstOptimal)
-			   .setDstAccessMask(vk::AccessFlagBits::eTransferRead)
-			   .setSrcAccessMask(vk::AccessFlagBits::eTransferWrite);
-		command.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eTransfer, {}, 0, nullptr, 0, nullptr, 1, &barrier);
-
-		vk::ImageBlit blit;
-		std::array<vk::Offset3D, 2> dstOffsets = { vk::Offset3D(0, 0, 0), vk::Offset3D(mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1) };
-		std::array<vk::Offset3D, 2> srcOffsets = { vk::Offset3D(0, 0, 0), vk::Offset3D(mipWidth, mipHeight, 1) };
-		vk::ImageSubresourceLayers srcLayers;
-		srcLayers.setAspectMask(vk::ImageAspectFlagBits::eColor)
-				 .setBaseArrayLayer(0)
-				 .setLayerCount(1)
-				 .setMipLevel(i - 1);
-
-		vk::ImageSubresourceLayers dstLayers;
-		dstLayers.setAspectMask(vk::ImageAspectFlagBits::eColor)
-				 .setBaseArrayLayer(0)
-				 .setLayerCount(1)
-				 .setMipLevel(i);
-
-		blit.setDstOffsets(dstOffsets)
-			.setSrcOffsets(srcOffsets)
-			.setSrcSubresource(srcLayers)
-			.setDstSubresource(dstLayers);
-
-		command.blitImage(image, vk::ImageLayout::eTransferSrcOptimal, image, vk::ImageLayout::eTransferDstOptimal, 1, &blit, vk::Filter::eLinear);
-
-		barrier.setSrcAccessMask(vk::AccessFlagBits::eTransferRead)
-			   .setOldLayout(vk::ImageLayout::eTransferSrcOptimal)
-			   .setDstAccessMask(vk::AccessFlagBits::eShaderRead)
-			   .setNewLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
-		command.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader, {}, 0, nullptr, 0, nullptr, 1, &barrier);
-		mipWidth = mipWidth > 1 ? mipWidth / 2 : 1;
-		mipHeight = mipHeight > 1 ? mipHeight / 2 : 1;
-	}
-
-	region.setBaseMipLevel(mipLevels - 1);
-	barrier.setSubresourceRange(region)
-		   .setSrcAccessMask(vk::AccessFlagBits::eTransferWrite)
-		   .setOldLayout(vk::ImageLayout::eTransferDstOptimal)
-		   .setDstAccessMask(vk::AccessFlagBits::eShaderRead)
-		   .setNewLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
-	command.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader, {}, 0, nullptr, 0, nullptr, 1, &barrier);
-	
-	commandManager.FlushCommandBuffer(command, m_Device.GetGraphicQueue());
-}
-
 void Application::CreateColorSources()
 {
-	CreateImage(m_ColorImage, m_ColorMemory, 1, m_SamplerCount, m_SwapChain.GetExtent(), m_SwapChain.GetFormat(), vk::ImageUsageFlagBits::eTransientAttachment | vk::ImageUsageFlagBits::eColorAttachment, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal);
-	CreateImageView(m_ColorImage, m_ColorView, 1, m_SwapChain.GetFormat(), vk::ImageAspectFlagBits::eColor, vk::ImageViewType::e2D);
+	vk::Extent3D size(m_SwapChain.GetExtent().width, m_SwapChain.GetExtent().height, 1);
+	vk::Format format = m_SwapChain.GetFormat();
+	m_ColorImage.Create(m_Device, commandManager, 1, m_SamplerCount, vk::ImageType::e2D, size, format, vk::ImageUsageFlagBits::eTransientAttachment | vk::ImageUsageFlagBits::eColorAttachment, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageLayout::eUndefined, vk::SharingMode::eExclusive);
+	m_ColorImageView.Create(m_Device.GetLogicDevice(), m_ColorImage.GetVkImage(), format, vk::ImageAspectFlagBits::eColor, 1, vk::ImageViewType::e2D);
 }
