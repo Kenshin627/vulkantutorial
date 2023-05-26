@@ -5,29 +5,51 @@
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
 
-
-Device::Device(Window& window, vk::Instance vkInstance)
+Device::Device(Window& window)
 {
-	CreateSurface(window, vkInstance);
-	PickPhysicalDevice(vkInstance);
+	CreateInstance();
+	CreateSurface(window);
+	PickPhysicalDevice();
 	CreateLogicDevice();
 	m_CommandManager.SetContext(m_LogicDevice, QueryQueueFamilyIndices(m_PhysicalDevice).GraphicQueueIndex.value());
 }
 
 Device::~Device() {}
 
-void Device::CreateSurface(Window& window, vk::Instance vkInstance)
+void Device::CreateInstance()
+{
+	vk::ApplicationInfo appInfo;
+	appInfo.sType = vk::StructureType::eApplicationInfo;
+	appInfo.setApiVersion(VK_API_VERSION_1_3);
+
+	uint32_t extensionCount = 0;
+	const char** extensions = glfwGetRequiredInstanceExtensions(&extensionCount);
+
+	vk::InstanceCreateInfo instanceInfo;
+	instanceInfo.sType = vk::StructureType::eInstanceCreateInfo;
+	instanceInfo.setPApplicationInfo(&appInfo)
+				.setEnabledExtensionCount(extensionCount)
+				.setPpEnabledExtensionNames(extensions)
+				.setEnabledLayerCount(0)
+				.setPpEnabledLayerNames(nullptr);
+	if (vk::createInstance(&instanceInfo, nullptr, &m_VkInstance) != vk::Result::eSuccess)
+	{
+		throw std::runtime_error("vk instance create failed!");
+	}
+}
+
+void Device::CreateSurface(Window& window)
 {
 	vk::Win32SurfaceCreateInfoKHR surfaceInfo;
 	surfaceInfo.sType = vk::StructureType::eWin32SurfaceCreateInfoKHR;
 	surfaceInfo.setHwnd(glfwGetWin32Window(window.GetNativeWindow()))
 			   .setHinstance(GetModuleHandle(nullptr));
-	VK_CHECK_RESULT(vkInstance.createWin32SurfaceKHR(&surfaceInfo, nullptr, &m_Surface));
+	VK_CHECK_RESULT(m_VkInstance.createWin32SurfaceKHR(&surfaceInfo, nullptr, &m_Surface));
 }
 
-void Device::PickPhysicalDevice(vk::Instance vkInstance)
+void Device::PickPhysicalDevice()
 {
-	auto devices = vkInstance.enumeratePhysicalDevices();
+	auto devices = m_VkInstance.enumeratePhysicalDevices();
 	uint32_t index = 1;
 	for (auto& device : devices)
 	{

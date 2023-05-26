@@ -34,23 +34,23 @@ struct Vertex
 		std::vector<vk::VertexInputAttributeDescription> result;
 		vk::VertexInputAttributeDescription positionAttribute;
 		positionAttribute.setBinding(0)
-			.setFormat(vk::Format::eR32G32B32Sfloat)
-			.setLocation(0)
-			.setOffset(offsetof(Vertex, Position));
+						 .setFormat(vk::Format::eR32G32B32Sfloat)
+						 .setLocation(0)
+						 .setOffset(offsetof(Vertex, Position));
 		result.push_back(positionAttribute);
 
 		vk::VertexInputAttributeDescription colorAttribute;
 		colorAttribute.setBinding(0)
-			.setFormat(vk::Format::eR32G32B32Sfloat)
-			.setLocation(1)
-			.setOffset(offsetof(Vertex, Color));
+					  .setFormat(vk::Format::eR32G32B32Sfloat)
+					  .setLocation(1)
+					  .setOffset(offsetof(Vertex, Color));
 		result.push_back(colorAttribute);
 
 		vk::VertexInputAttributeDescription coordAttribute;
 		coordAttribute.setBinding(0)
-			.setFormat(vk::Format::eR32G32Sfloat)
-			.setLocation(2)
-			.setOffset(offsetof(Vertex, Coord));
+					  .setFormat(vk::Format::eR32G32Sfloat)
+					  .setLocation(2)
+					  .setOffset(offsetof(Vertex, Coord));
 		result.push_back(coordAttribute);
 		return result;
 	}
@@ -80,7 +80,6 @@ public:
 	void Clear();
 	void LoadModel(const char* path);
 private:
-	void CreateInstance();
 	void InitDevice(Window& window);
 	void CreateSetLayout();
 	void CreatePipeLine();
@@ -96,7 +95,6 @@ private:
 	void UpdateUniformBuffers();
 private:
 	Window m_Window;
-	vk::Instance m_VKInstance;
 	Device m_Device;
 	SwapChain m_SwapChain;
 

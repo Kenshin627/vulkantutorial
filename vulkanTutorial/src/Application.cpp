@@ -24,12 +24,11 @@ void Application::InitWindow(int width, int height, const char* title)
 
 void Application::InitDevice(Window& window)
 {
-	m_Device = Device(window, m_VKInstance);
+	m_Device = Device(window);
 }
 
 void Application::InitVulkan()
 {
-	CreateInstance();
 	InitDevice(m_Window);
 	m_SamplerCount = m_Device.GetMaxSampleCount();
 	m_SwapChain.Init(m_Device, m_Window, m_SamplerCount, false, true);
@@ -63,29 +62,6 @@ void Application::RenderLoop()
 void Application::Clear()
 {
 	
-}
-
-void Application::CreateInstance()
-{
-	vk::ApplicationInfo appInfo;
-	appInfo.sType = vk::StructureType::eApplicationInfo;
-	appInfo.setApiVersion(VK_API_VERSION_1_3);
-
-	uint32_t extensionCount = 0;
-	const char** extensions = glfwGetRequiredInstanceExtensions(&extensionCount);
-	
-
-	vk::InstanceCreateInfo instanceInfo;
-	instanceInfo.sType = vk::StructureType::eInstanceCreateInfo;
-	instanceInfo.setPApplicationInfo(&appInfo)
-				.setEnabledExtensionCount(extensionCount)
-				.setPpEnabledExtensionNames(extensions)
-				.setEnabledLayerCount(0)
-				.setPpEnabledLayerNames(nullptr);
-	if (vk::createInstance(&instanceInfo, nullptr, &m_VKInstance) != vk::Result::eSuccess)
-	{
-		throw std::runtime_error("vk instance create failed!");
-	}
 }
 
 void Application::CreatePipeLine()

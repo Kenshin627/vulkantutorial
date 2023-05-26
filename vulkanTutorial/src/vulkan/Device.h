@@ -17,7 +17,7 @@ class Device
 {
 public:
 	Device() = default;
-	Device(Window& window, vk::Instance vkInstance);
+	Device(Window& window);
 	~Device();
 	vk::Device GetLogicDevice() { return m_LogicDevice; }
 	vk::PhysicalDevice GetPhysicalDevice() { return m_PhysicalDevice; }
@@ -35,13 +35,15 @@ public:
 	vk::Format FindImageFormatDeviceSupport(const std::vector<vk::Format> formats, vk::ImageTiling tiling, vk::FormatFeatureFlags featureFlags);
 	bool HasStencil(vk::Format format);
 private:
+	void CreateInstance();
 	vk::Fence CreateFence(vk::FenceCreateFlags flags);
-	void CreateSurface(Window& window, vk::Instance vkInstance);
-	void PickPhysicalDevice(vk::Instance vkInstance);
+	void CreateSurface(Window& window);
+	void PickPhysicalDevice();
 	void CreateLogicDevice();
 	vk::SampleCountFlagBits CalcMaxSamplerCount(vk::PhysicalDeviceProperties properties);
 
 private:
+	vk::Instance m_VkInstance;
 	vk::PhysicalDevice m_PhysicalDevice;
 	vk::Device m_LogicDevice;
 	vk::SurfaceKHR m_Surface; 
