@@ -11,8 +11,7 @@
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "../vendor/tiny_obj_loader/tiny_obj_loader.h"
@@ -47,11 +46,11 @@ void Application::InitVulkan()
 	CreateImageTexture("resource/textures/vikingRoom.png");
 	LoadModel("resource/models/vikingRoom.obj");
 	
-	m_CommandBuffer = commandManager.AllocateCommandBuffer(vk::CommandBufferLevel::ePrimary, false);
+	m_CommandBuffer = commandManager.AllocateCommandBuffer(vk::CommandBufferLevel::ePrimary, true);
 	CreateVertexBuffer();
 	CreateIndexBuffer();
 	CreateUniformBuffer();
-	CreateSampler(m_Texture.GetMiplevel());
+	CreateSampler(m_Texture.GetMipLevel());
 	CreateDescriptorPool();
 	CreateDescriptorSet();
 	UpdateDescriptorSet();
@@ -428,7 +427,7 @@ void Application::UpdateDescriptorSet()
 
 	vk::DescriptorImageInfo imageInfo;
 	imageInfo.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
-			 .setImageView(m_Texture.GetVkImageView())
+			 .setImageView(m_Texture.GetImage().GetVkImageView())
 			 .setSampler(m_Sampler);
 
 	vk::WriteDescriptorSet samplerWrite;
@@ -445,27 +444,7 @@ void Application::UpdateDescriptorSet()
 
 void Application::CreateImageTexture(const char* path)
 {
-	int width, height, channel;
-	stbi_uc* pixels = stbi_load(path, &width, &height, &channel, STBI_rgb_alpha);
-	if (!pixels)
-	{
-		throw std::runtime_error("read imagefile failed!");
-	}
-	vk::DeviceSize size = width * height * 4;
-	uint32_t mipLevel = std::floor(std::log2(std::max(width, height))) + 1;
-
-	Buffer stagingBuffer;
-	stagingBuffer.Create(m_Device, vk::BufferUsageFlagBits::eTransferSrc, size, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, pixels);
-
-	m_Texture.Create(m_Device, commandManager, mipLevel, vk::SampleCountFlagBits::e1, vk::ImageType::e2D, vk::Extent3D(width, height, 1), vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageLayout::eUndefined, vk::SharingMode::eExclusive);
-	m_Texture.CreateImageView(vk::Format::eR8G8B8A8Srgb);
-
-	m_Texture.TransiationLayout(vk::PipelineStageFlagBits::eTopOfPipe, vk::AccessFlagBits::eNone, vk::ImageLayout::eUndefined, vk::PipelineStageFlagBits::eTransfer, vk::AccessFlagBits::eTransferWrite, vk::ImageLayout::eTransferDstOptimal, vk::ImageAspectFlagBits::eColor);
-
-	m_Texture.CopyBufferToImage(stagingBuffer.m_Buffer, vk::Extent3D(width, height, 1), vk::ImageLayout::eShaderReadOnlyOptimal);
-
-	m_Texture.GenerateMipMaps();
-	//stagingBuffer.Clear();
+	m_Texture.Create(m_Device, commandManager, "resource/textures/vikingRoom.png", true);
 }
 
 void Application::CreateSampler(uint32_t mipLevel)

@@ -6,6 +6,7 @@ void Image::Create(Device& device, CommandManager& commandManager, uint32_t mipL
 	m_Device = device;
 	m_CommandManager = commandManager;
 	m_Size = size;
+	m_MipLevel = mipLevels;
 	vk::Device vkDevice = device.GetLogicDevice();
 	vk::ImageCreateInfo imageInfo;
 	imageInfo.sType = vk::StructureType::eImageCreateInfo;
@@ -164,4 +165,15 @@ void Image::CreateImageView(vk::Format format, vk::ImageAspectFlags aspectFlag, 
 		    .setViewType(viewType)
 		    .setSubresourceRange(region);
 	VK_CHECK_RESULT(m_Device.GetLogicDevice().createImageView(&viewInfo, nullptr, &m_View));
+}
+
+void Image::Clear()
+{
+	//vk::Image m_VkImage;
+	//vk::DeviceMemory m_Memory;
+	//vk::ImageView m_View;
+	vk::Device vkDevice = m_Device.GetLogicDevice();
+	vkDevice.destroyImageView(m_View, nullptr);
+	vkDevice.freeMemory(m_Memory, nullptr);
+	vkDevice.destroyImage(m_VkImage, nullptr);
 }

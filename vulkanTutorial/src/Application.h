@@ -16,6 +16,7 @@
 #include "vulkan/CommandManager.h"
 #include "vulkan/Shader.h"
 #include "vulkan/Image.h"
+#include "vulkan/Texture.h"
 
 struct Vertex
 {
@@ -139,7 +140,8 @@ private:
 	vk::DescriptorPool m_DescriptorPool;
 	vk::DescriptorSet m_DescriptorSet;
 
-	Image m_Texture;
+	//Image m_Texture;
+	Texture m_Texture;
 	vk::Sampler m_Sampler;
 
 	vk::SampleCountFlagBits m_SamplerCount = vk::SampleCountFlagBits::e1;

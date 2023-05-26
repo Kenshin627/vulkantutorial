@@ -14,6 +14,7 @@ public:
 	vk::Image GetVkImage() { return m_VkImage; }
 	vk::ImageView GetVkImageView() { return m_View; }
 	uint32_t GetMiplevel() { return m_MipLevel; }
+	void Clear();
 private:
 	vk::Image m_VkImage;
 	vk::DeviceMemory m_Memory;
