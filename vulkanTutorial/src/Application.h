@@ -80,18 +80,15 @@ public:
 	void InitVulkan();
 	void RenderLoop();
 	void Clear();
+	void LoadModel(const char* path);
 private:
 	void CreateInstance();
 	void InitDevice(Window& window);
-	//void CreateRenderPass();
 	void CreateSetLayout();
 	void CreatePipeLine();
-	//void CreateFrameBuffer();
 	void CreateVertexBuffer();
 	void CreateIndexBuffer();
 	void CreateUniformBuffer();
-	//void CreateColorSources();
-	//void CreateDepthSources();
 	void RecordCommandBuffer(vk::CommandBuffer buffer, uint32_t imageIndex);
 	void CreateAsyncObjects();
 	void CreateDescriptorPool();
@@ -101,19 +98,12 @@ private:
 	void UpdateUniformBuffers();
 	void CreateImageTexture(const char* path);
 	void CreateSampler(uint32_t mipLevel);
-	//vk::Format FindImageFormatDeviceSupport(const std::vector<vk::Format> formats, vk::ImageTiling tiling, vk::FormatFeatureFlags featureFlags);
-	//bool HasStencil(vk::Format format);
-	public:
-	void LoadModel(const char* path);
-
 private:
 	Window m_Window;
 	vk::Instance m_VKInstance;
 	Device m_Device;
 	SwapChain m_SwapChain;
-	//std::vector<FrameBuffer> m_FrameBuffers;
 
-	//vk::RenderPass m_RenderPass;
 	vk::PipelineLayout m_Layout;
 	vk::Pipeline m_Pipeline;
 	
@@ -151,13 +141,7 @@ private:
 
 	Image m_Texture;
 	vk::Sampler m_Sampler;
-	//ImageView m_TextureImageView;
 
-	//Image m_DepthImage;
-	//Image m_ColorImage;
-	//ImageView m_ColorImageView;
-
-	//TODO getSamplerCount
 	vk::SampleCountFlagBits m_SamplerCount = vk::SampleCountFlagBits::e1;
 };
 

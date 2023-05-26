@@ -41,10 +41,6 @@ void Application::InitVulkan()
 	commandManager.SetContext(m_Device);
 	m_SamplerCount = m_Device.GetMaxSampleCount();
 	m_SwapChain.Init(m_Device, m_Window, m_SamplerCount, false, true, commandManager);
-	/*CreateColorSources();
-	CreateDepthSources();
-	CreateRenderPass();
-	CreateFrameBuffer();*/
 	CreateSetLayout();
 	CreatePipeLine();
 
@@ -100,76 +96,6 @@ void Application::CreateInstance()
 		throw std::runtime_error("vk instance create failed!");
 	}
 }
-
-//void Application::CreateRenderPass()
-//{
-//	vk::AttachmentDescription colorAttachment;
-//	colorAttachment.setFormat(m_SwapChain.GetFormat())
-//				   .setSamples(m_SamplerCount)
-//				   .setInitialLayout(vk::ImageLayout::eUndefined)
-//				   .setFinalLayout(vk::ImageLayout::eColorAttachmentOptimal)		
-//				   .setLoadOp(vk::AttachmentLoadOp::eClear)
-//				   .setStoreOp(vk::AttachmentStoreOp::eStore)
-//				   .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
-//				   .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare);
-//
-//	vk::Format depthFormat = FindImageFormatDeviceSupport({ vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint, vk::Format::eD24UnormS8Uint }, vk::ImageTiling::eOptimal, vk::FormatFeatureFlagBits::eDepthStencilAttachment);
-//	vk::AttachmentDescription depthAttachment;
-//	depthAttachment.setFormat(depthFormat)
-//				   .setSamples(m_SamplerCount)
-//				   .setInitialLayout(vk::ImageLayout::eUndefined)
-//				   .setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
-//				   .setLoadOp(vk::AttachmentLoadOp::eClear)
-//				   .setStoreOp(vk::AttachmentStoreOp::eDontCare)
-//				   .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
-//				   .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare);
-//
-//	vk::AttachmentDescription resolvedAttachment;
-//	resolvedAttachment.setFormat(m_SwapChain.GetFormat())
-//					  .setSamples(vk::SampleCountFlagBits::e1)
-//					  .setInitialLayout(vk::ImageLayout::eUndefined)
-//					  .setFinalLayout(vk::ImageLayout::ePresentSrcKHR)
-//					  .setLoadOp(vk::AttachmentLoadOp::eDontCare)
-//					  .setStoreOp(vk::AttachmentStoreOp::eStore)
-//					  .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
-//					  .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare);
-//	std::array<vk::AttachmentDescription, 3> attachments = { colorAttachment, depthAttachment, resolvedAttachment };
-//	vk::AttachmentReference colorReference;
-//	colorReference.setAttachment(0)
-//				  .setLayout(vk::ImageLayout::eColorAttachmentOptimal);
-//	vk::AttachmentReference depthReference;
-//	depthReference.setAttachment(1)
-//			      .setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
-//	vk::AttachmentReference resolveReference;
-//	resolveReference.setAttachment(2)
-//				    .setLayout(vk::ImageLayout::eColorAttachmentOptimal);
-//	
-//	vk::SubpassDescription subpassInfo;
-//	subpassInfo.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
-//			   .setColorAttachmentCount(1)
-//			   .setPColorAttachments(&colorReference)
-//			   .setPDepthStencilAttachment(&depthReference)
-//			   .setPResolveAttachments(&resolveReference);
-//	vk::SubpassDependency dependency;
-//	dependency.setSrcSubpass(VK_SUBPASS_EXTERNAL)
-//			  .setDstSubpass(0)
-//			  .setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests)
-//			  .setSrcAccessMask(vk::AccessFlagBits::eNone)
-//			  .setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests)
-//			  .setDstAccessMask(vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite);
-//	vk::RenderPassCreateInfo renderPassInfo;
-//	renderPassInfo.sType = vk::StructureType::eRenderPassCreateInfo;
-//	renderPassInfo.setAttachmentCount(static_cast<uint32_t>(attachments.size()))
-//				  .setPAttachments(attachments.data())
-//				  .setPSubpasses(&subpassInfo)
-//				  .setSubpassCount(1)
-//				  .setDependencyCount(1)
-//				  .setPDependencies(&dependency);
-//	if (m_Device.GetLogicDevice().createRenderPass(&renderPassInfo, nullptr, &m_RenderPass) != vk::Result::eSuccess)
-//	{
-//		throw std::runtime_error("renderpass create failed!");
-//	}
-//}
 
 void Application::CreatePipeLine()
 {
@@ -290,22 +216,6 @@ void Application::CreatePipeLine()
 		throw std::runtime_error("pipeline Create failed!");
 	}
 }
-
-//void Application::CreateFrameBuffer()
-//{
-//	vk::Device device = m_Device.GetLogicDevice();
-//	uint32_t width = m_SwapChain.GetExtent().width;
-//	uint32_t height = m_SwapChain.GetExtent().height;
-//	m_FrameBuffers.resize(m_SwapChain.GetImageViews().size());
-//	uint32_t index = 0;
-//	for (auto& view : m_SwapChain.GetImageViews())
-//	{
-//		m_FrameBuffers[index].SetAttachment(m_ColorImage.GetVkImageView())
-//							 .SetAttachment(m_DepthImage.GetVkImageView())
-//							 .SetAttachment(view);
-//		m_FrameBuffers[index++].Create(device, width, height, m_RenderPass);
-//	}
-//}
 
 void Application::RecordCommandBuffer(vk::CommandBuffer buffer, uint32_t imageIndex)
 {
@@ -582,90 +492,6 @@ void Application::CreateSampler(uint32_t mipLevel)
 	}
 }
 
-//void Application::CreateDepthSources()
-//{
-//	vk::Format depthFormat = FindImageFormatDeviceSupport({ vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint, vk::Format::eD24UnormS8Uint }, vk::ImageTiling::eOptimal, vk::FormatFeatureFlagBits::eDepthStencilAttachment);
-//	
-//	vk::Extent3D size(m_SwapChain.GetExtent().width, m_SwapChain.GetExtent().height, 1);
-//	m_DepthImage.Create(m_Device, commandManager, 1, m_SamplerCount, vk::ImageType::e2D, size, depthFormat, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageLayout::eUndefined, vk::SharingMode::eExclusive);
-//	vk::ImageAspectFlags aspectFlags = vk::ImageAspectFlagBits::eDepth;
-//	if (HasStencil(depthFormat))
-//	{
-//		aspectFlags |= vk::ImageAspectFlagBits::eStencil;
-//	}
-//	m_DepthImage.CreateImageView(depthFormat, aspectFlags);
-//
-//	//TODO remove
-//	m_DepthImage.TransiationLayout(vk::PipelineStageFlagBits::eTopOfPipe, vk::AccessFlagBits::eNone, vk::ImageLayout::eUndefined, vk::PipelineStageFlagBits::eEarlyFragmentTests, vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite, vk::ImageLayout::eDepthStencilAttachmentOptimal, aspectFlags);
-//}
-
-
-//vk::Format Application::FindImageFormatDeviceSupport(const std::vector<vk::Format> formats, vk::ImageTiling tiling, vk::FormatFeatureFlags featureFlags)
-//{
-//	for (auto& format : formats)
-//	{
-//		auto formatProperties = m_Device.GetPhysicalDevice().getFormatProperties(format);
-//		if (tiling == vk::ImageTiling::eLinear && ((formatProperties.linearTilingFeatures & featureFlags) == featureFlags))
-//		{
-//			return format;
-//		}
-//		else if (tiling == vk::ImageTiling::eOptimal && ((formatProperties.optimalTilingFeatures & featureFlags) == featureFlags))
-//		{
-//			return format;
-//		}
-//	}
-//	throw std::runtime_error("image Format not found!");
-//}
-//
-//bool Application::HasStencil(vk::Format format)
-//{
-//	if (format == vk::Format::eD32SfloatS8Uint || format == vk::Format::eD24UnormS8Uint)
-//	{
-//		return true;
-//	}
-//	return false;
-//}
-
-//void Application::ClearSwapchain()
-//{
-//	for (auto& frameBuffer : m_FrameBuffers)
-//	{
-//		m_Device.GetLogicDevice().destroyFramebuffer(frameBuffer);
-//	}
-//
-//	for (auto& imageView : m_SwapChain.GetImageViews())
-//	{
-//		m_Device.GetLogicDevice().destroyImageView(imageView);
-//	}
-//
-//	m_Device.GetLogicDevice().destroySwapchainKHR(m_SwapChain.GetSwapChain());
-//
-//	m_Device.GetLogicDevice().destroyImageView(m_DepthImageView);
-//	m_Device.GetLogicDevice().destroyImage(m_DepthImage);
-//	m_Device.GetLogicDevice().freeMemory(m_DepthMemory);
-//
-//	m_Device.GetLogicDevice().destroyImageView(m_ColorView);
-//	m_Device.GetLogicDevice().destroyImage(m_ColorImage);
-//	m_Device.GetLogicDevice().freeMemory(m_ColorMemory);
-//}
-
-//void Application::ReCreateSwapchain()
-//{
-//	int width, height;
-//	m_Window.GetFrameBufferSize(&width, &height);
-//	while (width ==0 || height == 0)
-//	{
-//		m_Window.GetFrameBufferSize(&width, &height);
-//		glfwWaitEvents();
-//	}
-//	m_Device.GetLogicDevice().waitIdle();
-//	ClearSwapchain();
-//	//CreateSwapchain();
-//	CreateColorSources();
-//	CreateDepthSources();
-//	CreateFrameBuffer();
-//}
-
 void Application::LoadModel(const char* path)
 {
 	tinyobj::attrib_t attris;
@@ -705,11 +531,3 @@ void Application::LoadModel(const char* path)
 		}
 	}
 }
-//
-//void Application::CreateColorSources()
-//{
-//	vk::Extent3D size(m_SwapChain.GetExtent().width, m_SwapChain.GetExtent().height, 1);
-//	vk::Format format = m_SwapChain.GetFormat();
-//	m_ColorImage.Create(m_Device, commandManager, 1, m_SamplerCount, vk::ImageType::e2D, size, format, vk::ImageUsageFlagBits::eTransientAttachment | vk::ImageUsageFlagBits::eColorAttachment, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageLayout::eUndefined, vk::SharingMode::eExclusive);
-//	m_ColorImage.CreateImageView(format);
-//}
