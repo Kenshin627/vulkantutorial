@@ -71,7 +71,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(projectDir)vendor\GLFW\include;$(projectDir)vendor\glm;$(projectDir)vendor\tiny_obj_loader;$(projectDir)vendor\stbimage;C:\VulkanSDK\1.3.211.0\Include;$(IncludePath)</IncludePath>
+    <IncludePath>$(projectDir)vendor\GLFW\include;$(projectDir)vendor\glm;$(projectDir)vendor\tiny_obj_loader;$(projectDir)vendor\stbimage;C:\VulkanSDK\1.3.231.1\Include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -112,7 +112,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(projectDir)\vendor\GLFW\lib-vc2022;C:\VulkanSDK\1.3.211.0\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(projectDir)\vendor\GLFW\lib-vc2022;C:\VulkanSDK\1.3.231.1\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>glfw3.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -144,6 +144,7 @@
     <ClCompile Include="src\vulkan\ImageView.cpp" />
     <ClCompile Include="src\vulkan\Shader.cpp" />
     <ClCompile Include="src\vulkan\SwapChain.cpp" />
+    <ClCompile Include="src\vulkan\Texture.cpp" />
     <ClCompile Include="src\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -157,6 +158,7 @@
     <ClInclude Include="src\vulkan\ImageView.h" />
     <ClInclude Include="src\vulkan\Shader.h" />
     <ClInclude Include="src\vulkan\SwapChain.h" />
+    <ClInclude Include="src\vulkan\Texture.h" />
     <ClInclude Include="src\Window.h" />
     <ClInclude Include="utils\readFile.h" />
   </ItemGroup>

@@ -120,7 +120,7 @@ void Device::CreateLogicDevice()
 	m_PresentQueue = m_LogicDevice.getQueue(queueFamilyIndices.PresentQueueIndex.value(), 0);
 }
 
-vk::SampleCountFlags Device::CalcMaxSamplerCount(vk::PhysicalDeviceProperties properties)
+vk::SampleCountFlagBits Device::CalcMaxSamplerCount(vk::PhysicalDeviceProperties properties)
 {
 	auto count = properties.limits.framebufferColorSampleCounts & properties.limits.framebufferDepthSampleCounts;
 	if (count & vk::SampleCountFlagBits::e64) { return vk::SampleCountFlagBits::e64; }

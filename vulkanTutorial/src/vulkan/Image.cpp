@@ -147,3 +147,21 @@ void Image::GenerateMipMaps()
 
 	m_CommandManager.FlushCommandBuffer(command, m_Device.GetGraphicQueue());
 }
+
+void Image::CreateImageView(vk::Format format, vk::ImageAspectFlags aspectFlag, vk::ImageViewType viewType, vk::ComponentMapping mapping)
+{
+	vk::ImageSubresourceRange region;
+	region.setAspectMask(aspectFlag)
+		  .setBaseArrayLayer(0)
+		  .setBaseMipLevel(0)
+		  .setLayerCount(1)
+		  .setLevelCount(m_MipLevel);
+	vk::ImageViewCreateInfo viewInfo;
+	viewInfo.sType = vk::StructureType::eImageViewCreateInfo;
+	viewInfo.setComponents(mapping)
+		    .setFormat(format)
+		    .setImage(m_VkImage)
+		    .setViewType(viewType)
+		    .setSubresourceRange(region);
+	VK_CHECK_RESULT(m_Device.GetLogicDevice().createImageView(&viewInfo, nullptr, &m_View));
+}

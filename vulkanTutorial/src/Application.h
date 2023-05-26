@@ -150,14 +150,14 @@ private:
 	vk::DescriptorSet m_DescriptorSet;
 
 	Image m_Texture;
-	ImageView m_TextureImageView;
+	//ImageView m_TextureImageView;
 	vk::Sampler m_Sampler;
 
 	Image m_DepthImage;
-	ImageView m_DepthImageView;
+	//ImageView m_DepthImageView;
 
 	Image m_ColorImage;
-	ImageView m_ColorImageView;
+	//ImageView m_ColorImageView;
 
 	//TODO getSamplerCount
 	vk::SampleCountFlagBits m_SamplerCount = vk::SampleCountFlagBits::e1;

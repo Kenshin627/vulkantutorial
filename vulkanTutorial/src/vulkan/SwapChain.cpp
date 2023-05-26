@@ -1,11 +1,13 @@
 #include "../Core.h"
 #include "SwapChain.h"
 
-void SwapChain::Init(const Device& device, const Window& window, bool vSync)
+void SwapChain::Init(const Device& device, const Window& window, vk::SampleCountFlagBits sampleBits, bool vSync, bool hasDepth)
 {
 	m_Device = device;
 	m_Window = window;
 	m_vSync = vSync;
+	m_Samples = sampleBits;
+	m_HasDepth = hasDepth;
 	Create();
 }
 

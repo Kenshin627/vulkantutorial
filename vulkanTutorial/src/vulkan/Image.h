@@ -10,11 +10,14 @@ public:
 	void TransiationLayout(vk::PipelineStageFlags srcStage, vk::AccessFlags srcAccess, vk::ImageLayout srcLayout, vk::PipelineStageFlags dstStage, vk::AccessFlags dstAccess, vk::ImageLayout dstLayout, vk::ImageAspectFlags aspectFlags);
 	void CopyBufferToImage(vk::Buffer srcBuffer, vk::Extent3D size, vk::ImageLayout layout);
 	void GenerateMipMaps();
+	void CreateImageView(vk::Format format, vk::ImageAspectFlags aspectFlag = vk::ImageAspectFlagBits::eColor, vk::ImageViewType viewType = vk::ImageViewType::e2D, vk::ComponentMapping mapping = vk::ComponentMapping());
 	vk::Image GetVkImage() { return m_VkImage; }
+	vk::ImageView GetVkImageView() { return m_View; }
 	uint32_t GetMiplevel() { return m_MipLevel; }
 private:
 	vk::Image m_VkImage;
 	vk::DeviceMemory m_Memory;
+	vk::ImageView m_View;
 	Device m_Device;
 	vk::Extent3D m_Size;
 	CommandManager m_CommandManager;

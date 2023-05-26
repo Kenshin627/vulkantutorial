@@ -27,6 +27,7 @@ public:
 	std::vector<vk::SurfaceFormatKHR> GetSurfaceSupportFormats() { return m_SurfaceFormats; }
 	std::vector<vk::PresentModeKHR> GetSurfaceSupportPresentModes() { return m_SurfacePresentModes; }
 	vk::SurfaceCapabilitiesKHR GetSurfaceSupportCapability() { return m_SurfaceCapability; }
+	vk::SampleCountFlagBits GetMaxSampleCount() { return m_MaxSamplerCount; }
 	uint32_t FindMemoryType(uint32_t memoryTypeBits, vk::MemoryPropertyFlags flags);
 	bool QuerySwapchainASupport(const vk::PhysicalDevice& device);
 	QueueFamilyIndices QueryQueueFamilyIndices(const vk::PhysicalDevice& device);
@@ -36,7 +37,7 @@ private:
 	void CreateSurface(Window& window, vk::Instance vkInstance);
 	void PickPhysicalDevice(vk::Instance vkInstance);
 	void CreateLogicDevice();
-	vk::SampleCountFlags CalcMaxSamplerCount(vk::PhysicalDeviceProperties properties);
+	vk::SampleCountFlagBits CalcMaxSamplerCount(vk::PhysicalDeviceProperties properties);
 
 private:
 	vk::PhysicalDevice m_PhysicalDevice;
@@ -47,7 +48,7 @@ private:
 	vk::Queue m_GraphicQueue;
 	vk::Queue m_PresentQueue;
 	vk::PhysicalDeviceMemoryProperties m_MemoryProperties;
-	vk::SampleCountFlags m_MaxSamplerCount;
+	vk::SampleCountFlagBits m_MaxSamplerCount;
 	std::vector<vk::SurfaceFormatKHR> m_SurfaceFormats;
 	std::vector<vk::PresentModeKHR> m_SurfacePresentModes;
 	vk::SurfaceCapabilitiesKHR m_SurfaceCapability;

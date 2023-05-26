@@ -38,7 +38,8 @@ void Application::InitVulkan()
 {
 	CreateInstance();
 	InitDevice(m_Window);
-	m_SwapChain.Init(m_Device, m_Window, false);
+	m_SamplerCount = m_Device.GetMaxSampleCount();
+	m_SwapChain.Init(m_Device, m_Window, m_SamplerCount, false, true);
 	commandManager.SetContext(m_Device);
 	CreateColorSources();
 	CreateDepthSources();
@@ -299,8 +300,8 @@ void Application::CreateFrameBuffer()
 	uint32_t index = 0;
 	for (auto& view : m_SwapChain.GetImageViews())
 	{
-		m_FrameBuffers[index].SetAttachment(m_ColorImageView.GetVkImageView())
-							 .SetAttachment(m_DepthImageView.GetVkImageView())
+		m_FrameBuffers[index].SetAttachment(m_ColorImage.GetVkImageView())
+							 .SetAttachment(m_DepthImage.GetVkImageView())
 							 .SetAttachment(view);
 		m_FrameBuffers[index++].Create(device, width, height, m_RenderPass);
 	}
@@ -517,7 +518,7 @@ void Application::UpdateDescriptorSet()
 
 	vk::DescriptorImageInfo imageInfo;
 	imageInfo.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
-			 .setImageView(m_TextureImageView.GetVkImageView())
+			 .setImageView(m_Texture.GetVkImageView())
 			 .setSampler(m_Sampler);
 
 	vk::WriteDescriptorSet samplerWrite;
@@ -547,7 +548,7 @@ void Application::CreateImageTexture(const char* path)
 	stagingBuffer.Create(m_Device, vk::BufferUsageFlagBits::eTransferSrc, size, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, pixels);
 
 	m_Texture.Create(m_Device, commandManager, mipLevel, vk::SampleCountFlagBits::e1, vk::ImageType::e2D, vk::Extent3D(width, height, 1), vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageLayout::eUndefined, vk::SharingMode::eExclusive);
-	m_TextureImageView.Create(m_Device.GetLogicDevice(), m_Texture.GetVkImage(), vk::Format::eR8G8B8A8Srgb, vk::ImageAspectFlagBits::eColor, mipLevel);
+	m_Texture.CreateImageView(vk::Format::eR8G8B8A8Srgb);
 
 	m_Texture.TransiationLayout(vk::PipelineStageFlagBits::eTopOfPipe, vk::AccessFlagBits::eNone, vk::ImageLayout::eUndefined, vk::PipelineStageFlagBits::eTransfer, vk::AccessFlagBits::eTransferWrite, vk::ImageLayout::eTransferDstOptimal, vk::ImageAspectFlagBits::eColor);
 
@@ -592,7 +593,7 @@ void Application::CreateDepthSources()
 	{
 		aspectFlags |= vk::ImageAspectFlagBits::eStencil;
 	}
-	m_DepthImageView.Create(m_Device.GetLogicDevice(), m_DepthImage.GetVkImage(), depthFormat, aspectFlags, 1, vk::ImageViewType::e2D);
+	m_DepthImage.CreateImageView(depthFormat, aspectFlags);
 
 	//TODO remove
 	m_DepthImage.TransiationLayout(vk::PipelineStageFlagBits::eTopOfPipe, vk::AccessFlagBits::eNone, vk::ImageLayout::eUndefined, vk::PipelineStageFlagBits::eEarlyFragmentTests, vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite, vk::ImageLayout::eDepthStencilAttachmentOptimal, aspectFlags);
@@ -710,5 +711,5 @@ void Application::CreateColorSources()
 	vk::Extent3D size(m_SwapChain.GetExtent().width, m_SwapChain.GetExtent().height, 1);
 	vk::Format format = m_SwapChain.GetFormat();
 	m_ColorImage.Create(m_Device, commandManager, 1, m_SamplerCount, vk::ImageType::e2D, size, format, vk::ImageUsageFlagBits::eTransientAttachment | vk::ImageUsageFlagBits::eColorAttachment, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageLayout::eUndefined, vk::SharingMode::eExclusive);
-	m_ColorImageView.Create(m_Device.GetLogicDevice(), m_ColorImage.GetVkImage(), format, vk::ImageAspectFlagBits::eColor, 1, vk::ImageViewType::e2D);
+	m_ColorImage.CreateImageView(format);
 }
