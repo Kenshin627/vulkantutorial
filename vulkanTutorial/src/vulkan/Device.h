@@ -31,7 +31,8 @@ public:
 	uint32_t FindMemoryType(uint32_t memoryTypeBits, vk::MemoryPropertyFlags flags);
 	bool QuerySwapchainASupport(const vk::PhysicalDevice& device);
 	QueueFamilyIndices QueryQueueFamilyIndices(const vk::PhysicalDevice& device);
-
+	vk::Format FindImageFormatDeviceSupport(const std::vector<vk::Format> formats, vk::ImageTiling tiling, vk::FormatFeatureFlags featureFlags);
+	bool HasStencil(vk::Format format);
 private:
 	vk::Fence CreateFence(vk::FenceCreateFlags flags);
 	void CreateSurface(Window& window, vk::Instance vkInstance);

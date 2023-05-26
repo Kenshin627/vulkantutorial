@@ -83,15 +83,15 @@ public:
 private:
 	void CreateInstance();
 	void InitDevice(Window& window);
-	void CreateRenderPass();
+	//void CreateRenderPass();
 	void CreateSetLayout();
 	void CreatePipeLine();
-	void CreateFrameBuffer();
+	//void CreateFrameBuffer();
 	void CreateVertexBuffer();
 	void CreateIndexBuffer();
 	void CreateUniformBuffer();
-	void CreateColorSources();
-	void CreateDepthSources();
+	//void CreateColorSources();
+	//void CreateDepthSources();
 	void RecordCommandBuffer(vk::CommandBuffer buffer, uint32_t imageIndex);
 	void CreateAsyncObjects();
 	void CreateDescriptorPool();
@@ -101,8 +101,8 @@ private:
 	void UpdateUniformBuffers();
 	void CreateImageTexture(const char* path);
 	void CreateSampler(uint32_t mipLevel);
-	vk::Format FindImageFormatDeviceSupport(const std::vector<vk::Format> formats, vk::ImageTiling tiling, vk::FormatFeatureFlags featureFlags);
-	bool HasStencil(vk::Format format);
+	//vk::Format FindImageFormatDeviceSupport(const std::vector<vk::Format> formats, vk::ImageTiling tiling, vk::FormatFeatureFlags featureFlags);
+	//bool HasStencil(vk::Format format);
 	public:
 	void LoadModel(const char* path);
 
@@ -111,9 +111,9 @@ private:
 	vk::Instance m_VKInstance;
 	Device m_Device;
 	SwapChain m_SwapChain;
-	std::vector<FrameBuffer> m_FrameBuffers;
+	//std::vector<FrameBuffer> m_FrameBuffers;
 
-	vk::RenderPass m_RenderPass;
+	//vk::RenderPass m_RenderPass;
 	vk::PipelineLayout m_Layout;
 	vk::Pipeline m_Pipeline;
 	
@@ -150,13 +150,11 @@ private:
 	vk::DescriptorSet m_DescriptorSet;
 
 	Image m_Texture;
-	//ImageView m_TextureImageView;
 	vk::Sampler m_Sampler;
+	//ImageView m_TextureImageView;
 
-	Image m_DepthImage;
-	//ImageView m_DepthImageView;
-
-	Image m_ColorImage;
+	//Image m_DepthImage;
+	//Image m_ColorImage;
 	//ImageView m_ColorImageView;
 
 	//TODO getSamplerCount

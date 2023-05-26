@@ -155,3 +155,29 @@ uint32_t Device::FindMemoryType(uint32_t memoryTypeBits, vk::MemoryPropertyFlags
 		}
 	}
 }
+
+vk::Format Device::FindImageFormatDeviceSupport(const std::vector<vk::Format> formats, vk::ImageTiling tiling, vk::FormatFeatureFlags featureFlags)
+{
+	for (auto& format : formats)
+	{
+		auto formatProperties = m_PhysicalDevice.getFormatProperties(format);
+		if (tiling == vk::ImageTiling::eLinear && ((formatProperties.linearTilingFeatures & featureFlags) == featureFlags))
+		{
+			return format;
+		}
+		else if (tiling == vk::ImageTiling::eOptimal && ((formatProperties.optimalTilingFeatures & featureFlags) == featureFlags))
+		{
+			return format;
+		}
+	}
+	throw std::runtime_error("image Format not found!");
+}
+
+bool Device::HasStencil(vk::Format format)
+{
+	if (format == vk::Format::eD32SfloatS8Uint || format == vk::Format::eD24UnormS8Uint)
+	{
+		return true;
+	}
+	return false;
+}

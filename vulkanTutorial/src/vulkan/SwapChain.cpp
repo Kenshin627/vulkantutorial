@@ -1,9 +1,10 @@
 #include "../Core.h"
 #include "SwapChain.h"
 
-void SwapChain::Init(const Device& device, const Window& window, vk::SampleCountFlagBits sampleBits, bool vSync, bool hasDepth)
+void SwapChain::Init(const Device& device, const Window& window, vk::SampleCountFlagBits sampleBits, bool vSync, bool hasDepth, CommandManager& commandManager)
 {
 	m_Device = device;
+	m_CommandManager = commandManager;
 	m_Window = window;
 	m_vSync = vSync;
 	m_Samples = sampleBits;
@@ -120,6 +121,7 @@ void SwapChain::Create()
 	for (const auto& image : m_Images)
 	{
 		//m_ImageViews.emplace_back(m_Device.GetLogicDevice(), image, m_Format, vk::ImageAspectFlagBits::eColor, 1, vk::ImageViewType::e2D);
+		//TODO: Imageview class
 		vk::ImageSubresourceRange region;
 		region.setAspectMask(vk::ImageAspectFlagBits::eColor)
 			  .setBaseArrayLayer(0)
@@ -135,6 +137,16 @@ void SwapChain::Create()
 			    .setViewType(vk::ImageViewType::e2D);
 		VK_CHECK_RESULT(m_Device.GetLogicDevice().createImageView(&viewInfo, nullptr, &m_ImageViews[imageIndex++]));
 	}
+	if (m_Samples != vk::SampleCountFlagBits::e1)
+	{
+		CreateMultiSampleColorAttachment();
+	}
+	if (m_HasDepth)
+	{
+		CreateDepthStencilAttachment();
+	}
+	CreateRenderPass();
+	CreateFrameBuffers();
 }
 
 void SwapChain::ReCreate()
@@ -202,5 +214,119 @@ void SwapChain::PresentImage(uint32_t imageIndex, vk::Semaphore waitDrawFinish)
 	{
 		m_Window.SetWindowResized(false);
 		ReCreate();
+	}
+}
+
+void SwapChain::CreateMultiSampleColorAttachment()
+{
+	vk::Extent3D size(m_Extent.width, m_Extent.height, 1);
+	m_MultiSampleColorImage.Create(m_Device, m_CommandManager, 1, m_Samples, vk::ImageType::e2D, size, m_Format, vk::ImageUsageFlagBits::eTransientAttachment | vk::ImageUsageFlagBits::eColorAttachment, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageLayout::eUndefined, vk::SharingMode::eExclusive);
+	m_MultiSampleColorImage.CreateImageView(m_Format);
+}
+
+void SwapChain::CreateDepthStencilAttachment()
+{
+	vk::Format depthFormat = m_Device.FindImageFormatDeviceSupport({ vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint, vk::Format::eD24UnormS8Uint }, vk::ImageTiling::eOptimal, vk::FormatFeatureFlagBits::eDepthStencilAttachment);
+
+	vk::Extent3D size(m_Extent.width, m_Extent.height, 1);
+	m_DepthImage.Create(m_Device, m_CommandManager, 1, m_Samples, vk::ImageType::e2D, size, depthFormat, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageLayout::eUndefined, vk::SharingMode::eExclusive);
+	vk::ImageAspectFlags aspectFlags = vk::ImageAspectFlagBits::eDepth;
+	if (m_Device.HasStencil(depthFormat))
+	{
+		aspectFlags |= vk::ImageAspectFlagBits::eStencil;
+	}
+	m_DepthImage.CreateImageView(depthFormat, aspectFlags);
+
+	//TODO remove
+	m_DepthImage.TransiationLayout(vk::PipelineStageFlagBits::eTopOfPipe, vk::AccessFlagBits::eNone, vk::ImageLayout::eUndefined, vk::PipelineStageFlagBits::eEarlyFragmentTests, vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite, vk::ImageLayout::eDepthStencilAttachmentOptimal, aspectFlags);
+}
+
+void SwapChain::CreateFrameBuffers()
+{
+	vk::Device device = m_Device.GetLogicDevice();
+	m_FrameBuffers.resize(m_Images.size());
+	uint32_t index = 0;
+	for (auto& view : m_ImageViews)
+	{
+		if (m_Samples != vk::SampleCountFlagBits::e1)
+		{
+			m_FrameBuffers[index].SetAttachment(m_MultiSampleColorImage.GetVkImageView());
+		}
+		
+		if (m_HasDepth)
+		{
+			m_FrameBuffers[index].SetAttachment(m_DepthImage.GetVkImageView());
+		}
+		m_FrameBuffers[index].SetAttachment(view);
+		m_FrameBuffers[index++].Create(device, m_Extent.width, m_Extent.height, m_RenderPass);
+	}
+}
+void SwapChain::CreateRenderPass()
+{
+	vk::AttachmentDescription colorAttachment;
+	colorAttachment.setFormat(m_Format)
+		.setSamples(m_Samples)
+		.setInitialLayout(vk::ImageLayout::eUndefined)
+		.setFinalLayout(vk::ImageLayout::eColorAttachmentOptimal)
+		.setLoadOp(vk::AttachmentLoadOp::eClear)
+		.setStoreOp(vk::AttachmentStoreOp::eStore)
+		.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
+		.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare);
+
+	vk::Format depthFormat = m_Device.FindImageFormatDeviceSupport({ vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint, vk::Format::eD24UnormS8Uint }, vk::ImageTiling::eOptimal, vk::FormatFeatureFlagBits::eDepthStencilAttachment);
+	vk::AttachmentDescription depthAttachment;
+	depthAttachment.setFormat(depthFormat)
+		.setSamples(m_Samples)
+		.setInitialLayout(vk::ImageLayout::eUndefined)
+		.setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
+		.setLoadOp(vk::AttachmentLoadOp::eClear)
+		.setStoreOp(vk::AttachmentStoreOp::eDontCare)
+		.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
+		.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare);
+
+	vk::AttachmentDescription resolvedAttachment;
+	resolvedAttachment.setFormat(m_Format)
+		.setSamples(vk::SampleCountFlagBits::e1)
+		.setInitialLayout(vk::ImageLayout::eUndefined)
+		.setFinalLayout(vk::ImageLayout::ePresentSrcKHR)
+		.setLoadOp(vk::AttachmentLoadOp::eDontCare)
+		.setStoreOp(vk::AttachmentStoreOp::eStore)
+		.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
+		.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare);
+	std::array<vk::AttachmentDescription, 3> attachments = { colorAttachment, depthAttachment, resolvedAttachment };
+	vk::AttachmentReference colorReference;
+	colorReference.setAttachment(0)
+		.setLayout(vk::ImageLayout::eColorAttachmentOptimal);
+	vk::AttachmentReference depthReference;
+	depthReference.setAttachment(1)
+		.setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
+	vk::AttachmentReference resolveReference;
+	resolveReference.setAttachment(2)
+		.setLayout(vk::ImageLayout::eColorAttachmentOptimal);
+
+	vk::SubpassDescription subpassInfo;
+	subpassInfo.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
+		.setColorAttachmentCount(1)
+		.setPColorAttachments(&colorReference)
+		.setPDepthStencilAttachment(&depthReference)
+		.setPResolveAttachments(&resolveReference);
+	vk::SubpassDependency dependency;
+	dependency.setSrcSubpass(VK_SUBPASS_EXTERNAL)
+		.setDstSubpass(0)
+		.setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests)
+		.setSrcAccessMask(vk::AccessFlagBits::eNone)
+		.setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests)
+		.setDstAccessMask(vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite);
+	vk::RenderPassCreateInfo renderPassInfo;
+	renderPassInfo.sType = vk::StructureType::eRenderPassCreateInfo;
+	renderPassInfo.setAttachmentCount(static_cast<uint32_t>(attachments.size()))
+		.setPAttachments(attachments.data())
+		.setPSubpasses(&subpassInfo)
+		.setSubpassCount(1)
+		.setDependencyCount(1)
+		.setPDependencies(&dependency);
+	if (m_Device.GetLogicDevice().createRenderPass(&renderPassInfo, nullptr, &m_RenderPass) != vk::Result::eSuccess)
+	{
+		throw std::runtime_error("renderpass create failed!");
 	}
 }
