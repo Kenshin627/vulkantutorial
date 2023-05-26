@@ -1,11 +1,4 @@
 #pragma once
-
-#include <vector>
-#include <optional>
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm.hpp>
-#include <gtx/hash.hpp>
 #include "Window.h"
 #include "vulkan/Device.h"
 #include "vulkan/SwapChain.h"
@@ -14,6 +7,13 @@
 #include "vulkan/Shader.h"
 #include "vulkan/Image.h"
 #include "vulkan/Texture.h"
+
+#include <vector>
+#include <optional>
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm.hpp>
+#include <gtx/hash.hpp>
 
 struct Vertex
 {
@@ -72,7 +72,6 @@ class Application
 {
 public:
 	Application(int width, int height, const char* title) : m_Window(width, height, title)  {}
-
 	void Run();
 	void InitWindow(int width, int height, const char* title);
 	void InitVulkan();
@@ -97,44 +96,23 @@ private:
 	Window m_Window;
 	Device m_Device;
 	SwapChain m_SwapChain;
-
 	vk::PipelineLayout m_Layout;
-	vk::Pipeline m_Pipeline;
-	
+	vk::Pipeline m_Pipeline;	
 	vk::CommandBuffer m_CommandBuffer;
 	vk::Fence m_InFlightFence;
 	vk::Semaphore m_WaitAcquireImageSemaphore;
 	vk::Semaphore m_WaitFinishDrawSemaphore;
-	std::vector<const char*> m_DeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
-
-	std::vector<Vertex> m_VertexData /*= {
-		{glm::vec3(-0.5, -0.5, 0.0), glm::vec3(1.0, 0.0, 0.0), glm::vec2(0, 1)},
-		{glm::vec3( 0.5, -0.5, 0.0), glm::vec3(0.0, 1.0, 0.0), glm::vec2(1, 1)},
-		{glm::vec3( 0.5,  0.5, 0.0), glm::vec3(0.0, 1.0, 0.0), glm::vec2(1, 0)},
-		{glm::vec3(-0.5,  0.5, 0.0), glm::vec3(0.0, 0.0, 1.0), glm::vec2(0, 0)},
-
-		{glm::vec3(-0.5, -0.5, 0.5), glm::vec3(1.0, 0.0, 0.0), glm::vec2(0, 1)},
-		{glm::vec3(0.5, -0.5, 0.5), glm::vec3(0.0, 1.0, 0.0), glm::vec2(1, 1)},
-		{glm::vec3(0.5,  0.5, 0.5), glm::vec3(0.0, 1.0, 0.0), glm::vec2(1, 0)},
-		{glm::vec3(-0.5,  0.5, 0.5), glm::vec3(0.0, 0.0, 1.0), glm::vec2(0, 0)},
-	}*/;
-	std::vector<uint32_t> m_Indices /*= {
-		0, 1, 2,
-		2, 3, 0,
-		4, 5, 6,
-		6, 7, 4
-	}*/;
-	Buffer m_VertexBuffer;
-	Buffer m_IndexBuffer;
-	Buffer m_UniformBuffer;
-	
+	vk::SampleCountFlagBits m_SamplerCount = vk::SampleCountFlagBits::e1;
 	vk::DescriptorSetLayout m_SetLayout;
 	vk::DescriptorPool m_DescriptorPool;
 	vk::DescriptorSet m_DescriptorSet;
 
-	Texture m_Texture;
-
-	vk::SampleCountFlagBits m_SamplerCount = vk::SampleCountFlagBits::e1;
+	std::vector<Vertex> m_VertexData;
+	std::vector<uint32_t> m_Indices;
+	Buffer m_VertexBuffer;
+	Buffer m_IndexBuffer;
+	Buffer m_UniformBuffer;
+	Texture m_Texture;	
 };
 
 namespace std

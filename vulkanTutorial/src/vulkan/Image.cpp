@@ -168,11 +168,8 @@ void Image::CreateImageView(vk::Format format, vk::ImageAspectFlags aspectFlag, 
 
 void Image::Clear()
 {
-	//vk::Image m_VkImage;
-	//vk::DeviceMemory m_Memory;
-	//vk::ImageView m_View;
 	vk::Device vkDevice = m_Device.GetLogicDevice();
 	vkDevice.destroyImageView(m_View, nullptr);
-	vkDevice.freeMemory(m_Memory, nullptr);
 	vkDevice.destroyImage(m_VkImage, nullptr);
+	vkDevice.freeMemory(m_Memory, nullptr);
 }

@@ -186,7 +186,11 @@ void Application::CreatePipeLine()
 
 void Application::RecordCommandBuffer(vk::CommandBuffer command, uint32_t imageIndex)
 {
-	m_Device.GetCommandManager().CommandBegin(command);
+	/*m_Device.GetCommandManager().CommandBegin(command);*/
+	vk::CommandBufferBeginInfo beginInfo;
+	beginInfo.sType = vk::StructureType::eCommandBufferBeginInfo;
+	beginInfo.setPInheritanceInfo(nullptr);
+	command.begin(&beginInfo);
 		std::array<vk::ClearValue, 2> clearValues{};
 		clearValues[0].color = vk::ClearColorValue();
 		clearValues[1].depthStencil = vk::ClearDepthStencilValue(1.0f, 0);

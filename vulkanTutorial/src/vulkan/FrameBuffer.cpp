@@ -30,4 +30,5 @@ void FrameBuffer::Clear()
 	{
 		m_Device.destroyFramebuffer(m_VkFrameBuffer, nullptr);
 	}
+	m_Attachments.clear();
 }

@@ -55,18 +55,15 @@ void CommandManager::CommandEnd(vk::CommandBuffer command)
 void CommandManager::FlushCommandBuffer(vk::CommandBuffer command, vk::Queue queue, vk::CommandPool pool, bool free)
 {
 	command.end();
-	vk::Fence fence;
 	vk::FenceCreateInfo fenceInfo;
 	fenceInfo.sType = vk::StructureType::eFenceCreateInfo;
 	fenceInfo.setFlags(vk::FenceCreateFlags());
-	VK_CHECK_RESULT(m_Device.createFence(&fenceInfo, nullptr, &fence));
 	vk::SubmitInfo submitInfo;
 	submitInfo.sType = vk::StructureType::eSubmitInfo;
 	submitInfo.setCommandBufferCount(1)
 			  .setPCommandBuffers(&command);
-	VK_CHECK_RESULT(queue.submit(1, &submitInfo, fence));
-	VK_CHECK_RESULT(m_Device.waitForFences(1, &fence, true, UINT64_MAX));
-	m_Device.destroyFence(fence, nullptr);
+	VK_CHECK_RESULT(queue.submit(1, &submitInfo, nullptr));
+	queue.waitIdle();
 	if (free)
 	{
 		m_Device.freeCommandBuffers(pool, 1, &command);

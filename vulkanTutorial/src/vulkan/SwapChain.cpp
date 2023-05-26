@@ -9,6 +9,7 @@ void SwapChain::Init(Device& device, const Window& window, vk::SampleCountFlagBi
 	m_vSync = vSync;
 	m_Samples = sampleBits;
 	m_HasDepth = hasDepth;
+	CreateRenderPass();
 	Create();
 }
 
@@ -96,17 +97,17 @@ void SwapChain::Create()
 	vk::SwapchainCreateInfoKHR swapChainInfo;
 	swapChainInfo.sType = vk::StructureType::eSwapchainCreateInfoKHR;
 	swapChainInfo.setClipped(true)
-		.setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque)
-		.setImageArrayLayers(1)
-		.setImageColorSpace(m_ColorSpace)
-		.setImageExtent(m_Extent)
-		.setImageFormat(m_Format)
-		.setImageSharingMode(sharingMode)
-		.setImageUsage(usage)
-		.setMinImageCount(m_ImageCount)
-		.setPresentMode(m_PresentMode)
-		.setPreTransform(preTransform)
-		.setSurface(m_Device.GetSurface());
+				 .setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque)
+				 .setImageArrayLayers(1)
+				 .setImageColorSpace(m_ColorSpace)
+				 .setImageExtent(m_Extent)
+				 .setImageFormat(m_Format)
+				 .setImageSharingMode(sharingMode)
+				 .setImageUsage(usage)
+				 .setMinImageCount(m_ImageCount)
+				 .setPresentMode(m_PresentMode)
+				 .setPreTransform(preTransform)
+				 .setSurface(m_Device.GetSurface());
 	if (queueIndices.GraphicQueueIndex != queueIndices.PresentQueueIndex)
 	{
 		std::array<uint32_t, 2> indices = { queueIndices.GraphicQueueIndex.value(), queueIndices.PresentQueueIndex.value() };
@@ -145,7 +146,6 @@ void SwapChain::Create()
 	{
 		CreateDepthStencilAttachment();
 	}
-	CreateRenderPass();
 	CreateFrameBuffers();
 }
 
@@ -158,12 +158,11 @@ void SwapChain::ReCreate()
 		m_Window.GetFrameBufferSize(&width, &height);
 		glfwWaitEvents();
 	}
+
 	m_Device.GetLogicDevice().waitIdle();
+
 	Clear();
 	Create();
-	/*CreateColorSources();
-	CreateDepthSources();
-	CreateFrameBuffer();*/
 }
 
 SwapChain::~SwapChain()
@@ -173,15 +172,33 @@ SwapChain::~SwapChain()
 
 void SwapChain::Clear()
 {
+	if (m_Samples != vk::SampleCountFlagBits::e1)
+	{
+		m_MultiSampleColorImage.Clear();
+	}
+
+	if (m_HasDepth)
+	{
+		m_DepthImage.Clear();
+	}
+
+	if (!m_FrameBuffers.empty())
+	{
+		for (auto& fb : m_FrameBuffers) 
+		{
+			fb.Clear();
+		}
+	}
+
 	if (!m_ImageViews.empty())
 	{
 		for (auto& view : m_ImageViews) 
 		{
 			m_Device.GetLogicDevice().destroyImageView(view);
-			/*view.Clear();*/
 		}
 		//m_ImageViews.clear();
 	}
+
 	if (m_SwapChain)
 	{
 		m_Device.GetLogicDevice().destroySwapchainKHR(m_SwapChain);
@@ -204,11 +221,11 @@ void SwapChain::PresentImage(uint32_t imageIndex, vk::Semaphore waitDrawFinish)
 	vk::PresentInfoKHR presentInfo;
 	presentInfo.sType = vk::StructureType::ePresentInfoKHR;
 	presentInfo.setPImageIndices(&imageIndex)
-		.setPResults(nullptr)
-		.setWaitSemaphoreCount(1)
-		.setPWaitSemaphores(&waitDrawFinish)
-		.setSwapchainCount(1)
-		.setPSwapchains(&m_SwapChain);
+		       .setPResults(nullptr)
+		       .setWaitSemaphoreCount(1)
+		       .setPWaitSemaphores(&waitDrawFinish)
+		       .setSwapchainCount(1)
+		       .setPSwapchains(&m_SwapChain);
 	auto presentResult = m_Device.GetPresentQueue().presentKHR(&presentInfo);
 	if (presentResult == vk::Result::eErrorOutOfDateKHR || presentResult == vk::Result::eSuboptimalKHR || m_Window.GetWindowResized())
 	{
@@ -325,8 +342,5 @@ void SwapChain::CreateRenderPass()
 		.setSubpassCount(1)
 		.setDependencyCount(1)
 		.setPDependencies(&dependency);
-	if (m_Device.GetLogicDevice().createRenderPass(&renderPassInfo, nullptr, &m_RenderPass) != vk::Result::eSuccess)
-	{
-		throw std::runtime_error("renderpass create failed!");
-	}
+	VK_CHECK_RESULT(m_Device.GetLogicDevice().createRenderPass(&renderPassInfo, nullptr, &m_RenderPass));
 }

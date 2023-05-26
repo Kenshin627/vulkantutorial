@@ -24,9 +24,20 @@ public:
 	vk::SurfaceKHR GetSurface() { return m_Surface; }
 	vk::Queue GetGraphicQueue() { return m_GraphicQueue; }
 	vk::Queue GetPresentQueue() { return m_PresentQueue; }
-	std::vector<vk::SurfaceFormatKHR> GetSurfaceSupportFormats() { return m_SurfaceFormats; }
-	std::vector<vk::PresentModeKHR> GetSurfaceSupportPresentModes() { return m_SurfacePresentModes; }
-	vk::SurfaceCapabilitiesKHR GetSurfaceSupportCapability() { return m_SurfaceCapability; }
+	std::vector<vk::SurfaceFormatKHR> GetSurfaceSupportFormats() { 
+		m_SurfaceFormats = m_PhysicalDevice.getSurfaceFormatsKHR(m_Surface);
+		return m_SurfaceFormats; 
+	}
+	std::vector<vk::PresentModeKHR> GetSurfaceSupportPresentModes() 
+	{
+		m_SurfacePresentModes = m_PhysicalDevice.getSurfacePresentModesKHR(m_Surface);
+		return m_SurfacePresentModes; 
+	}
+	vk::SurfaceCapabilitiesKHR GetSurfaceSupportCapability() 
+	{
+		m_SurfaceCapability = m_PhysicalDevice.getSurfaceCapabilitiesKHR(m_Surface);
+		return m_SurfaceCapability; 
+	}
 	vk::SampleCountFlagBits GetMaxSampleCount() { return m_MaxSamplerCount; }
 	CommandManager& GetCommandManager() { return m_CommandManager; }
 	uint32_t FindMemoryType(uint32_t memoryTypeBits, vk::MemoryPropertyFlags flags);
