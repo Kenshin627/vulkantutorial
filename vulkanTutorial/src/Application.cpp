@@ -177,8 +177,25 @@ void Application::CreatePipeLine()
 				.setSubpass(0)
 				.setPDynamicState(&dynamicState)
 				.setBasePipelineHandle(VK_NULL_HANDLE)
+				.setBasePipelineIndex(-1)
+				.setFlags(vk::PipelineCreateFlagBits::eAllowDerivatives);
+	if (m_Device.GetLogicDevice().createGraphicsPipelines({}, 1, &pipelineInfo, nullptr, &m_PipeLines.Phong) != vk::Result::eSuccess)
+	{
+		throw std::runtime_error("pipeline Create failed!");
+	}
+
+	pipelineInfo.setFlags(vk::PipelineCreateFlagBits::eDerivative)
+				.setBasePipelineHandle(m_PipeLines.Phong)
 				.setBasePipelineIndex(-1);
-	if (m_Device.GetLogicDevice().createGraphicsPipelines({}, 1, &pipelineInfo, nullptr, &m_Pipeline) != vk::Result::eSuccess)
+	//3.
+	vertex = Shader(m_Device.GetLogicDevice(), "resource/shaders/wireframeVert.spv");
+	vertex.SetPipelineShaderStageInfo(vk::ShaderStageFlagBits::eVertex);
+	fragment = Shader(m_Device.GetLogicDevice(), "resource/shaders/wireframeFrag.spv");
+	fragment.SetPipelineShaderStageInfo(vk::ShaderStageFlagBits::eFragment);
+	shaders[0] = vertex.m_ShaderStage;
+	shaders[1] = fragment.m_ShaderStage;
+	rasterizationInfo.setPolygonMode(vk::PolygonMode::eLine);
+	if (m_Device.GetLogicDevice().createGraphicsPipelines({}, 1, &pipelineInfo, nullptr, &m_PipeLines.WireFrame) != vk::Result::eSuccess)
 	{
 		throw std::runtime_error("pipeline Create failed!");
 	}
@@ -207,7 +224,7 @@ void Application::RecordCommandBuffer(vk::CommandBuffer command, uint32_t imageI
 					   .setRenderPass(m_SwapChain.GetRenderPass())
 					   .setRenderArea(renderArea);
 		command.beginRenderPass(&renderPassBegin, vk::SubpassContents::eInline);
-			command.bindPipeline(vk::PipelineBindPoint::eGraphics, m_Pipeline);
+			command.bindPipeline(vk::PipelineBindPoint::eGraphics, m_PipeLines.Phong);
 			vk::Viewport viewport;
 			viewport.setX(0.0f)
 					.setY(0.0f)

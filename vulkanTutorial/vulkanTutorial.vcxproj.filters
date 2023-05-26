@@ -96,5 +96,7 @@
   <ItemGroup>
     <None Include="resource\shaders\triangle.vert" />
     <None Include="resource\shaders\triangle.frag" />
+    <None Include="resource\shaders\wireframe.vert" />
+    <None Include="resource\shaders\wireframe.frag" />
   </ItemGroup>
 </Project>

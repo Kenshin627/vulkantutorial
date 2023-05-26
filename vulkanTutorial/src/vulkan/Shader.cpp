@@ -20,7 +20,8 @@ Shader::~Shader()
 
 void Shader::Clear()
 {
-	m_Device.destroyShaderModule(m_VkShader, nullptr);
+	//TODO: destroy shaderModule
+	//m_Device.destroyShaderModule(m_VkShader, nullptr);
 }
 
 void Shader::SetPipelineShaderStageInfo(vk::ShaderStageFlagBits flag, const char* main)

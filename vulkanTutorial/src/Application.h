@@ -68,6 +68,12 @@ struct UniformBufferObject
 	glm::mat4 Model;
 };
 
+struct PipeLines
+{
+	vk::Pipeline Phong;
+	vk::Pipeline WireFrame;
+};
+
 class Application
 {
 public:
@@ -97,7 +103,7 @@ private:
 	Device m_Device;
 	SwapChain m_SwapChain;
 	vk::PipelineLayout m_Layout;
-	vk::Pipeline m_Pipeline;	
+	//vk::Pipeline m_Pipeline;	
 	vk::CommandBuffer m_CommandBuffer;
 	vk::Fence m_InFlightFence;
 	vk::Semaphore m_WaitAcquireImageSemaphore;
@@ -106,7 +112,7 @@ private:
 	vk::DescriptorSetLayout m_SetLayout;
 	vk::DescriptorPool m_DescriptorPool;
 	vk::DescriptorSet m_DescriptorSet;
-
+	PipeLines m_PipeLines;
 	std::vector<Vertex> m_VertexData;
 	std::vector<uint32_t> m_Indices;
 	Buffer m_VertexBuffer;
