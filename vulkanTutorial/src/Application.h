@@ -1,6 +1,4 @@
 #pragma once
-#define VK_USE_PLATFORM_WIN32_KHR
-#include <vulkan/vulkan.hpp>
 
 #include <vector>
 #include <optional>
@@ -13,7 +11,6 @@
 #include "vulkan/SwapChain.h"
 #include "vulkan/Buffer.h"
 #include "vulkan/FrameBuffer.h"
-#include "vulkan/CommandManager.h"
 #include "vulkan/Shader.h"
 #include "vulkan/Image.h"
 #include "vulkan/Texture.h"
@@ -132,7 +129,6 @@ private:
 	Buffer m_VertexBuffer;
 	Buffer m_IndexBuffer;
 	Buffer m_UniformBuffer;
-	CommandManager commandManager;
 	
 	vk::DescriptorSetLayout m_SetLayout;
 	vk::DescriptorPool m_DescriptorPool;

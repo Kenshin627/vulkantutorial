@@ -1,10 +1,9 @@
 #include "../Core.h"
 #include "Image.h"
 
-void Image::Create(Device& device, CommandManager& commandManager, uint32_t mipLevels, vk::SampleCountFlagBits samplerCount, vk::ImageType type, vk::Extent3D size, vk::Format format, vk::ImageUsageFlags usage, vk::ImageTiling tiling, vk::MemoryPropertyFlags memoryFlags, vk::ImageLayout initialLayout, vk::SharingMode sharingMode)
+void Image::Create(Device& device, uint32_t mipLevels, vk::SampleCountFlagBits samplerCount, vk::ImageType type, vk::Extent3D size, vk::Format format, vk::ImageUsageFlags usage, vk::ImageTiling tiling, vk::MemoryPropertyFlags memoryFlags, vk::ImageLayout initialLayout, vk::SharingMode sharingMode)
 {
 	m_Device = device;
-	m_CommandManager = commandManager;
 	m_Size = size;
 	m_MipLevel = mipLevels;
 	vk::Device vkDevice = device.GetLogicDevice();
@@ -33,7 +32,7 @@ void Image::Create(Device& device, CommandManager& commandManager, uint32_t mipL
 
 void Image::TransiationLayout(vk::PipelineStageFlags srcStage, vk::AccessFlags srcAccess, vk::ImageLayout srcLayout, vk::PipelineStageFlags dstStage, vk::AccessFlags dstAccess, vk::ImageLayout dstLayout, vk::ImageAspectFlags aspectFlags)
 {
-	auto command = m_CommandManager.AllocateCommandBuffer(vk::CommandBufferLevel::ePrimary);
+	auto command = m_Device.GetCommandManager().AllocateCommandBuffer(vk::CommandBufferLevel::ePrimary);
 		vk::ImageSubresourceRange region;
 		region.setAspectMask(aspectFlags)
 			  .setBaseArrayLayer(0)
@@ -51,12 +50,12 @@ void Image::TransiationLayout(vk::PipelineStageFlags srcStage, vk::AccessFlags s
 			   .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
 			   .setNewLayout(dstLayout);
 		command.pipelineBarrier(srcStage, dstStage, {}, 0, nullptr, 0, nullptr, 1, &barrier);
-	m_CommandManager.FlushCommandBuffer(command, m_Device.GetGraphicQueue());
+		m_Device.GetCommandManager().FlushCommandBuffer(command, m_Device.GetGraphicQueue());
 }
 
 void Image::CopyBufferToImage(vk::Buffer srcBuffer, vk::Extent3D size, vk::ImageLayout layout)
 {
-	auto command = m_CommandManager.AllocateCommandBuffer(vk::CommandBufferLevel::ePrimary);
+	auto command = m_Device.GetCommandManager().AllocateCommandBuffer(vk::CommandBufferLevel::ePrimary);
 
 	vk::ImageSubresourceLayers layer;
 	layer.setAspectMask(vk::ImageAspectFlagBits::eColor)
@@ -72,7 +71,7 @@ void Image::CopyBufferToImage(vk::Buffer srcBuffer, vk::Extent3D size, vk::Image
 		  .setImageSubresource(layer);
 	command.copyBufferToImage(srcBuffer, m_VkImage, layout, 1, &region);
 
-	m_CommandManager.FlushCommandBuffer(command, m_Device.GetGraphicQueue());
+	m_Device.GetCommandManager().FlushCommandBuffer(command, m_Device.GetGraphicQueue());
 }
 
 void Image::GenerateMipMaps()
@@ -83,7 +82,7 @@ void Image::GenerateMipMaps()
 	}
 	uint32_t mipWidth = m_Size.width;
 	uint32_t mipHeight = m_Size.height;
-	auto command = m_CommandManager.AllocateCommandBuffer(vk::CommandBufferLevel::ePrimary);
+	auto command = m_Device.GetCommandManager().AllocateCommandBuffer(vk::CommandBufferLevel::ePrimary);
 
 	vk::ImageSubresourceRange region;
 	region.setAspectMask(vk::ImageAspectFlagBits::eColor)
@@ -146,7 +145,7 @@ void Image::GenerateMipMaps()
 		   .setNewLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
 	command.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader, {}, 0, nullptr, 0, nullptr, 1, &barrier);
 
-	m_CommandManager.FlushCommandBuffer(command, m_Device.GetGraphicQueue());
+	m_Device.GetCommandManager().FlushCommandBuffer(command, m_Device.GetGraphicQueue());
 }
 
 void Image::CreateImageView(vk::Format format, vk::ImageAspectFlags aspectFlag, vk::ImageViewType viewType, vk::ComponentMapping mapping)

@@ -1,17 +1,17 @@
-#include "Device.h"
 #include "../Core.h"
-#include "CommandManager.h"
-
+#include "Device.h"
 #include <set>
 #include <string>
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
+
 
 Device::Device(Window& window, vk::Instance vkInstance)
 {
 	CreateSurface(window, vkInstance);
 	PickPhysicalDevice(vkInstance);
 	CreateLogicDevice();
+	m_CommandManager.SetContext(m_LogicDevice, QueryQueueFamilyIndices(m_PhysicalDevice).GraphicQueueIndex.value());
 }
 
 Device::~Device() {}

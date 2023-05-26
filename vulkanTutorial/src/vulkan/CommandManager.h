@@ -1,12 +1,11 @@
 #pragma once
-
-#include "Device.h"
+#define VK_USE_PLATFORM_WIN32_KHR
 #include <vulkan/vulkan.hpp>
 
 class CommandManager
 {
 public:
-	void SetContext(Device& device);
+	void SetContext(vk::Device& device, uint32_t queueFamilyIndex);
 	vk::CommandPool CreatePool(uint32_t queueFamilyIndex, vk::CommandPoolCreateFlags flag = vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
 	vk::CommandBuffer AllocateCommandBuffer(vk::CommandBufferLevel level, vk::CommandPool pool, bool begin = true);
 	vk::CommandBuffer AllocateCommandBuffer(vk::CommandBufferLevel level, bool begin = true);
@@ -16,6 +15,6 @@ public:
 	void FlushCommandBuffer(vk::CommandBuffer command, vk::Queue queue, bool free = true);
 	vk::CommandPool GetCommandPool() { return m_DefaultPool; }
 private:
-	Device m_Device;
+	vk::Device m_Device;
 	vk::CommandPool m_DefaultPool;
 };

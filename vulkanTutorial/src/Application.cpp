@@ -31,16 +31,15 @@ void Application::InitVulkan()
 {
 	CreateInstance();
 	InitDevice(m_Window);
-	commandManager.SetContext(m_Device);
 	m_SamplerCount = m_Device.GetMaxSampleCount();
-	m_SwapChain.Init(m_Device, m_Window, m_SamplerCount, false, true, commandManager);
+	m_SwapChain.Init(m_Device, m_Window, m_SamplerCount, false, true);
 	CreateSetLayout();
 	CreatePipeLine();
 
-	m_Texture.Create(m_Device, commandManager, "resource/textures/vikingRoom.png", true);
+	m_Texture.Create(m_Device, "resource/textures/vikingRoom.png", true);
 	LoadModel("resource/models/vikingRoom.obj");
 	
-	m_CommandBuffer = commandManager.AllocateCommandBuffer(vk::CommandBufferLevel::ePrimary, true);
+	m_CommandBuffer = m_Device.GetCommandManager().AllocateCommandBuffer(vk::CommandBufferLevel::ePrimary, true);
 	CreateVertexBuffer();
 	CreateIndexBuffer();
 	CreateUniformBuffer();
@@ -66,7 +65,6 @@ void Application::Clear()
 	
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void Application::CreateInstance()
 {
 	vk::ApplicationInfo appInfo;
@@ -212,7 +210,7 @@ void Application::CreatePipeLine()
 
 void Application::RecordCommandBuffer(vk::CommandBuffer command, uint32_t imageIndex)
 {
-	commandManager.CommandBegin(command);
+	m_Device.GetCommandManager().CommandBegin(command);
 		std::array<vk::ClearValue, 2> clearValues{};
 		clearValues[0].color = vk::ClearColorValue();
 		clearValues[1].depthStencil = vk::ClearDepthStencilValue(1.0f, 0);
@@ -248,7 +246,7 @@ void Application::RecordCommandBuffer(vk::CommandBuffer command, uint32_t imageI
 			command.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_Layout, 0, 1, &m_DescriptorSet, 0, nullptr);
 			command.drawIndexed(static_cast<uint32_t>(m_Indices.size()), 1, 0, 0, 0);
 			command.endRenderPass();
-	commandManager.CommandEnd(command);
+	m_Device.GetCommandManager().CommandEnd(command);
 }				
 
 void Application::DrawFrame()
@@ -302,7 +300,7 @@ void Application::CreateVertexBuffer()
 
 	m_VertexBuffer.Create(m_Device, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer, size, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eDeviceLocal, nullptr);
 
-	Buffer::CopyBuffer(stagingBuffer.m_Buffer, 0, m_VertexBuffer.m_Buffer, 0, size, m_Device.GetGraphicQueue(), commandManager);
+	Buffer::CopyBuffer(stagingBuffer.m_Buffer, 0, m_VertexBuffer.m_Buffer, 0, size, m_Device.GetGraphicQueue(), m_Device.GetCommandManager());
 	//stagingBuffer.Clear();
 }
 
@@ -312,7 +310,7 @@ void Application::CreateIndexBuffer()
 	Buffer stagingBuffer;
 	stagingBuffer.Create(m_Device, vk::BufferUsageFlagBits::eTransferSrc, size, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, m_Indices.data());
 	m_IndexBuffer.Create(m_Device, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, size, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eDeviceLocal, nullptr);
-	Buffer::CopyBuffer(stagingBuffer.m_Buffer, 0, m_IndexBuffer.m_Buffer, 0, size, m_Device.GetGraphicQueue(), commandManager);
+	Buffer::CopyBuffer(stagingBuffer.m_Buffer, 0, m_IndexBuffer.m_Buffer, 0, size, m_Device.GetGraphicQueue(), m_Device.GetCommandManager());
 	//stagingBuffer.Clear();
 }
 

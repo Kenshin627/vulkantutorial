@@ -1,10 +1,10 @@
 #include "../Core.h"
 #include "CommandManager.h"
 
-void CommandManager::SetContext(Device& device)
+void CommandManager::SetContext(vk::Device& device, uint32_t queueFamilyIndex)
 {
 	m_Device = device;
-	m_DefaultPool = CreatePool(m_Device.QueryQueueFamilyIndices(m_Device.GetPhysicalDevice()).GraphicQueueIndex.value());
+	m_DefaultPool = CreatePool(queueFamilyIndex);
 }
 
 vk::CommandPool CommandManager::CreatePool(uint32_t queueFamilyIndex, vk::CommandPoolCreateFlags flag)
@@ -13,7 +13,7 @@ vk::CommandPool CommandManager::CreatePool(uint32_t queueFamilyIndex, vk::Comman
 	vk::CommandPoolCreateInfo poolInfo;
 	poolInfo.sType = vk::StructureType::eCommandPoolCreateInfo;
 	poolInfo.setFlags(flag).setQueueFamilyIndex(queueFamilyIndex);
-	VK_CHECK_RESULT(m_Device.GetLogicDevice().createCommandPool(&poolInfo, nullptr, &pool));
+	VK_CHECK_RESULT(m_Device.createCommandPool(&poolInfo, nullptr, &pool));
 	return pool;
 }
 
@@ -25,7 +25,7 @@ vk::CommandBuffer CommandManager::AllocateCommandBuffer(vk::CommandBufferLevel l
 	bufferInfo.setCommandBufferCount(1)
 		      .setCommandPool(pool)
 		      .setLevel(level);
-	VK_CHECK_RESULT(m_Device.GetLogicDevice().allocateCommandBuffers(&bufferInfo, &command));
+	VK_CHECK_RESULT(m_Device.allocateCommandBuffers(&bufferInfo, &command));
 	if (begin)
 	{
 		CommandBegin(command);
@@ -55,22 +55,21 @@ void CommandManager::CommandEnd(vk::CommandBuffer command)
 void CommandManager::FlushCommandBuffer(vk::CommandBuffer command, vk::Queue queue, vk::CommandPool pool, bool free)
 {
 	command.end();
-	vk::Device device = m_Device.GetLogicDevice();
 	vk::Fence fence;
 	vk::FenceCreateInfo fenceInfo;
 	fenceInfo.sType = vk::StructureType::eFenceCreateInfo;
 	fenceInfo.setFlags(vk::FenceCreateFlags());
-	VK_CHECK_RESULT(device.createFence(&fenceInfo, nullptr, &fence));
+	VK_CHECK_RESULT(m_Device.createFence(&fenceInfo, nullptr, &fence));
 	vk::SubmitInfo submitInfo;
 	submitInfo.sType = vk::StructureType::eSubmitInfo;
 	submitInfo.setCommandBufferCount(1)
 			  .setPCommandBuffers(&command);
 	VK_CHECK_RESULT(queue.submit(1, &submitInfo, fence));
-	VK_CHECK_RESULT(device.waitForFences(1, &fence, true, UINT64_MAX));
-	device.destroyFence(fence, nullptr);
+	VK_CHECK_RESULT(m_Device.waitForFences(1, &fence, true, UINT64_MAX));
+	m_Device.destroyFence(fence, nullptr);
 	if (free)
 	{
-		device.freeCommandBuffers(pool, 1, &command);
+		m_Device.freeCommandBuffers(pool, 1, &command);
 	}
 }
 
