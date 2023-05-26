@@ -6,11 +6,14 @@ class Texture
 {
 public:
 	void Create(Device& device, CommandManager& commandManager, const char* path, bool generateMipmaps);
+	void CreateSampler();
 	void Clear();
 	uint32_t GetMipLevel() { return m_MipLevel; }
 	Image& GetImage() { return m_Image; }
+	vk::Sampler GetSampler() { return m_Sampler; }
 private:
 	Image m_Image;
+	vk::Sampler m_Sampler;
 	uint32_t m_MipLevel;
 	Device m_Device;
 	CommandManager m_CommandManager;

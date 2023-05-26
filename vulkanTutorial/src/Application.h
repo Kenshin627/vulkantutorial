@@ -97,8 +97,6 @@ private:
 	void UpdateDescriptorSet();
 	void DrawFrame();
 	void UpdateUniformBuffers();
-	void CreateImageTexture(const char* path);
-	void CreateSampler(uint32_t mipLevel);
 private:
 	Window m_Window;
 	vk::Instance m_VKInstance;
@@ -140,9 +138,7 @@ private:
 	vk::DescriptorPool m_DescriptorPool;
 	vk::DescriptorSet m_DescriptorSet;
 
-	//Image m_Texture;
 	Texture m_Texture;
-	vk::Sampler m_Sampler;
 
 	vk::SampleCountFlagBits m_SamplerCount = vk::SampleCountFlagBits::e1;
 };

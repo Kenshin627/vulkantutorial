@@ -36,9 +36,34 @@ void Texture::Create(Device& device, CommandManager& commandManager, const char*
 		m_Image.GenerateMipMaps();
 	}
 	//stagingBuffer.Clear();
+	CreateSampler();
 }
 
 void Texture::Clear()
 {
 	m_Image.Clear();
+}
+
+void Texture::CreateSampler()
+{
+	vk::SamplerCreateInfo samplerInfo;
+	samplerInfo.sType = vk::StructureType::eSamplerCreateInfo;
+	samplerInfo.setAddressModeU(vk::SamplerAddressMode::eRepeat)
+		.setAddressModeV(vk::SamplerAddressMode::eRepeat)
+		.setAddressModeW(vk::SamplerAddressMode::eRepeat)
+		.setAnisotropyEnable(VK_FALSE)
+		.setBorderColor(vk::BorderColor::eIntOpaqueBlack)
+		.setCompareEnable(VK_FALSE)
+		.setCompareOp(vk::CompareOp::eAlways)
+		.setMagFilter(vk::Filter::eLinear)
+		.setMinFilter(vk::Filter::eLinear)
+		.setMipLodBias(0.0f)
+		.setMipmapMode(vk::SamplerMipmapMode::eLinear)
+		.setMinLod(0.0f)
+		.setMaxLod(static_cast<float>(m_MipLevel))
+		.setUnnormalizedCoordinates(VK_FALSE);
+	if (m_Device.GetLogicDevice().createSampler(&samplerInfo, nullptr, &m_Sampler) != vk::Result::eSuccess)
+	{
+		throw std::runtime_error("sampler create failed!");
+	}
 }

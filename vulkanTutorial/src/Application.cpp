@@ -3,16 +3,10 @@
 #include <limits>
 #include <chrono>
 #include <unordered_map>
-
 #include <gtc/matrix_transform.hpp>
-
-
 #include <GLFW/glfw3.h>
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
-
-
-
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "../vendor/tiny_obj_loader/tiny_obj_loader.h"
 
@@ -43,14 +37,14 @@ void Application::InitVulkan()
 	CreateSetLayout();
 	CreatePipeLine();
 
-	CreateImageTexture("resource/textures/vikingRoom.png");
+	m_Texture.Create(m_Device, commandManager, "resource/textures/vikingRoom.png", true);
 	LoadModel("resource/models/vikingRoom.obj");
 	
 	m_CommandBuffer = commandManager.AllocateCommandBuffer(vk::CommandBufferLevel::ePrimary, true);
 	CreateVertexBuffer();
 	CreateIndexBuffer();
 	CreateUniformBuffer();
-	CreateSampler(m_Texture.GetMipLevel());
+
 	CreateDescriptorPool();
 	CreateDescriptorSet();
 	UpdateDescriptorSet();
@@ -149,14 +143,14 @@ void Application::CreatePipeLine()
 	vk::PipelineDepthStencilStateCreateInfo depthStencilInfo;
 	depthStencilInfo.sType = vk::StructureType::ePipelineDepthStencilStateCreateInfo;
 	depthStencilInfo.setDepthTestEnable(VK_TRUE)
-		.setBack({})
-		.setDepthBoundsTestEnable(VK_FALSE)
-		.setDepthCompareOp(vk::CompareOp::eLess)
-		.setDepthWriteEnable(VK_TRUE)
-		.setFront({})
-		.setMaxDepthBounds(1.0f)
-		.setMinDepthBounds(0.0f)
-		.setStencilTestEnable(VK_FALSE);
+					.setBack({})
+					.setDepthBoundsTestEnable(VK_FALSE)
+					.setDepthCompareOp(vk::CompareOp::eLess)
+					.setDepthWriteEnable(VK_TRUE)
+					.setFront({})
+					.setMaxDepthBounds(1.0f)
+					.setMinDepthBounds(0.0f)
+					.setStencilTestEnable(VK_FALSE);
 
 	//7.
 	vk::PipelineLayoutCreateInfo layoutInfo;
@@ -181,7 +175,7 @@ void Application::CreatePipeLine()
 	vk::PipelineDynamicStateCreateInfo dynamicState;
 	dynamicState.sType = vk::StructureType::ePipelineDynamicStateCreateInfo;
 	dynamicState.setDynamicStateCount(static_cast<uint32_t>(dynamicStates.size()))
-		.setPDynamicStates(dynamicStates.data());
+		        .setPDynamicStates(dynamicStates.data());
 
 	//10.
 	vk::PipelineMultisampleStateCreateInfo multisamplesInfo;
@@ -216,15 +210,9 @@ void Application::CreatePipeLine()
 	}
 }
 
-void Application::RecordCommandBuffer(vk::CommandBuffer buffer, uint32_t imageIndex)
+void Application::RecordCommandBuffer(vk::CommandBuffer command, uint32_t imageIndex)
 {
-	//vk::CommandBufferBeginInfo commandBufferBegin;
-	//commandBufferBegin.sType = vk::StructureType::eCommandBufferBeginInfo;
-	//commandBufferBegin.setPInheritanceInfo(nullptr);
-	//				  //.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-
-	//auto beginRes = buffer.begin(&commandBufferBegin);
-	commandManager.CommandBegin(buffer);
+	commandManager.CommandBegin(command);
 		std::array<vk::ClearValue, 2> clearValues{};
 		clearValues[0].color = vk::ClearColorValue();
 		clearValues[1].depthStencil = vk::ClearDepthStencilValue(1.0f, 0);
@@ -240,8 +228,8 @@ void Application::RecordCommandBuffer(vk::CommandBuffer buffer, uint32_t imageIn
 					   .setFramebuffer(m_SwapChain.GetFrameBuffers()[imageIndex].GetVkFrameBuffer())
 					   .setRenderPass(m_SwapChain.GetRenderPass())
 					   .setRenderArea(renderArea);
-		buffer.beginRenderPass(&renderPassBegin, vk::SubpassContents::eInline);
-			buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_Pipeline);
+		command.beginRenderPass(&renderPassBegin, vk::SubpassContents::eInline);
+			command.bindPipeline(vk::PipelineBindPoint::eGraphics, m_Pipeline);
 			vk::Viewport viewport;
 			viewport.setX(0.0f)
 					.setY(0.0f)
@@ -252,15 +240,15 @@ void Application::RecordCommandBuffer(vk::CommandBuffer buffer, uint32_t imageIn
 			vk::Rect2D scissor;
 			scissor.setOffset({ 0, 0 })
 				   .setExtent(extent);
-			buffer.setViewport(0, 1, &viewport);
-			buffer.setScissor(0, 1, &scissor);
+			command.setViewport(0, 1, &viewport);
+			command.setScissor(0, 1, &scissor);
 			vk::DeviceSize size(0);
-			buffer.bindVertexBuffers(0, 1, &m_VertexBuffer.m_Buffer, &size);
-			buffer.bindIndexBuffer(m_IndexBuffer.m_Buffer, 0, vk::IndexType::eUint32);
-			buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_Layout, 0, 1, &m_DescriptorSet, 0, nullptr);
-			buffer.drawIndexed(static_cast<uint32_t>(m_Indices.size()), 1, 0, 0, 0);
-		buffer.endRenderPass();
-	commandManager.CommandEnd(buffer);
+			command.bindVertexBuffers(0, 1, &m_VertexBuffer.m_Buffer, &size);
+			command.bindIndexBuffer(m_IndexBuffer.m_Buffer, 0, vk::IndexType::eUint32);
+			command.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_Layout, 0, 1, &m_DescriptorSet, 0, nullptr);
+			command.drawIndexed(static_cast<uint32_t>(m_Indices.size()), 1, 0, 0, 0);
+			command.endRenderPass();
+	commandManager.CommandEnd(command);
 }				
 
 void Application::DrawFrame()
@@ -428,7 +416,7 @@ void Application::UpdateDescriptorSet()
 	vk::DescriptorImageInfo imageInfo;
 	imageInfo.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
 			 .setImageView(m_Texture.GetImage().GetVkImageView())
-			 .setSampler(m_Sampler);
+			 .setSampler(m_Texture.GetSampler());
 
 	vk::WriteDescriptorSet samplerWrite;
 	samplerWrite.sType = vk::StructureType::eWriteDescriptorSet;
@@ -440,35 +428,6 @@ void Application::UpdateDescriptorSet()
 				.setPImageInfo(&imageInfo);
 	std::array<vk::WriteDescriptorSet, 2> writes = { uniformWriteSet, samplerWrite };
 	m_Device.GetLogicDevice().updateDescriptorSets(static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
-}
-
-void Application::CreateImageTexture(const char* path)
-{
-	m_Texture.Create(m_Device, commandManager, "resource/textures/vikingRoom.png", true);
-}
-
-void Application::CreateSampler(uint32_t mipLevel)
-{
-	vk::SamplerCreateInfo samplerInfo;
-	samplerInfo.sType = vk::StructureType::eSamplerCreateInfo;
-	samplerInfo.setAddressModeU(vk::SamplerAddressMode::eRepeat)
-			   .setAddressModeV(vk::SamplerAddressMode::eRepeat)
-			   .setAddressModeW(vk::SamplerAddressMode::eRepeat)
-			   .setAnisotropyEnable(VK_FALSE)
-			   .setBorderColor(vk::BorderColor::eIntOpaqueBlack)
-			   .setCompareEnable(VK_FALSE)
-			   .setCompareOp(vk::CompareOp::eAlways)
-			   .setMagFilter(vk::Filter::eLinear)
-			   .setMinFilter(vk::Filter::eLinear)
-			   .setMipLodBias(0.0f)
-			   .setMipmapMode(vk::SamplerMipmapMode::eLinear)
-			   .setMinLod(0.0f)
-			   .setMaxLod(static_cast<float>(mipLevel))
-			   .setUnnormalizedCoordinates(VK_FALSE);
-	if (m_Device.GetLogicDevice().createSampler(&samplerInfo, nullptr, &m_Sampler) != vk::Result::eSuccess)
-	{
-		throw std::runtime_error("sampler create failed!");
-	}
 }
 
 void Application::LoadModel(const char* path)
