@@ -37,6 +37,7 @@ void Application::InitVulkan()
 	CreatePipeLine();
 	m_Texture.Create(m_Device, "resource/textures/vikingRoom.png", true);
 	m_CubeTexture.Create(m_Device, "resource/textures/cube.jpg", true);
+	m_SkyBoxTexture.Create(m_Device, { "resource/textures/skybox/back.jpg", "resource/textures/skybox/bottom.jpg", "resource/textures/skybox/front.jpg", "resource/textures/skybox/left.jpg", "resource/textures/skybox/right.jpg", "resource/textures/skybox/top.jpg" });
 	LoadModel("resource/models/vikingRoom.obj", m_VertexData, m_Indices);	
 	LoadModel("resource/models/cube.obj", m_CubeVexData, m_CubeIndices);
 	m_CommandBuffer = m_Device.GetCommandManager().AllocateCommandBuffer(vk::CommandBufferLevel::ePrimary, true);
@@ -201,6 +202,17 @@ void Application::CreatePipeLine()
 	shaders[1] = fragment.m_ShaderStage;
 	rasterizationInfo.setPolygonMode(vk::PolygonMode::eFill);
 	VK_CHECK_RESULT(m_Device.GetLogicDevice().createGraphicsPipelines({}, 1, &pipelineInfo, nullptr, &m_PipeLines.PushConstant));
+
+	//skyBox
+	vertex = Shader(m_Device.GetLogicDevice(), "resource/shaders/skyboxVert.spv");
+	vertex.SetPipelineShaderStageInfo(vk::ShaderStageFlagBits::eVertex);
+	fragment = Shader(m_Device.GetLogicDevice(), "resource/shaders/skyboxFrag.spv");
+	fragment.SetPipelineShaderStageInfo(vk::ShaderStageFlagBits::eFragment);
+	shaders[0] = vertex.m_ShaderStage;
+	shaders[1] = fragment.m_ShaderStage;
+	rasterizationInfo.setCullMode(vk::CullModeFlagBits::eFront);
+	depthStencilInfo.setDepthWriteEnable(false);
+	VK_CHECK_RESULT(m_Device.GetLogicDevice().createGraphicsPipelines({}, 1, & pipelineInfo, nullptr, & m_PipeLines.SkyBox));
 }
 
 void Application::RecordCommandBuffer(vk::CommandBuffer command, uint32_t imageIndex)
@@ -351,6 +363,13 @@ void Application::CreateSetLayout()
 				  .setPImmutableSamplers(nullptr)
 				  .setStageFlags(vk::ShaderStageFlagBits::eFragment);
 
+	vk::DescriptorSetLayoutBinding skyboxSamplerBinding;
+	skyboxSamplerBinding.setBinding(2)
+					    .setDescriptorCount(1)
+					    .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
+					    .setPImmutableSamplers(nullptr)
+					    .setStageFlags(vk::ShaderStageFlagBits::eFragment);
+
 	std::array<vk::DescriptorSetLayoutBinding, 2> bindings = { uniformBinding, samplerBinding };
 
 	vk::DescriptorSetLayoutCreateInfo setlayoutInfo;
@@ -392,7 +411,10 @@ void Application::CreateDescriptorPool()
 	samplerPoolSize.setDescriptorCount(1)
 				   .setType(vk::DescriptorType::eCombinedImageSampler);
 
-	std::array<vk::DescriptorPoolSize, 2> poolSize = { uniformPoolSize, samplerPoolSize };
+	vk::DescriptorPoolSize skyBoxSamplerPoolSize;
+	skyBoxSamplerPoolSize.setDescriptorCount(1).setType(vk::DescriptorType::eCombinedImageSampler);
+
+	std::array<vk::DescriptorPoolSize, 3> poolSize = { uniformPoolSize, samplerPoolSize, skyBoxSamplerPoolSize };
 
 	vk::DescriptorPoolCreateInfo descriptorPoolInfo;
 	descriptorPoolInfo.sType = vk::StructureType::eDescriptorPoolCreateInfo;
@@ -432,6 +454,17 @@ void Application::UpdateDescriptorSet()
 				.setDstBinding(1)
 				.setDstSet(m_DescriptorSet)
 				.setPImageInfo(&imageDescriptor);
+
+	vk::DescriptorImageInfo skyBoxSamplerDescriptor = m_SkyBoxTexture.GetDescriptor();
+	vk::WriteDescriptorSet skyboxSamplerWrite;
+	skyboxSamplerWrite.sType = vk::StructureType::eWriteDescriptorSet;
+	skyboxSamplerWrite.setDescriptorCount(1)
+					  .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
+					  .setDstArrayElement(0)
+					  .setDstBinding(1)
+					  .setDstSet(m_DescriptorSet)
+					  .setPImageInfo(&skyBoxSamplerDescriptor);
+
 	std::array<vk::WriteDescriptorSet, 2> writes = { uniformWriteSet, samplerWrite };
 	m_Device.GetLogicDevice().updateDescriptorSets(static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 }

@@ -51,6 +51,12 @@
     <ClCompile Include="src\vulkan\Texture.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\vulkan\CubeMap.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="vendor\stbimage\stb_image.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Application.h">
@@ -92,6 +98,12 @@
     <ClInclude Include="src\vulkan\Texture.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="src\vulkan\CubeMap.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="vendor\stbimage\stb_image.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="resource\shaders\triangle.vert" />
@@ -100,5 +112,7 @@
     <None Include="resource\shaders\wireframe.frag" />
     <None Include="resource\shaders\pushConstant.vert" />
     <None Include="resource\shaders\pushConstant.frag" />
+    <None Include="resource\shaders\skybox.vert" />
+    <None Include="resource\shaders\skybox.frag" />
   </ItemGroup>
 </Project>

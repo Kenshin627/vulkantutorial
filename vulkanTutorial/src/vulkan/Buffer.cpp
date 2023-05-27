@@ -62,9 +62,14 @@ void Buffer::SetDescriptor(vk::DeviceSize size, vk::DeviceSize offset)
 			    .setRange(size);
 }
 
-void Buffer::CopyFrom(void* data, vk::DeviceSize size)
+void Buffer::CopyFrom(void* src, size_t size)
 {
-	memcpy(mapped, data, size);
+	memcpy(mapped, src, size);
+}
+
+void Buffer::CopyFrom(void* dst, void* src, size_t size)
+{
+	memcpy(dst, src, size);
 }
 
 vk::Result Buffer::Flush(vk::DeviceSize size, vk::DeviceSize offset)

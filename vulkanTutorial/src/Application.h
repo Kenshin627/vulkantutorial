@@ -7,6 +7,7 @@
 #include "vulkan/Shader.h"
 #include "vulkan/Image.h"
 #include "vulkan/Texture.h"
+#include "vulkan/CubeMap.h"
 
 #include <vector>
 #include <optional>
@@ -73,6 +74,7 @@ struct PipeLines
 	vk::Pipeline Phong;
 	vk::Pipeline WireFrame;
 	vk::Pipeline PushConstant;
+	vk::Pipeline SkyBox;
 };
 
 struct PushConsntantCube
@@ -133,6 +135,8 @@ private:
 	Buffer m_CubeVertexBuffer;
 	Buffer m_CubeIndexBuffer;
 	Texture m_CubeTexture;
+
+	CubeMap m_SkyBoxTexture;
 
 	std::vector<PushConsntantCube> CubePushConstants =
 	{

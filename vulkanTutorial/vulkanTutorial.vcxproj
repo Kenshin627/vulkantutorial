@@ -138,6 +138,7 @@
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\vulkan\Buffer.cpp" />
     <ClCompile Include="src\vulkan\CommandManager.cpp" />
+    <ClCompile Include="src\vulkan\CubeMap.cpp" />
     <ClCompile Include="src\vulkan\Device.cpp" />
     <ClCompile Include="src\vulkan\FrameBuffer.cpp" />
     <ClCompile Include="src\vulkan\Image.cpp" />
@@ -146,12 +147,14 @@
     <ClCompile Include="src\vulkan\SwapChain.cpp" />
     <ClCompile Include="src\vulkan\Texture.cpp" />
     <ClCompile Include="src\Window.cpp" />
+    <ClCompile Include="vendor\stbimage\stb_image.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Application.h" />
     <ClInclude Include="src\Core.h" />
     <ClInclude Include="src\vulkan\Buffer.h" />
     <ClInclude Include="src\vulkan\CommandManager.h" />
+    <ClInclude Include="src\vulkan\CubeMap.h" />
     <ClInclude Include="src\vulkan\Device.h" />
     <ClInclude Include="src\vulkan\FrameBuffer.h" />
     <ClInclude Include="src\vulkan\Image.h" />
@@ -161,10 +164,13 @@
     <ClInclude Include="src\vulkan\Texture.h" />
     <ClInclude Include="src\Window.h" />
     <ClInclude Include="utils\readFile.h" />
+    <ClInclude Include="vendor\stbimage\stb_image.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="resource\shaders\pushConstant.frag" />
     <None Include="resource\shaders\pushConstant.vert" />
+    <None Include="resource\shaders\skybox.frag" />
+    <None Include="resource\shaders\skybox.vert" />
     <None Include="resource\shaders\triangle.frag" />
     <None Include="resource\shaders\triangle.vert" />
     <None Include="resource\shaders\wireframe.frag" />

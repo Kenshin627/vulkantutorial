@@ -7,4 +7,7 @@ C:/VulkanSDK/1.3.211.0/Bin/glslc.exe shaders/wireframe.frag -o shaders/wireframe
 C:/VulkanSDK/1.3.211.0/Bin/glslc.exe shaders/pushConstant.vert -o shaders/pushConstantVert.spv
 C:/VulkanSDK/1.3.211.0/Bin/glslc.exe shaders/pushConstant.frag -o shaders/pushConstantFrag.spv
 
+C:/VulkanSDK/1.3.211.0/Bin/glslc.exe shaders/skybox.vert -o shaders/skyboxVert.spv
+C:/VulkanSDK/1.3.211.0/Bin/glslc.exe shaders/skybox.frag -o shaders/skyboxFrag.spv
+
 pause
