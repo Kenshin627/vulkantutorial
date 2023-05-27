@@ -237,7 +237,7 @@ void SwapChain::PresentImage(uint32_t imageIndex, vk::Semaphore waitDrawFinish)
 void SwapChain::CreateMultiSampleColorAttachment()
 {
 	vk::Extent3D size(m_Extent.width, m_Extent.height, 1);
-	m_MultiSampleColorImage.Create(m_Device, 1, m_Samples, vk::ImageType::e2D, size, m_Format, vk::ImageUsageFlagBits::eTransientAttachment | vk::ImageUsageFlagBits::eColorAttachment, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageLayout::eUndefined, vk::SharingMode::eExclusive);
+	m_MultiSampleColorImage.Create(m_Device, 1, m_Samples, vk::ImageType::e2D, size, m_Format, vk::ImageUsageFlagBits::eTransientAttachment | vk::ImageUsageFlagBits::eColorAttachment, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageLayout::eUndefined, vk::SharingMode::eExclusive, 1, {});
 	m_MultiSampleColorImage.CreateImageView(m_Format);
 }
 
@@ -246,7 +246,7 @@ void SwapChain::CreateDepthStencilAttachment()
 	vk::Format depthFormat = m_Device.FindImageFormatDeviceSupport({ vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint, vk::Format::eD24UnormS8Uint }, vk::ImageTiling::eOptimal, vk::FormatFeatureFlagBits::eDepthStencilAttachment);
 
 	vk::Extent3D size(m_Extent.width, m_Extent.height, 1);
-	m_DepthImage.Create(m_Device, 1, m_Samples, vk::ImageType::e2D, size, depthFormat, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageLayout::eUndefined, vk::SharingMode::eExclusive);
+	m_DepthImage.Create(m_Device, 1, m_Samples, vk::ImageType::e2D, size, depthFormat, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageLayout::eUndefined, vk::SharingMode::eExclusive, 1, {});
 	vk::ImageAspectFlags aspectFlags = vk::ImageAspectFlagBits::eDepth;
 	if (m_Device.HasStencil(depthFormat))
 	{

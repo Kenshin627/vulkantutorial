@@ -133,10 +133,8 @@ void Application::CreatePipeLine()
 			  .setPSetLayouts(&m_SetLayout)
 			  .setPushConstantRangeCount(0)
 			  .setPPushConstantRanges(nullptr);  
-	if (m_Device.GetLogicDevice().createPipelineLayout(&layoutInfo, nullptr, &m_Layout) != vk::Result::eSuccess)
-	{
-		throw std::runtime_error("create pipeline layout faield!");
-	}
+	VK_CHECK_RESULT(m_Device.GetLogicDevice().createPipelineLayout(&layoutInfo, nullptr, &m_Layout));
+	
 
 	//8.
 	vk::PipelineViewportStateCreateInfo viewportInfo;
@@ -207,11 +205,11 @@ void Application::CreatePipeLine()
 
 void Application::RecordCommandBuffer(vk::CommandBuffer command, uint32_t imageIndex)
 {
-	/*m_Device.GetCommandManager().CommandBegin(command);*/
-	vk::CommandBufferBeginInfo beginInfo;
+	m_Device.GetCommandManager().CommandBegin(command);
+	/*vk::CommandBufferBeginInfo beginInfo;
 	beginInfo.sType = vk::StructureType::eCommandBufferBeginInfo;
 	beginInfo.setPInheritanceInfo(nullptr);
-	command.begin(&beginInfo);
+	command.begin(&beginInfo);*/
 		std::array<vk::ClearValue, 2> clearValues{};
 		clearValues[0].color = vk::ClearColorValue();
 		clearValues[1].depthStencil = vk::ClearDepthStencilValue(1.0f, 0);
@@ -359,10 +357,7 @@ void Application::CreateSetLayout()
 	setlayoutInfo.sType = vk::StructureType::eDescriptorSetLayoutCreateInfo;
 	setlayoutInfo.setBindingCount(static_cast<uint32_t>(bindings.size()))
 				 .setPBindings(bindings.data());
-	if (m_Device.GetLogicDevice().createDescriptorSetLayout(&setlayoutInfo, nullptr, &m_SetLayout) != vk::Result::eSuccess)
-	{
-		throw std::runtime_error("descriptor setlayout create failed!");
-	}
+	VK_CHECK_RESULT(m_Device.GetLogicDevice().createDescriptorSetLayout(&setlayoutInfo, nullptr, &m_SetLayout));
 }
 
 void Application::CreateUniformBuffer()
@@ -404,10 +399,7 @@ void Application::CreateDescriptorPool()
 	descriptorPoolInfo.setMaxSets(1)
 					  .setPoolSizeCount(static_cast<uint32_t>(poolSize.size()))
 					  .setPPoolSizes(poolSize.data());
-	if (m_Device.GetLogicDevice().createDescriptorPool(&descriptorPoolInfo, nullptr, &m_DescriptorPool) != vk::Result::eSuccess)
-	{
-		throw std::runtime_error("create descriptorPool failed!");
-	}
+	VK_CHECK_RESULT(m_Device.GetLogicDevice().createDescriptorPool(&descriptorPoolInfo, nullptr, &m_DescriptorPool));
 }
 
 void Application::CreateDescriptorSet()
@@ -417,10 +409,7 @@ void Application::CreateDescriptorSet()
 	setInfo.setDescriptorPool(m_DescriptorPool)
 		   .setDescriptorSetCount(1)
 		   .setPSetLayouts(&m_SetLayout);
-	if (m_Device.GetLogicDevice().allocateDescriptorSets(&setInfo, &m_DescriptorSet) != vk::Result::eSuccess)
-	{
-		throw std::runtime_error("descriptorSet allocate failed!");
-	}
+	VK_CHECK_RESULT(m_Device.GetLogicDevice().allocateDescriptorSets(&setInfo, &m_DescriptorSet));
 }
 
 void Application::UpdateDescriptorSet()
@@ -434,11 +423,7 @@ void Application::UpdateDescriptorSet()
 				   .setDstSet(m_DescriptorSet)
 				   .setPBufferInfo(&m_UniformBuffer.m_Descriptor);
 
-	vk::DescriptorImageInfo imageInfo;
-	imageInfo.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
-			 .setImageView(m_CubeTexture.GetImage().GetVkImageView())
-			 .setSampler(m_CubeTexture.GetSampler());
-
+	vk::DescriptorImageInfo imageDescriptor = m_CubeTexture.GetDescriptor();
 	vk::WriteDescriptorSet samplerWrite;
 	samplerWrite.sType = vk::StructureType::eWriteDescriptorSet;
 	samplerWrite.setDescriptorCount(1)
@@ -446,7 +431,7 @@ void Application::UpdateDescriptorSet()
 				.setDstArrayElement(0)
 				.setDstBinding(1)
 				.setDstSet(m_DescriptorSet)
-				.setPImageInfo(&imageInfo);
+				.setPImageInfo(&imageDescriptor);
 	std::array<vk::WriteDescriptorSet, 2> writes = { uniformWriteSet, samplerWrite };
 	m_Device.GetLogicDevice().updateDescriptorSets(static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 }

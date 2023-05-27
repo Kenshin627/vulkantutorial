@@ -1,15 +1,16 @@
 #include "../Core.h"
 #include "Image.h"
 
-void Image::Create(Device& device, uint32_t mipLevels, vk::SampleCountFlagBits samplerCount, vk::ImageType type, vk::Extent3D size, vk::Format format, vk::ImageUsageFlags usage, vk::ImageTiling tiling, vk::MemoryPropertyFlags memoryFlags, vk::ImageLayout initialLayout, vk::SharingMode sharingMode)
+void Image::Create(Device& device, uint32_t mipLevels, vk::SampleCountFlagBits samplerCount, vk::ImageType type, vk::Extent3D size, vk::Format format, vk::ImageUsageFlags usage, vk::ImageTiling tiling, vk::MemoryPropertyFlags memoryFlags, vk::ImageLayout initialLayout, vk::SharingMode sharingMode, uint32_t arrayLayers, vk::ImageCreateFlags flag)
 {
 	m_Device = device;
 	m_Size = size;
 	m_MipLevel = mipLevels;
+	m_Layers = arrayLayers;
 	vk::Device vkDevice = device.GetLogicDevice();
 	vk::ImageCreateInfo imageInfo;
 	imageInfo.sType = vk::StructureType::eImageCreateInfo;
-	imageInfo.setArrayLayers(1)
+	imageInfo.setArrayLayers(arrayLayers)
 		     .setExtent(size)
 		     .setFormat(format)
 		     .setImageType(type)
@@ -18,7 +19,8 @@ void Image::Create(Device& device, uint32_t mipLevels, vk::SampleCountFlagBits s
 		     .setSamples(samplerCount)
 		     .setSharingMode(sharingMode)
 		     .setTiling(tiling)
-		     .setUsage(usage);
+		     .setUsage(usage)
+			 .setFlags(flag);
 	VK_CHECK_RESULT(vkDevice.createImage(&imageInfo, nullptr, &m_VkImage));
 
 	vk::MemoryRequirements requirement = vkDevice.getImageMemoryRequirements(m_VkImage);
@@ -37,7 +39,7 @@ void Image::TransiationLayout(vk::PipelineStageFlags srcStage, vk::AccessFlags s
 		region.setAspectMask(aspectFlags)
 			  .setBaseArrayLayer(0)
 			  .setBaseMipLevel(0)
-			  .setLayerCount(1)
+			  .setLayerCount(m_Layers)
 			  .setLevelCount(m_MipLevel);
 		vk::ImageMemoryBarrier barrier;
 		barrier.sType = vk::StructureType::eImageMemoryBarrier;
@@ -60,7 +62,7 @@ void Image::CopyBufferToImage(vk::Buffer srcBuffer, vk::Extent3D size, vk::Image
 	vk::ImageSubresourceLayers layer;
 	layer.setAspectMask(vk::ImageAspectFlagBits::eColor)
 		 .setBaseArrayLayer(0)
-		 .setLayerCount(1)
+		 .setLayerCount(m_Layers)
 		 .setMipLevel(0);
 	vk::BufferImageCopy region;
 	region.setBufferImageHeight(0)
@@ -154,7 +156,7 @@ void Image::CreateImageView(vk::Format format, vk::ImageAspectFlags aspectFlag, 
 	region.setAspectMask(aspectFlag)
 		  .setBaseArrayLayer(0)
 		  .setBaseMipLevel(0)
-		  .setLayerCount(1)
+		  .setLayerCount(m_Layers)
 		  .setLevelCount(m_MipLevel);
 	vk::ImageViewCreateInfo viewInfo;
 	viewInfo.sType = vk::StructureType::eImageViewCreateInfo;
