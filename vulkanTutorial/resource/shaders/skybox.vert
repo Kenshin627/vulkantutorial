@@ -15,7 +15,7 @@ layout(set = 0, binding = 0) uniform UniformBufferObject
 void main() {
 
     vCoord = aPosition;
-    vCoord.xy *= -1;
+    vCoord.xy *= -1.0;
     gl_Position = ubo.proj * mat4(mat3(ubo.view)) * vec4(aPosition, 1.0);
-    gl_Position = gl_Position.xyww;
+//    gl_Position = gl_Position.xyww;
 }

@@ -37,7 +37,7 @@ void Application::InitVulkan()
 	CreatePipeLine();
 	m_Texture.Create(m_Device, "resource/textures/vikingRoom.png", true);
 	m_CubeTexture.Create(m_Device, "resource/textures/cube.jpg", true);
-	m_SkyBoxTexture.Create(m_Device, { "resource/textures/skybox/back.jpg", "resource/textures/skybox/bottom.jpg", "resource/textures/skybox/front.jpg", "resource/textures/skybox/left.jpg", "resource/textures/skybox/right.jpg", "resource/textures/skybox/top.jpg" });
+	m_SkyBoxTexture.Create(m_Device, { "resource/textures/skybox/right.jpg", "resource/textures/skybox/left.jpg", "resource/textures/skybox/top.jpg", "resource/textures/skybox/bottom.jpg", "resource/textures/skybox/front.jpg", "resource/textures/skybox/back.jpg" });
 	LoadModel("resource/models/vikingRoom.obj", m_VertexData, m_Indices);	
 	LoadModel("resource/models/cube.obj", m_CubeVexData, m_CubeIndices);
 	m_CommandBuffer = m_Device.GetCommandManager().AllocateCommandBuffer(vk::CommandBufferLevel::ePrimary, true);
@@ -120,7 +120,7 @@ void Application::CreatePipeLine()
 	depthStencilInfo.setDepthTestEnable(VK_TRUE)
 					.setBack({})
 					.setDepthBoundsTestEnable(VK_FALSE)
-					.setDepthCompareOp(vk::CompareOp::eLess)
+					.setDepthCompareOp(vk::CompareOp::eLessOrEqual)
 					.setDepthWriteEnable(VK_TRUE)
 					.setFront({})
 					.setMaxDepthBounds(1.0f)
@@ -194,6 +194,8 @@ void Application::CreatePipeLine()
 	VK_CHECK_RESULT(m_Device.GetLogicDevice().createGraphicsPipelines({}, 1, &pipelineInfo, nullptr, &m_PipeLines.WireFrame));
 
 	//pushConstant
+	rasterizationInfo.setCullMode(vk::CullModeFlagBits::eBack);
+
 	vertex = Shader(m_Device.GetLogicDevice(), "resource/shaders/pushConstantVert.spv");
 	vertex.SetPipelineShaderStageInfo(vk::ShaderStageFlagBits::eVertex);
 	fragment = Shader(m_Device.GetLogicDevice(), "resource/shaders/pushConstantFrag.spv");
@@ -211,7 +213,7 @@ void Application::CreatePipeLine()
 	shaders[0] = vertex.m_ShaderStage;
 	shaders[1] = fragment.m_ShaderStage;
 	rasterizationInfo.setCullMode(vk::CullModeFlagBits::eFront);
-	depthStencilInfo.setDepthWriteEnable(false);
+	depthStencilInfo.setDepthWriteEnable(false).setDepthTestEnable(false);
 	VK_CHECK_RESULT(m_Device.GetLogicDevice().createGraphicsPipelines({}, 1, & pipelineInfo, nullptr, & m_PipeLines.SkyBox));
 }
 
@@ -238,7 +240,6 @@ void Application::RecordCommandBuffer(vk::CommandBuffer command, uint32_t imageI
 					   .setRenderPass(m_SwapChain.GetRenderPass())
 					   .setRenderArea(renderArea);
 		command.beginRenderPass(&renderPassBegin, vk::SubpassContents::eInline);
-			command.bindPipeline(vk::PipelineBindPoint::eGraphics, m_PipeLines.Phong);
 			vk::Viewport viewport;
 			viewport.setX(0.0f)
 					.setY(0.0f)
@@ -252,19 +253,22 @@ void Application::RecordCommandBuffer(vk::CommandBuffer command, uint32_t imageI
 			command.setViewport(0, 1, &viewport);
 			command.setScissor(0, 1, &scissor);
 			vk::DeviceSize size(0);
-			/*command.bindVertexBuffers(0, 1, &m_VertexBuffer.m_Buffer, &size);
-			command.bindIndexBuffer(m_IndexBuffer.m_Buffer, 0, vk::IndexType::eUint32);*/
 			command.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_Layout, 0, 1, &m_DescriptorSet, 0, nullptr);
-			//command.drawIndexed(static_cast<uint32_t>(m_Indices.size()), 1, 0, 0, 0);
+			
+			command.bindPipeline(vk::PipelineBindPoint::eGraphics, m_PipeLines.SkyBox);
+			command.bindVertexBuffers(0, 1, &m_CubeVertexBuffer.m_Buffer, &size);
+			command.bindIndexBuffer(m_CubeIndexBuffer.m_Buffer, 0, vk::IndexType::eUint32);
+			command.drawIndexed(static_cast<uint32_t>(m_CubeIndices.size()), 1, 0, 0, 0);
 
 			command.bindPipeline(vk::PipelineBindPoint::eGraphics, m_PipeLines.PushConstant);
-			command.bindVertexBuffers(0, 1, &CubeVertexBuffer.m_Buffer, &size);
+			command.bindVertexBuffers(0, 1, &m_CubeVertexBuffer.m_Buffer, &size);
 			command.bindIndexBuffer(m_CubeIndexBuffer.m_Buffer, 0, vk::IndexType::eUint32);
 			for (auto& cubeConst : CubePushConstants)
 			{
 				command.pushConstants(m_Layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(PushConsntantCube), &cubeConst);
 				command.drawIndexed(static_cast<uint32_t>(m_CubeIndices.size()), 1, 0, 0, 0);
 			}
+
 			
 			command.endRenderPass();
 	m_Device.GetCommandManager().CommandEnd(command);
@@ -327,8 +331,8 @@ void Application::CreateVertexBuffer()
 	vk::DeviceSize cubeDatasize = sizeof(m_CubeVexData[0]) * m_CubeVexData.size();
 	Buffer cubeStagingBuffer;
 	cubeStagingBuffer.Create(m_Device, vk::BufferUsageFlagBits::eTransferSrc, cubeDatasize, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, m_CubeVexData.data());
-	CubeVertexBuffer.Create(m_Device, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer, size, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eDeviceLocal, nullptr);
-	Buffer::CopyBuffer(cubeStagingBuffer.m_Buffer, 0, CubeVertexBuffer.m_Buffer, 0, cubeDatasize, m_Device.GetGraphicQueue(), m_Device.GetCommandManager());
+	m_CubeVertexBuffer.Create(m_Device, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer, size, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eDeviceLocal, nullptr);
+	Buffer::CopyBuffer(cubeStagingBuffer.m_Buffer, 0, m_CubeVertexBuffer.m_Buffer, 0, cubeDatasize, m_Device.GetGraphicQueue(), m_Device.GetCommandManager());
 }
 
 void Application::CreateIndexBuffer()
@@ -370,7 +374,7 @@ void Application::CreateSetLayout()
 					    .setPImmutableSamplers(nullptr)
 					    .setStageFlags(vk::ShaderStageFlagBits::eFragment);
 
-	std::array<vk::DescriptorSetLayoutBinding, 2> bindings = { uniformBinding, samplerBinding };
+	std::array<vk::DescriptorSetLayoutBinding, 3> bindings = { uniformBinding, samplerBinding, skyboxSamplerBinding };
 
 	vk::DescriptorSetLayoutCreateInfo setlayoutInfo;
 	setlayoutInfo.sType = vk::StructureType::eDescriptorSetLayoutCreateInfo;
@@ -395,8 +399,8 @@ void Application::UpdateUniformBuffers()
 	UniformBufferObject ubo{};
 	ubo.Proj = glm::perspective(glm::radians(45.0f), m_SwapChain.GetExtent().width / (float)m_SwapChain.GetExtent().height, 0.1f, 100.0f);
 	ubo.Proj[1][1] *= -1;
-	ubo.View = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	ubo.Model = glm::rotate(glm::mat4(1.0f), time * glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.View = glm::translate(glm::mat4(1.0f), glm::vec3(0, -1.0, -4.5));
+	ubo.Model = glm::rotate(glm::mat4(1.0f), time * glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
 	m_UniformBuffer.CopyFrom(&ubo, sizeof(UniformBufferObject));
 }
@@ -461,11 +465,11 @@ void Application::UpdateDescriptorSet()
 	skyboxSamplerWrite.setDescriptorCount(1)
 					  .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
 					  .setDstArrayElement(0)
-					  .setDstBinding(1)
+					  .setDstBinding(2)
 					  .setDstSet(m_DescriptorSet)
 					  .setPImageInfo(&skyBoxSamplerDescriptor);
 
-	std::array<vk::WriteDescriptorSet, 2> writes = { uniformWriteSet, samplerWrite };
+	std::array<vk::WriteDescriptorSet, 3> writes = { uniformWriteSet, samplerWrite, skyboxSamplerWrite };
 	m_Device.GetLogicDevice().updateDescriptorSets(static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 }
 

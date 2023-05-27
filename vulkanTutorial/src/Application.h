@@ -129,10 +129,9 @@ private:
 	Buffer m_UniformBuffer;
 	Texture m_Texture;	
 
-	Buffer CubeVertexBuffer;	
 	std::vector<Vertex> m_CubeVexData;
 	std::vector<uint32_t> m_CubeIndices;
-	Buffer m_CubeVertexBuffer;
+	Buffer m_CubeVertexBuffer;	
 	Buffer m_CubeIndexBuffer;
 	Texture m_CubeTexture;
 

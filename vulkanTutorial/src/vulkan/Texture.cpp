@@ -7,6 +7,7 @@ void Texture::Create(Device& device, const char* path, bool generateMipmaps)
 {
 	m_Device = device;
 	int width, height, channel;
+	stbi_set_flip_vertically_on_load(1);
 	stbi_uc* pixels = stbi_load(path, &width, &height, &channel, STBI_rgb_alpha);
 	if (!pixels)
 	{
