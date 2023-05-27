@@ -98,5 +98,7 @@
     <None Include="resource\shaders\triangle.frag" />
     <None Include="resource\shaders\wireframe.vert" />
     <None Include="resource\shaders\wireframe.frag" />
+    <None Include="resource\shaders\pushConstant.vert" />
+    <None Include="resource\shaders\pushConstant.frag" />
   </ItemGroup>
 </Project>

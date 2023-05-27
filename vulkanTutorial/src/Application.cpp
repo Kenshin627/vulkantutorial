@@ -1,3 +1,4 @@
+#include "Core.h"
 #include "Application.h"
 #include <set>
 #include <limits>
@@ -34,15 +35,14 @@ void Application::InitVulkan()
 	m_SwapChain.Init(m_Device, m_Window, m_SamplerCount, false, true);
 	CreateSetLayout();
 	CreatePipeLine();
-
 	m_Texture.Create(m_Device, "resource/textures/vikingRoom.png", true);
-	LoadModel("resource/models/vikingRoom.obj");
-	
+	m_CubeTexture.Create(m_Device, "resource/textures/cube.jpg", true);
+	LoadModel("resource/models/vikingRoom.obj", m_VertexData, m_Indices);	
+	LoadModel("resource/models/cube.obj", m_CubeVexData, m_CubeIndices);
 	m_CommandBuffer = m_Device.GetCommandManager().AllocateCommandBuffer(vk::CommandBufferLevel::ePrimary, true);
 	CreateVertexBuffer();
 	CreateIndexBuffer();
 	CreateUniformBuffer();
-
 	CreateDescriptorPool();
 	CreateDescriptorSet();
 	UpdateDescriptorSet();
@@ -179,10 +179,7 @@ void Application::CreatePipeLine()
 				.setBasePipelineHandle(VK_NULL_HANDLE)
 				.setBasePipelineIndex(-1)
 				.setFlags(vk::PipelineCreateFlagBits::eAllowDerivatives);
-	if (m_Device.GetLogicDevice().createGraphicsPipelines({}, 1, &pipelineInfo, nullptr, &m_PipeLines.Phong) != vk::Result::eSuccess)
-	{
-		throw std::runtime_error("pipeline Create failed!");
-	}
+	VK_CHECK_RESULT(m_Device.GetLogicDevice().createGraphicsPipelines({}, 1, &pipelineInfo, nullptr, &m_PipeLines.Phong));
 
 	pipelineInfo.setFlags(vk::PipelineCreateFlagBits::eDerivative)
 				.setBasePipelineHandle(m_PipeLines.Phong)
@@ -195,10 +192,17 @@ void Application::CreatePipeLine()
 	shaders[0] = vertex.m_ShaderStage;
 	shaders[1] = fragment.m_ShaderStage;
 	rasterizationInfo.setPolygonMode(vk::PolygonMode::eLine);
-	if (m_Device.GetLogicDevice().createGraphicsPipelines({}, 1, &pipelineInfo, nullptr, &m_PipeLines.WireFrame) != vk::Result::eSuccess)
-	{
-		throw std::runtime_error("pipeline Create failed!");
-	}
+	VK_CHECK_RESULT(m_Device.GetLogicDevice().createGraphicsPipelines({}, 1, &pipelineInfo, nullptr, &m_PipeLines.WireFrame));
+
+	//pushConstant
+	vertex = Shader(m_Device.GetLogicDevice(), "resource/shaders/pushConstantVert.spv");
+	vertex.SetPipelineShaderStageInfo(vk::ShaderStageFlagBits::eVertex);
+	fragment = Shader(m_Device.GetLogicDevice(), "resource/shaders/pushConstantFrag.spv");
+	fragment.SetPipelineShaderStageInfo(vk::ShaderStageFlagBits::eFragment);
+	shaders[0] = vertex.m_ShaderStage;
+	shaders[1] = fragment.m_ShaderStage;
+	rasterizationInfo.setPolygonMode(vk::PolygonMode::eFill);
+	VK_CHECK_RESULT(m_Device.GetLogicDevice().createGraphicsPipelines({}, 1, &pipelineInfo, nullptr, &m_PipeLines.PushConstant));
 }
 
 void Application::RecordCommandBuffer(vk::CommandBuffer command, uint32_t imageIndex)
@@ -238,10 +242,20 @@ void Application::RecordCommandBuffer(vk::CommandBuffer command, uint32_t imageI
 			command.setViewport(0, 1, &viewport);
 			command.setScissor(0, 1, &scissor);
 			vk::DeviceSize size(0);
-			command.bindVertexBuffers(0, 1, &m_VertexBuffer.m_Buffer, &size);
-			command.bindIndexBuffer(m_IndexBuffer.m_Buffer, 0, vk::IndexType::eUint32);
+			/*command.bindVertexBuffers(0, 1, &m_VertexBuffer.m_Buffer, &size);
+			command.bindIndexBuffer(m_IndexBuffer.m_Buffer, 0, vk::IndexType::eUint32);*/
 			command.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_Layout, 0, 1, &m_DescriptorSet, 0, nullptr);
-			command.drawIndexed(static_cast<uint32_t>(m_Indices.size()), 1, 0, 0, 0);
+			//command.drawIndexed(static_cast<uint32_t>(m_Indices.size()), 1, 0, 0, 0);
+
+			command.bindPipeline(vk::PipelineBindPoint::eGraphics, m_PipeLines.PushConstant);
+			command.bindVertexBuffers(0, 1, &CubeVertexBuffer.m_Buffer, &size);
+			command.bindIndexBuffer(m_CubeIndexBuffer.m_Buffer, 0, vk::IndexType::eUint32);
+			for (auto& cubeConst : CubePushConstants)
+			{
+				command.pushConstants(m_Layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(PushConsntantCube), &cubeConst);
+				command.drawIndexed(static_cast<uint32_t>(m_CubeIndices.size()), 1, 0, 0, 0);
+			}
+			
 			command.endRenderPass();
 	m_Device.GetCommandManager().CommandEnd(command);
 }				
@@ -299,6 +313,12 @@ void Application::CreateVertexBuffer()
 
 	Buffer::CopyBuffer(stagingBuffer.m_Buffer, 0, m_VertexBuffer.m_Buffer, 0, size, m_Device.GetGraphicQueue(), m_Device.GetCommandManager());
 	//stagingBuffer.Clear();
+
+	vk::DeviceSize cubeDatasize = sizeof(m_CubeVexData[0]) * m_CubeVexData.size();
+	Buffer cubeStagingBuffer;
+	cubeStagingBuffer.Create(m_Device, vk::BufferUsageFlagBits::eTransferSrc, cubeDatasize, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, m_CubeVexData.data());
+	CubeVertexBuffer.Create(m_Device, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer, size, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eDeviceLocal, nullptr);
+	Buffer::CopyBuffer(cubeStagingBuffer.m_Buffer, 0, CubeVertexBuffer.m_Buffer, 0, cubeDatasize, m_Device.GetGraphicQueue(), m_Device.GetCommandManager());
 }
 
 void Application::CreateIndexBuffer()
@@ -309,6 +329,12 @@ void Application::CreateIndexBuffer()
 	m_IndexBuffer.Create(m_Device, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, size, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eDeviceLocal, nullptr);
 	Buffer::CopyBuffer(stagingBuffer.m_Buffer, 0, m_IndexBuffer.m_Buffer, 0, size, m_Device.GetGraphicQueue(), m_Device.GetCommandManager());
 	//stagingBuffer.Clear();
+
+	vk::DeviceSize cubeDataSize = sizeof(uint32_t) * m_CubeIndices.size();
+	Buffer cubeStagingBuffer;
+	cubeStagingBuffer.Create(m_Device, vk::BufferUsageFlagBits::eTransferSrc, cubeDataSize, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, m_CubeIndices.data());
+	m_CubeIndexBuffer.Create(m_Device, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, size, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eDeviceLocal, nullptr);
+	Buffer::CopyBuffer(cubeStagingBuffer.m_Buffer, 0, m_CubeIndexBuffer.m_Buffer, 0, cubeDataSize, m_Device.GetGraphicQueue(), m_Device.GetCommandManager());
 }
 
 void Application::CreateSetLayout()
@@ -410,8 +436,8 @@ void Application::UpdateDescriptorSet()
 
 	vk::DescriptorImageInfo imageInfo;
 	imageInfo.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
-			 .setImageView(m_Texture.GetImage().GetVkImageView())
-			 .setSampler(m_Texture.GetSampler());
+			 .setImageView(m_CubeTexture.GetImage().GetVkImageView())
+			 .setSampler(m_CubeTexture.GetSampler());
 
 	vk::WriteDescriptorSet samplerWrite;
 	samplerWrite.sType = vk::StructureType::eWriteDescriptorSet;
@@ -425,7 +451,7 @@ void Application::UpdateDescriptorSet()
 	m_Device.GetLogicDevice().updateDescriptorSets(static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 }
 
-void Application::LoadModel(const char* path)
+void Application::LoadModel(const char* path, std::vector<Vertex>& vertexData, std::vector<uint32_t>& indicesData)
 {
 	tinyobj::attrib_t attris;
 	std::vector<tinyobj::shape_t> shapes;
@@ -457,10 +483,10 @@ void Application::LoadModel(const char* path)
 			vertex.Color = { 1.0f, 1.0f, 1.0f };
 			if (uniqueVertices.count(vertex) == 0)
 			{
-				uniqueVertices[vertex] = static_cast<uint32_t>(m_VertexData.size());
-				m_VertexData.push_back(vertex);
+				uniqueVertices[vertex] = static_cast<uint32_t>(vertexData.size());
+				vertexData.push_back(vertex);
 			}
-			m_Indices.push_back(uniqueVertices[vertex]);
+			indicesData.push_back(uniqueVertices[vertex]);
 		}
 	}
 }

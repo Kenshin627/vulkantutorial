@@ -72,6 +72,12 @@ struct PipeLines
 {
 	vk::Pipeline Phong;
 	vk::Pipeline WireFrame;
+	vk::Pipeline PushConstant;
+};
+
+struct PushConsntantCube
+{
+	glm::vec3 Pos;
 };
 
 class Application
@@ -83,7 +89,7 @@ public:
 	void InitVulkan();
 	void RenderLoop();
 	void Clear();
-	void LoadModel(const char* path);
+	void LoadModel(const char* path, std::vector<Vertex>& vertexData, std::vector<uint32_t>& indicesData);
 private:
 	void InitDevice(Window& window);
 	void CreateSetLayout();
@@ -103,7 +109,6 @@ private:
 	Device m_Device;
 	SwapChain m_SwapChain;
 	vk::PipelineLayout m_Layout;
-	//vk::Pipeline m_Pipeline;	
 	vk::CommandBuffer m_CommandBuffer;
 	vk::Fence m_InFlightFence;
 	vk::Semaphore m_WaitAcquireImageSemaphore;
@@ -113,12 +118,26 @@ private:
 	vk::DescriptorPool m_DescriptorPool;
 	vk::DescriptorSet m_DescriptorSet;
 	PipeLines m_PipeLines;
+
+	//GeometryData
 	std::vector<Vertex> m_VertexData;
 	std::vector<uint32_t> m_Indices;
 	Buffer m_VertexBuffer;
 	Buffer m_IndexBuffer;
 	Buffer m_UniformBuffer;
 	Texture m_Texture;	
+
+	Buffer CubeVertexBuffer;	
+	std::vector<Vertex> m_CubeVexData;
+	std::vector<uint32_t> m_CubeIndices;
+	Buffer m_CubeVertexBuffer;
+	Buffer m_CubeIndexBuffer;
+	Texture m_CubeTexture;
+
+	std::vector<PushConsntantCube> CubePushConstants =
+	{
+		{{ 0.0, 0.0, 0.0 }}
+	};
 };
 
 namespace std
