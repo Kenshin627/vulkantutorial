@@ -72,6 +72,7 @@ struct UniformBufferObject
 struct PipeLines
 {
 	vk::Pipeline Phong;
+	vk::Pipeline GrayScale;
 	vk::Pipeline WireFrame;
 	vk::Pipeline PushConstant;
 	vk::Pipeline SkyBox;
@@ -110,16 +111,22 @@ private:
 	Window m_Window;
 	Device m_Device;
 	SwapChain m_SwapChain;
-	vk::PipelineLayout m_Layout;
+	
 	vk::CommandBuffer m_CommandBuffer;
 	vk::Fence m_InFlightFence;
 	vk::Semaphore m_WaitAcquireImageSemaphore;
 	vk::Semaphore m_WaitFinishDrawSemaphore;
-	vk::SampleCountFlagBits m_SamplerCount = vk::SampleCountFlagBits::e1;
-	vk::DescriptorSetLayout m_SetLayout;
-	vk::DescriptorPool m_DescriptorPool;
-	vk::DescriptorSet m_DescriptorSet;
+	vk::SampleCountFlagBits m_SamplerCount = vk::SampleCountFlagBits::e1;	
 	PipeLines m_PipeLines;
+
+	vk::DescriptorPool m_DescriptorPool;
+	vk::PipelineLayout m_Layout;
+	vk::DescriptorSetLayout m_SetLayout;
+	vk::DescriptorSet m_DescriptorSet;
+
+	vk::PipelineLayout m_GrayScaleLayout;
+	vk::DescriptorSetLayout m_GrayScaleSetLayout;
+	std::vector<vk::DescriptorSet> m_GrayScaleDescriptorSets;
 
 	//GeometryData
 	std::vector<Vertex> m_VertexData;

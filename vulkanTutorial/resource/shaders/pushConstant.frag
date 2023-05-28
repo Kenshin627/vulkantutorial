@@ -6,5 +6,5 @@ layout(location = 0) out vec4 outColor;
 layout(binding = 1) uniform sampler2D imageSampler;
 
 void main() {
-    outColor = vec4(vColor, 1.0) * texture(imageSampler, vCoord);
+    outColor = vec4(1.0, 0.2, 0.3, 1.0);
 }

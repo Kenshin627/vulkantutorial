@@ -23,6 +23,7 @@ public:
 	std::vector<vk::ImageView> GetImageViews() { return m_ImageViews; }
 	vk::RenderPass GetRenderPass() { return m_RenderPass; }
 	std::vector<FrameBuffer>& GetFrameBuffers() { return m_FrameBuffers; }
+	uint32_t GetImageCount() { return m_ImageCount; }
 private:
 	void CreateMultiSampleColorAttachment();
 	void CreateDepthStencilAttachment();

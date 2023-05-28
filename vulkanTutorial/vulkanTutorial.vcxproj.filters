@@ -114,5 +114,7 @@
     <None Include="resource\shaders\pushConstant.frag" />
     <None Include="resource\shaders\skybox.vert" />
     <None Include="resource\shaders\skybox.frag" />
+    <None Include="resource\shaders\grayscale.vert" />
+    <None Include="resource\shaders\grayscale.frag" />
   </ItemGroup>
 </Project>

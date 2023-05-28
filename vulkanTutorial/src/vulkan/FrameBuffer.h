@@ -11,6 +11,7 @@ public:
 	void Create(vk::Device device, uint32_t width, uint32_t height, vk::RenderPass renderPass);
 	void Clear();
 	vk::Framebuffer GetVkFrameBuffer() const { return m_VkFrameBuffer; }
+	std::vector<vk::ImageView>& GetAttachments() { return m_Attachments; }
 private:
 	uint32_t m_Width;
 	uint32_t m_Height;

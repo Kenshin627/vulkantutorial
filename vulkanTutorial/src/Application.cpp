@@ -31,7 +31,8 @@ void Application::InitDevice(Window& window)
 void Application::InitVulkan()
 {
 	InitDevice(m_Window);
-	m_SamplerCount = m_Device.GetMaxSampleCount();
+	//m_SamplerCount = m_Device.GetMaxSampleCount();
+	m_SamplerCount = vk::SampleCountFlagBits::e1;
 	m_SwapChain.Init(m_Device, m_Window, m_SamplerCount, false, true);
 	CreateSetLayout();
 	CreatePipeLine();
@@ -84,9 +85,9 @@ void Application::CreatePipeLine()
 			    .setPrimitiveRestartEnable(VK_FALSE);
 
 	//3.
-	Shader vertex(m_Device.GetLogicDevice(), "resource/shaders/vert.spv");
+	Shader vertex(m_Device.GetLogicDevice(), "resource/shaders/pushConstantVert.spv");
 	vertex.SetPipelineShaderStageInfo(vk::ShaderStageFlagBits::eVertex);
-	Shader fragment(m_Device.GetLogicDevice(), "resource/shaders/frag.spv");
+	Shader fragment(m_Device.GetLogicDevice(), "resource/shaders/pushConstantFrag.spv");
 	fragment.SetPipelineShaderStageInfo(vk::ShaderStageFlagBits::eFragment);
 	vk::PipelineShaderStageCreateInfo shaders[] = { vertex.m_ShaderStage, fragment.m_ShaderStage };
 
@@ -128,13 +129,7 @@ void Application::CreatePipeLine()
 					.setStencilTestEnable(VK_FALSE);
 
 	//7.
-	vk::PipelineLayoutCreateInfo layoutInfo;
-	layoutInfo.sType = vk::StructureType::ePipelineLayoutCreateInfo;
-	layoutInfo.setSetLayoutCount(1)
-			  .setPSetLayouts(&m_SetLayout)
-			  .setPushConstantRangeCount(0)
-			  .setPPushConstantRanges(nullptr);  
-	VK_CHECK_RESULT(m_Device.GetLogicDevice().createPipelineLayout(&layoutInfo, nullptr, &m_Layout));
+	//Layout
 	
 
 	//8.
@@ -180,50 +175,63 @@ void Application::CreatePipeLine()
 				.setFlags(vk::PipelineCreateFlagBits::eAllowDerivatives);
 	VK_CHECK_RESULT(m_Device.GetLogicDevice().createGraphicsPipelines({}, 1, &pipelineInfo, nullptr, &m_PipeLines.Phong));
 
+	//GrayScale
+	vk::PipelineVertexInputStateCreateInfo emptyInput;
 	pipelineInfo.setFlags(vk::PipelineCreateFlagBits::eDerivative)
 				.setBasePipelineHandle(m_PipeLines.Phong)
-				.setBasePipelineIndex(-1);
-	//3.
-	vertex = Shader(m_Device.GetLogicDevice(), "resource/shaders/wireframeVert.spv");
+				.setBasePipelineIndex(-1)
+				.setPVertexInputState(&emptyInput)
+				.setSubpass(1)
+				.setLayout(m_GrayScaleLayout);
+	rasterizationInfo.setCullMode(vk::CullModeFlagBits::eNone);
+	depthStencilInfo.setDepthWriteEnable(false);
+	vertex = Shader(m_Device.GetLogicDevice(), "resource/shaders/grayscaleVert.spv");
 	vertex.SetPipelineShaderStageInfo(vk::ShaderStageFlagBits::eVertex);
-	fragment = Shader(m_Device.GetLogicDevice(), "resource/shaders/wireframeFrag.spv");
+	fragment = Shader(m_Device.GetLogicDevice(), "resource/shaders/grayscaleFrag.spv");
 	fragment.SetPipelineShaderStageInfo(vk::ShaderStageFlagBits::eFragment);
 	shaders[0] = vertex.m_ShaderStage;
 	shaders[1] = fragment.m_ShaderStage;
-	rasterizationInfo.setPolygonMode(vk::PolygonMode::eLine);
-	VK_CHECK_RESULT(m_Device.GetLogicDevice().createGraphicsPipelines({}, 1, &pipelineInfo, nullptr, &m_PipeLines.WireFrame));
+	VK_CHECK_RESULT(m_Device.GetLogicDevice().createGraphicsPipelines({}, 1, & pipelineInfo, nullptr, & m_PipeLines.GrayScale));
 
-	//pushConstant
-	rasterizationInfo.setCullMode(vk::CullModeFlagBits::eBack);
+	////wireFrame
+	//pipelineInfo.setFlags(vk::PipelineCreateFlagBits::eDerivative)
+	//			.setBasePipelineHandle(m_PipeLines.Phong)
+	//			.setBasePipelineIndex(-1);
+	//vertex = Shader(m_Device.GetLogicDevice(), "resource/shaders/wireframeVert.spv");
+	//vertex.SetPipelineShaderStageInfo(vk::ShaderStageFlagBits::eVertex);
+	//fragment = Shader(m_Device.GetLogicDevice(), "resource/shaders/wireframeFrag.spv");
+	//fragment.SetPipelineShaderStageInfo(vk::ShaderStageFlagBits::eFragment);
+	//shaders[0] = vertex.m_ShaderStage;
+	//shaders[1] = fragment.m_ShaderStage;
+	//rasterizationInfo.setPolygonMode(vk::PolygonMode::eLine);
+	//VK_CHECK_RESULT(m_Device.GetLogicDevice().createGraphicsPipelines({}, 1, &pipelineInfo, nullptr, &m_PipeLines.WireFrame));
 
-	vertex = Shader(m_Device.GetLogicDevice(), "resource/shaders/pushConstantVert.spv");
-	vertex.SetPipelineShaderStageInfo(vk::ShaderStageFlagBits::eVertex);
-	fragment = Shader(m_Device.GetLogicDevice(), "resource/shaders/pushConstantFrag.spv");
-	fragment.SetPipelineShaderStageInfo(vk::ShaderStageFlagBits::eFragment);
-	shaders[0] = vertex.m_ShaderStage;
-	shaders[1] = fragment.m_ShaderStage;
-	rasterizationInfo.setPolygonMode(vk::PolygonMode::eFill);
-	VK_CHECK_RESULT(m_Device.GetLogicDevice().createGraphicsPipelines({}, 1, &pipelineInfo, nullptr, &m_PipeLines.PushConstant));
+	////pushConstant
+	//rasterizationInfo.setCullMode(vk::CullModeFlagBits::eBack);
+	//vertex = Shader(m_Device.GetLogicDevice(), "resource/shaders/pushConstantVert.spv");
+	//vertex.SetPipelineShaderStageInfo(vk::ShaderStageFlagBits::eVertex);
+	//fragment = Shader(m_Device.GetLogicDevice(), "resource/shaders/pushConstantFrag.spv");
+	//fragment.SetPipelineShaderStageInfo(vk::ShaderStageFlagBits::eFragment);
+	//shaders[0] = vertex.m_ShaderStage;
+	//shaders[1] = fragment.m_ShaderStage;
+	//rasterizationInfo.setPolygonMode(vk::PolygonMode::eFill);
+	//VK_CHECK_RESULT(m_Device.GetLogicDevice().createGraphicsPipelines({}, 1, &pipelineInfo, nullptr, &m_PipeLines.PushConstant));
 
-	//skyBox
-	vertex = Shader(m_Device.GetLogicDevice(), "resource/shaders/skyboxVert.spv");
-	vertex.SetPipelineShaderStageInfo(vk::ShaderStageFlagBits::eVertex);
-	fragment = Shader(m_Device.GetLogicDevice(), "resource/shaders/skyboxFrag.spv");
-	fragment.SetPipelineShaderStageInfo(vk::ShaderStageFlagBits::eFragment);
-	shaders[0] = vertex.m_ShaderStage;
-	shaders[1] = fragment.m_ShaderStage;
-	rasterizationInfo.setCullMode(vk::CullModeFlagBits::eFront);
-	depthStencilInfo.setDepthWriteEnable(false).setDepthTestEnable(false);
-	VK_CHECK_RESULT(m_Device.GetLogicDevice().createGraphicsPipelines({}, 1, & pipelineInfo, nullptr, & m_PipeLines.SkyBox));
+	////skyBox
+	//vertex = Shader(m_Device.GetLogicDevice(), "resource/shaders/skyboxVert.spv");
+	//vertex.SetPipelineShaderStageInfo(vk::ShaderStageFlagBits::eVertex);
+	//fragment = Shader(m_Device.GetLogicDevice(), "resource/shaders/skyboxFrag.spv");
+	//fragment.SetPipelineShaderStageInfo(vk::ShaderStageFlagBits::eFragment);
+	//shaders[0] = vertex.m_ShaderStage;
+	//shaders[1] = fragment.m_ShaderStage;
+	//rasterizationInfo.setCullMode(vk::CullModeFlagBits::eFront);
+	//depthStencilInfo.setDepthWriteEnable(false).setDepthTestEnable(false);
+	//VK_CHECK_RESULT(m_Device.GetLogicDevice().createGraphicsPipelines({}, 1, & pipelineInfo, nullptr, & m_PipeLines.SkyBox));
 }
 
 void Application::RecordCommandBuffer(vk::CommandBuffer command, uint32_t imageIndex)
 {
 	m_Device.GetCommandManager().CommandBegin(command);
-	/*vk::CommandBufferBeginInfo beginInfo;
-	beginInfo.sType = vk::StructureType::eCommandBufferBeginInfo;
-	beginInfo.setPInheritanceInfo(nullptr);
-	command.begin(&beginInfo);*/
 		std::array<vk::ClearValue, 2> clearValues{};
 		clearValues[0].color = vk::ClearColorValue();
 		clearValues[1].depthStencil = vk::ClearDepthStencilValue(1.0f, 0);
@@ -239,6 +247,7 @@ void Application::RecordCommandBuffer(vk::CommandBuffer command, uint32_t imageI
 					   .setFramebuffer(m_SwapChain.GetFrameBuffers()[imageIndex].GetVkFrameBuffer())
 					   .setRenderPass(m_SwapChain.GetRenderPass())
 					   .setRenderArea(renderArea);
+
 		command.beginRenderPass(&renderPassBegin, vk::SubpassContents::eInline);
 			vk::Viewport viewport;
 			viewport.setX(0.0f)
@@ -253,24 +262,33 @@ void Application::RecordCommandBuffer(vk::CommandBuffer command, uint32_t imageI
 			command.setViewport(0, 1, &viewport);
 			command.setScissor(0, 1, &scissor);
 			vk::DeviceSize size(0);
-			command.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_Layout, 0, 1, &m_DescriptorSet, 0, nullptr);
-			
-			command.bindPipeline(vk::PipelineBindPoint::eGraphics, m_PipeLines.SkyBox);
-			command.bindVertexBuffers(0, 1, &m_CubeVertexBuffer.m_Buffer, &size);
-			command.bindIndexBuffer(m_CubeIndexBuffer.m_Buffer, 0, vk::IndexType::eUint32);
-			command.drawIndexed(static_cast<uint32_t>(m_CubeIndices.size()), 1, 0, 0, 0);
-
-			command.bindPipeline(vk::PipelineBindPoint::eGraphics, m_PipeLines.PushConstant);
-			command.bindVertexBuffers(0, 1, &m_CubeVertexBuffer.m_Buffer, &size);
-			command.bindIndexBuffer(m_CubeIndexBuffer.m_Buffer, 0, vk::IndexType::eUint32);
-			for (auto& cubeConst : CubePushConstants)
+			//skybox
+			//command.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_Layout, 0, 1, &m_DescriptorSet, 0, nullptr);			
+			//command.bindPipeline(vk::PipelineBindPoint::eGraphics, m_PipeLines.SkyBox);
+			//command.bindVertexBuffers(0, 1, &m_CubeVertexBuffer.m_Buffer, &size);
+			//command.bindIndexBuffer(m_CubeIndexBuffer.m_Buffer, 0, vk::IndexType::eUint32);
+			//command.drawIndexed(static_cast<uint32_t>(m_CubeIndices.size()), 1, 0, 0, 0);
+			//first subpass
 			{
-				command.pushConstants(m_Layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(PushConsntantCube), &cubeConst);
-				command.drawIndexed(static_cast<uint32_t>(m_CubeIndices.size()), 1, 0, 0, 0);
+				command.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_Layout, 0, 1, &m_DescriptorSet, 0, nullptr);
+				command.bindPipeline(vk::PipelineBindPoint::eGraphics, m_PipeLines.Phong);
+				command.bindVertexBuffers(0, 1, &m_CubeVertexBuffer.m_Buffer, &size);
+				command.bindIndexBuffer(m_CubeIndexBuffer.m_Buffer, 0, vk::IndexType::eUint32);
+				for (auto& cubeConst : CubePushConstants)
+				{
+					command.pushConstants(m_Layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(PushConsntantCube), &cubeConst);
+					command.drawIndexed(static_cast<uint32_t>(m_CubeIndices.size()), 1, 0, 0, 0);
+				}
 			}
 
-			
-			command.endRenderPass();
+			////second subpass
+			{
+				command.nextSubpass(vk::SubpassContents::eInline);
+				command.bindPipeline(vk::PipelineBindPoint::eGraphics, m_PipeLines.GrayScale);
+				command.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_GrayScaleLayout, 0, 1, &m_GrayScaleDescriptorSets[imageIndex], 0, nullptr);
+				command.draw(3, 1, 0, 0);
+			}
+		command.endRenderPass();
 	m_Device.GetCommandManager().CommandEnd(command);
 }				
 
@@ -353,6 +371,7 @@ void Application::CreateIndexBuffer()
 
 void Application::CreateSetLayout()
 {
+	//firstPass set
 	vk::DescriptorSetLayoutBinding uniformBinding;
 	uniformBinding.setBinding(0)
 		          .setDescriptorCount(1)
@@ -367,20 +386,57 @@ void Application::CreateSetLayout()
 				  .setPImmutableSamplers(nullptr)
 				  .setStageFlags(vk::ShaderStageFlagBits::eFragment);
 
-	vk::DescriptorSetLayoutBinding skyboxSamplerBinding;
-	skyboxSamplerBinding.setBinding(2)
-					    .setDescriptorCount(1)
-					    .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
-					    .setPImmutableSamplers(nullptr)
-					    .setStageFlags(vk::ShaderStageFlagBits::eFragment);
+	//vk::DescriptorSetLayoutBinding skyboxSamplerBinding;
+	//skyboxSamplerBinding.setBinding(2)
+	//				    .setDescriptorCount(1)
+	//				    .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
+	//				    .setPImmutableSamplers(nullptr)
+	//				    .setStageFlags(vk::ShaderStageFlagBits::eFragment);
 
-	std::array<vk::DescriptorSetLayoutBinding, 3> bindings = { uniformBinding, samplerBinding, skyboxSamplerBinding };
+	std::array<vk::DescriptorSetLayoutBinding, 2> bindings = { uniformBinding, samplerBinding };
 
 	vk::DescriptorSetLayoutCreateInfo setlayoutInfo;
 	setlayoutInfo.sType = vk::StructureType::eDescriptorSetLayoutCreateInfo;
 	setlayoutInfo.setBindingCount(static_cast<uint32_t>(bindings.size()))
 				 .setPBindings(bindings.data());
 	VK_CHECK_RESULT(m_Device.GetLogicDevice().createDescriptorSetLayout(&setlayoutInfo, nullptr, &m_SetLayout));
+
+	vk::PipelineLayoutCreateInfo layoutInfo;
+	layoutInfo.sType = vk::StructureType::ePipelineLayoutCreateInfo;
+	layoutInfo.setSetLayoutCount(1)
+		      .setPSetLayouts(&m_SetLayout)
+		      .setPushConstantRangeCount(0)
+		      .setPPushConstantRanges(nullptr);
+	VK_CHECK_RESULT(m_Device.GetLogicDevice().createPipelineLayout(&layoutInfo, nullptr, &m_Layout));
+
+	//secondpass set
+	vk::DescriptorSetLayoutBinding inputColotAttachment;
+	inputColotAttachment.setBinding(0)
+						.setDescriptorCount(1)
+						.setDescriptorType(vk::DescriptorType::eInputAttachment)
+						.setPImmutableSamplers(nullptr)
+						.setStageFlags(vk::ShaderStageFlagBits::eFragment);
+
+	vk::DescriptorSetLayoutBinding inputDepthAttachment;
+	inputDepthAttachment.setBinding(1)
+						.setDescriptorCount(1)
+						.setDescriptorType(vk::DescriptorType::eInputAttachment)
+						.setPImmutableSamplers(nullptr)
+						.setStageFlags(vk::ShaderStageFlagBits::eFragment);
+	std::array<vk::DescriptorSetLayoutBinding, 2> bindings2 = { inputColotAttachment, inputDepthAttachment };
+	vk::DescriptorSetLayoutCreateInfo subpass2SetlayoutInfo;
+	subpass2SetlayoutInfo.sType = vk::StructureType::eDescriptorSetLayoutCreateInfo;
+	subpass2SetlayoutInfo.setBindingCount(static_cast<uint32_t>(bindings2.size()))
+					     .setPBindings(bindings2.data());
+	VK_CHECK_RESULT(m_Device.GetLogicDevice().createDescriptorSetLayout(&subpass2SetlayoutInfo, nullptr, &m_GrayScaleSetLayout));
+	
+	vk::PipelineLayoutCreateInfo layoutInfo2;
+	layoutInfo2.sType = vk::StructureType::ePipelineLayoutCreateInfo;
+	layoutInfo2.setSetLayoutCount(1)
+			   .setPSetLayouts(&m_GrayScaleSetLayout)
+			   .setPushConstantRangeCount(0)
+			   .setPPushConstantRanges(nullptr);
+	VK_CHECK_RESULT(m_Device.GetLogicDevice().createPipelineLayout(&layoutInfo2, nullptr, &m_GrayScaleLayout));
 }
 
 void Application::CreateUniformBuffer()
@@ -407,6 +463,7 @@ void Application::UpdateUniformBuffers()
 
 void Application::CreateDescriptorPool()
 {
+	uint32_t imageCount = m_SwapChain.GetImageCount();
 	vk::DescriptorPoolSize uniformPoolSize;
 	uniformPoolSize.setDescriptorCount(1)
 				   .setType(vk::DescriptorType::eUniformBuffer);
@@ -418,11 +475,14 @@ void Application::CreateDescriptorPool()
 	vk::DescriptorPoolSize skyBoxSamplerPoolSize;
 	skyBoxSamplerPoolSize.setDescriptorCount(1).setType(vk::DescriptorType::eCombinedImageSampler);
 
-	std::array<vk::DescriptorPoolSize, 3> poolSize = { uniformPoolSize, samplerPoolSize, skyBoxSamplerPoolSize };
+	vk::DescriptorPoolSize inputAttachmentPoolSize;
+	inputAttachmentPoolSize.setDescriptorCount(imageCount * 2).setType(vk::DescriptorType::eInputAttachment);
+
+	std::array<vk::DescriptorPoolSize, 4> poolSize = { uniformPoolSize, samplerPoolSize, skyBoxSamplerPoolSize, inputAttachmentPoolSize };
 
 	vk::DescriptorPoolCreateInfo descriptorPoolInfo;
 	descriptorPoolInfo.sType = vk::StructureType::eDescriptorPoolCreateInfo;
-	descriptorPoolInfo.setMaxSets(1)
+	descriptorPoolInfo.setMaxSets(imageCount + 1)
 					  .setPoolSizeCount(static_cast<uint32_t>(poolSize.size()))
 					  .setPPoolSizes(poolSize.data());
 	VK_CHECK_RESULT(m_Device.GetLogicDevice().createDescriptorPool(&descriptorPoolInfo, nullptr, &m_DescriptorPool));
@@ -436,6 +496,17 @@ void Application::CreateDescriptorSet()
 		   .setDescriptorSetCount(1)
 		   .setPSetLayouts(&m_SetLayout);
 	VK_CHECK_RESULT(m_Device.GetLogicDevice().allocateDescriptorSets(&setInfo, &m_DescriptorSet));
+
+	vk::DescriptorSetAllocateInfo setInfo2;
+	setInfo2.sType = vk::StructureType::eDescriptorSetAllocateInfo;
+	setInfo2.setDescriptorPool(m_DescriptorPool)
+			.setDescriptorSetCount(1)
+			.setPSetLayouts(&m_GrayScaleSetLayout);
+	m_GrayScaleDescriptorSets.resize(m_SwapChain.GetImageCount());
+	for (uint32_t i = 0; i < m_GrayScaleDescriptorSets.size(); i++)
+	{
+		VK_CHECK_RESULT(m_Device.GetLogicDevice().allocateDescriptorSets(&setInfo2, &m_GrayScaleDescriptorSets[i]));
+	}
 }
 
 void Application::UpdateDescriptorSet()
@@ -471,6 +542,36 @@ void Application::UpdateDescriptorSet()
 
 	std::array<vk::WriteDescriptorSet, 3> writes = { uniformWriteSet, samplerWrite, skyboxSamplerWrite };
 	m_Device.GetLogicDevice().updateDescriptorSets(static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
+
+	//subpass2
+	for (uint32_t i = 0; i < m_SwapChain.GetImageCount(); i++)
+	{
+		vk::DescriptorImageInfo colorInfo;
+		colorInfo.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
+			.setImageView(m_SwapChain.GetFrameBuffers()[i].GetAttachments()[1]);
+		vk::WriteDescriptorSet colorInput;
+		colorInput.sType = vk::StructureType::eWriteDescriptorSet;
+		colorInput.setDescriptorCount(1)
+			.setDstArrayElement(0)
+			.setDstBinding(0)
+			.setDstSet(m_GrayScaleDescriptorSets[i])
+			.setPImageInfo(&colorInfo)
+			.setDescriptorType(vk::DescriptorType::eInputAttachment);
+
+		vk::DescriptorImageInfo depthInfo;
+		depthInfo.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
+			.setImageView(m_SwapChain.GetFrameBuffers()[i].GetAttachments()[2]);
+		vk::WriteDescriptorSet depthInput;
+		depthInput.sType = vk::StructureType::eWriteDescriptorSet;
+		depthInput.setDescriptorCount(1)
+			.setDstArrayElement(0)
+			.setDstBinding(1)
+			.setDstSet(m_GrayScaleDescriptorSets[i])
+			.setPImageInfo(&depthInfo)
+			.setDescriptorType(vk::DescriptorType::eInputAttachment);
+		std::array<vk::WriteDescriptorSet, 2> sets = { colorInput, depthInput };
+		m_Device.GetLogicDevice().updateDescriptorSets(sets.size(), sets.data(), 0, nullptr);
+	}
 }
 
 void Application::LoadModel(const char* path, std::vector<Vertex>& vertexData, std::vector<uint32_t>& indicesData)

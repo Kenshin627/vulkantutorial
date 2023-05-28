@@ -167,6 +167,8 @@
     <ClInclude Include="vendor\stbimage\stb_image.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="resource\shaders\grayscale.frag" />
+    <None Include="resource\shaders\grayscale.vert" />
     <None Include="resource\shaders\pushConstant.frag" />
     <None Include="resource\shaders\pushConstant.vert" />
     <None Include="resource\shaders\skybox.frag" />

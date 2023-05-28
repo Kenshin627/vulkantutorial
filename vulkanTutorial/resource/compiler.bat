@@ -10,4 +10,7 @@ C:/VulkanSDK/1.3.211.0/Bin/glslc.exe shaders/pushConstant.frag -o shaders/pushCo
 C:/VulkanSDK/1.3.211.0/Bin/glslc.exe shaders/skybox.vert -o shaders/skyboxVert.spv
 C:/VulkanSDK/1.3.211.0/Bin/glslc.exe shaders/skybox.frag -o shaders/skyboxFrag.spv
 
+C:/VulkanSDK/1.3.211.0/Bin/glslc.exe shaders/grayscale.vert -o shaders/grayscaleVert.spv
+C:/VulkanSDK/1.3.211.0/Bin/glslc.exe shaders/grayscale.frag -o shaders/grayscaleFrag.spv
+
 pause
