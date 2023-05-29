@@ -12,7 +12,7 @@ public:
 	uint32_t GetMipLevel() { return m_MipLevel; }
 	Image& GetImage() { return m_Image; }
 	vk::Sampler GetSampler() { return m_Sampler; }
-	vk::DescriptorImageInfo GetDescriptor() { return m_Descriptor; }
+	vk::DescriptorImageInfo& GetDescriptor() { return m_Descriptor; }
 private:
 	Image m_Image;
 	vk::Sampler m_Sampler;
