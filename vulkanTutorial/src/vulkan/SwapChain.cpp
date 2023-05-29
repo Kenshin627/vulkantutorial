@@ -293,6 +293,7 @@ void SwapChain::CreateFrameBuffers()
 		index++;
 	}
 }
+
 void SwapChain::CreateRenderPass()
 {
 	vk::AttachmentDescription presentAttachment;
@@ -322,7 +323,7 @@ void SwapChain::CreateRenderPass()
 				   .setInitialLayout(vk::ImageLayout::eUndefined)
 				   .setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
 				   .setLoadOp(vk::AttachmentLoadOp::eClear)
-				   .setStoreOp(vk::AttachmentStoreOp::eDontCare)
+				   .setStoreOp(vk::AttachmentStoreOp::eStore)
 				   .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
 				   .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare);
 
