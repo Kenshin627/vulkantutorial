@@ -232,9 +232,10 @@ void Application::CreatePipeLine()
 void Application::RecordCommandBuffer(vk::CommandBuffer command, uint32_t imageIndex)
 {
 	m_Device.GetCommandManager().CommandBegin(command);
-		std::array<vk::ClearValue, 2> clearValues{};
+		std::array<vk::ClearValue, 3> clearValues{};
 		clearValues[0].color = vk::ClearColorValue();
-		clearValues[1].depthStencil = vk::ClearDepthStencilValue(1.0f, 0);
+		clearValues[1].color = vk::ClearColorValue();
+		clearValues[2].depthStencil = vk::ClearDepthStencilValue(1.0f, 0);
 		
 		vk::Extent2D extent = m_SwapChain.GetExtent();
 		vk::Rect2D renderArea;
