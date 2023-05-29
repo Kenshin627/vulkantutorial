@@ -7,15 +7,19 @@ void BindingSetLayout::Create(const Device& device, const std::vector<SetLayoutB
 	//DescriptorSetlayoutBinding
 	uint32_t bindingSize = bindings.size();
 	m_Bindings.resize(bindingSize);
+	m_PoolSizes.resize(bindingSize);
 	for (uint32_t i = 0; i < bindingSize; i++)
 	{
 		SetLayoutBinding currentBinding = bindings[i];
 
-		m_Bindings[i].setBinding(currentBinding.binding)
-					 .setDescriptorCount(1)
-					 .setDescriptorType(currentBinding.type)
+		m_Bindings[i].setBinding(currentBinding.Binding)
+					 .setDescriptorCount(currentBinding.DescriptorCount)
+					 .setDescriptorType(currentBinding.Type)
 					 .setPImmutableSamplers(nullptr)
-					 .setStageFlags(currentBinding.shaderStage);
+					 .setStageFlags(currentBinding.ShaderStage);
+
+		m_PoolSizes[i].setDescriptorCount(currentBinding.PoolSizeDescriptorCount)
+				      .setType(currentBinding.Type);
 	}
 
 	//SetLayout

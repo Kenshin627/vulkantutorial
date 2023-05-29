@@ -6,9 +6,11 @@
 
 struct SetLayoutBinding
 {
-	vk::DescriptorType type;
-	vk::ShaderStageFlags shaderStage;
-	uint32_t binding;
+	vk::DescriptorType Type;
+	vk::ShaderStageFlags ShaderStage;
+	uint32_t Binding;
+	uint32_t DescriptorCount = 1;
+	uint32_t PoolSizeDescriptorCount = 1;
 };
 class BindingSetLayout
 {
@@ -19,6 +21,8 @@ public:
 private:
 	vk::DescriptorSetLayout m_SetLayout;
 	vk::PipelineLayout m_PipelineLayout;
-	std::vector < vk::DescriptorSetLayoutBinding> m_Bindings;
+	std::vector<vk::DescriptorSetLayoutBinding> m_Bindings;
+	std::vector<vk::DescriptorPoolSize> m_PoolSizes;
+	
 	Device m_Device;
 };

@@ -139,6 +139,7 @@
     <ClCompile Include="src\vulkan\Buffer.cpp" />
     <ClCompile Include="src\vulkan\CommandManager.cpp" />
     <ClCompile Include="src\vulkan\CubeMap.cpp" />
+    <ClCompile Include="src\vulkan\DescriptorSetManager.cpp" />
     <ClCompile Include="src\vulkan\Device.cpp" />
     <ClCompile Include="src\vulkan\FrameBuffer.cpp" />
     <ClCompile Include="src\vulkan\Image.cpp" />
@@ -156,6 +157,7 @@
     <ClInclude Include="src\vulkan\Buffer.h" />
     <ClInclude Include="src\vulkan\CommandManager.h" />
     <ClInclude Include="src\vulkan\CubeMap.h" />
+    <ClInclude Include="src\vulkan\DescriptorSetManager.h" />
     <ClInclude Include="src\vulkan\Device.h" />
     <ClInclude Include="src\vulkan\FrameBuffer.h" />
     <ClInclude Include="src\vulkan\Image.h" />

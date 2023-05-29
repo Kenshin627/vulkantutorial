@@ -339,73 +339,16 @@ void Application::CreateIndexBuffer()
 
 void Application::CreateSetLayout()
 {
-	////firstPass set
-	//vk::DescriptorSetLayoutBinding uniformBinding;
-	//uniformBinding.setBinding(0)
-	//	          .setDescriptorCount(1)
-	//	          .setDescriptorType(vk::DescriptorType::eUniformBuffer)
-	//	          .setPImmutableSamplers(nullptr)
-	//	          .setStageFlags(vk::ShaderStageFlagBits::eVertex);
 
-	//vk::DescriptorSetLayoutBinding samplerBinding;
-	//samplerBinding.setBinding(1)
-	//			  .setDescriptorCount(1)
-	//			  .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
-	//			  .setPImmutableSamplers(nullptr)
-	//			  .setStageFlags(vk::ShaderStageFlagBits::eFragment);
-
-	//std::array<vk::DescriptorSetLayoutBinding, 2> bindings = { uniformBinding, samplerBinding };
-
-	//vk::DescriptorSetLayoutCreateInfo setlayoutInfo;
-	//setlayoutInfo.sType = vk::StructureType::eDescriptorSetLayoutCreateInfo;
-	//setlayoutInfo.setBindingCount(static_cast<uint32_t>(bindings.size()))
-	//			 .setPBindings(bindings.data());
-	//VK_CHECK_RESULT(m_Device.GetLogicDevice().createDescriptorSetLayout(&setlayoutInfo, nullptr, &m_SetLayout));
-
-	//vk::PipelineLayoutCreateInfo layoutInfo;
-	//layoutInfo.sType = vk::StructureType::ePipelineLayoutCreateInfo;
-	//layoutInfo.setSetLayoutCount(1)
-	//	      .setPSetLayouts(&m_SetLayout)
-	//	      .setPushConstantRangeCount(0)
-	//	      .setPPushConstantRanges(nullptr);
-	//VK_CHECK_RESULT(m_Device.GetLogicDevice().createPipelineLayout(&layoutInfo, nullptr, &m_Layout));
 	m_PushConstantSetlayout.Create(m_Device, { 
 		{vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex, 0 },
 		{vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, 1} 
 	});
 
 	m_InputAttachmentSetlayout.Create(m_Device, {
-		{ vk::DescriptorType::eInputAttachment, vk::ShaderStageFlagBits::eFragment, 0 },
-		{ vk::DescriptorType::eInputAttachment, vk::ShaderStageFlagBits::eFragment, 1 }
+		{ vk::DescriptorType::eInputAttachment, vk::ShaderStageFlagBits::eFragment, 0, 1, m_SwapChain.GetImageCount()},
+		{ vk::DescriptorType::eInputAttachment, vk::ShaderStageFlagBits::eFragment, 1, 1, m_SwapChain.GetImageCount()}
 	});
-	////secondpass set
-	//vk::DescriptorSetLayoutBinding inputColotAttachment;
-	//inputColotAttachment.setBinding(0)
-	//					.setDescriptorCount(1)
-	//					.setDescriptorType(vk::DescriptorType::eInputAttachment)
-	//					.setPImmutableSamplers(nullptr)
-	//					.setStageFlags(vk::ShaderStageFlagBits::eFragment);
-
-	//vk::DescriptorSetLayoutBinding inputDepthAttachment;
-	//inputDepthAttachment.setBinding(1)
-	//					.setDescriptorCount(1)
-	//					.setDescriptorType(vk::DescriptorType::eInputAttachment)
-	//					.setPImmutableSamplers(nullptr)
-	//					.setStageFlags(vk::ShaderStageFlagBits::eFragment);
-	//std::array<vk::DescriptorSetLayoutBinding, 2> bindings2 = { inputColotAttachment, inputDepthAttachment };
-	//vk::DescriptorSetLayoutCreateInfo subpass2SetlayoutInfo;
-	//subpass2SetlayoutInfo.sType = vk::StructureType::eDescriptorSetLayoutCreateInfo;
-	//subpass2SetlayoutInfo.setBindingCount(static_cast<uint32_t>(bindings2.size()))
-	//				     .setPBindings(bindings2.data());
-	//VK_CHECK_RESULT(m_Device.GetLogicDevice().createDescriptorSetLayout(&subpass2SetlayoutInfo, nullptr, &m_GrayScaleSetLayout));
-	//
-	//vk::PipelineLayoutCreateInfo layoutInfo2;
-	//layoutInfo2.sType = vk::StructureType::ePipelineLayoutCreateInfo;
-	//layoutInfo2.setSetLayoutCount(1)
-	//		   .setPSetLayouts(&m_GrayScaleSetLayout)
-	//		   .setPushConstantRangeCount(0)
-	//		   .setPPushConstantRanges(nullptr);
-	//VK_CHECK_RESULT(m_Device.GetLogicDevice().createPipelineLayout(&layoutInfo2, nullptr, &m_GrayScaleLayout));
 }
 
 void Application::CreateUniformBuffer()
