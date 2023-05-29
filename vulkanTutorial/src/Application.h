@@ -121,16 +121,11 @@ private:
 	PipeLines m_PipeLines;
 
 	vk::DescriptorPool m_DescriptorPool;
-	//vk::PipelineLayout m_Layout;
-	//vk::DescriptorSetLayout m_SetLayout;
-	vk::DescriptorSet m_DescriptorSet;
-
+	//vk::DescriptorSet m_DescriptorSet;
 	BindingSetLayout m_PushConstantSetlayout;
-	BindingSetLayout m_InputAttachmentSetlayout;
-
-	//vk::PipelineLayout m_GrayScaleLayout;
-	//vk::DescriptorSetLayout m_GrayScaleSetLayout;
-	std::vector<vk::DescriptorSet> m_GrayScaleDescriptorSets;
+	std::vector<BindingSetLayout> m_InputAttachmentSetlayouts;
+	//std::vector<vk::DescriptorSet> m_GrayScaleDescriptorSets;
+	uint32_t m_SetCount = 0;
 
 	//GeometryData
 	std::vector<Vertex> m_VertexData;
