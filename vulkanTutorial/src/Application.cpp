@@ -150,7 +150,7 @@ void Application::CreatePipeLine()
 	multisamplesInfo.sType = vk::StructureType::ePipelineMultisampleStateCreateInfo;
 	multisamplesInfo.setRasterizationSamples(m_SamplerCount)
 			        .setMinSampleShading(0.2f)
-			        .setSampleShadingEnable(VK_TRUE)
+			        .setSampleShadingEnable(VK_FALSE)
 			        .setAlphaToCoverageEnable(VK_FALSE)
 			        .setAlphaToOneEnable(VK_FALSE)
 			        .setPSampleMask(nullptr);
@@ -472,13 +472,13 @@ void Application::CreateDescriptorPool()
 	samplerPoolSize.setDescriptorCount(1)
 				   .setType(vk::DescriptorType::eCombinedImageSampler);
 
-	vk::DescriptorPoolSize skyBoxSamplerPoolSize;
-	skyBoxSamplerPoolSize.setDescriptorCount(1).setType(vk::DescriptorType::eCombinedImageSampler);
+	/*vk::DescriptorPoolSize skyBoxSamplerPoolSize;
+	skyBoxSamplerPoolSize.setDescriptorCount(1).setType(vk::DescriptorType::eCombinedImageSampler);*/
 
 	vk::DescriptorPoolSize inputAttachmentPoolSize;
 	inputAttachmentPoolSize.setDescriptorCount(imageCount * 2).setType(vk::DescriptorType::eInputAttachment);
 
-	std::array<vk::DescriptorPoolSize, 4> poolSize = { uniformPoolSize, samplerPoolSize, skyBoxSamplerPoolSize, inputAttachmentPoolSize };
+	std::array<vk::DescriptorPoolSize, 3> poolSize = { uniformPoolSize, samplerPoolSize, inputAttachmentPoolSize };
 
 	vk::DescriptorPoolCreateInfo descriptorPoolInfo;
 	descriptorPoolInfo.sType = vk::StructureType::eDescriptorPoolCreateInfo;
@@ -530,17 +530,17 @@ void Application::UpdateDescriptorSet()
 				.setDstSet(m_DescriptorSet)
 				.setPImageInfo(&imageDescriptor);
 
-	vk::DescriptorImageInfo skyBoxSamplerDescriptor = m_SkyBoxTexture.GetDescriptor();
-	vk::WriteDescriptorSet skyboxSamplerWrite;
-	skyboxSamplerWrite.sType = vk::StructureType::eWriteDescriptorSet;
-	skyboxSamplerWrite.setDescriptorCount(1)
-					  .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
-					  .setDstArrayElement(0)
-					  .setDstBinding(2)
-					  .setDstSet(m_DescriptorSet)
-					  .setPImageInfo(&skyBoxSamplerDescriptor);
+	//vk::DescriptorImageInfo skyBoxSamplerDescriptor = m_SkyBoxTexture.GetDescriptor();
+	//vk::WriteDescriptorSet skyboxSamplerWrite;
+	//skyboxSamplerWrite.sType = vk::StructureType::eWriteDescriptorSet;
+	//skyboxSamplerWrite.setDescriptorCount(1)
+	//				  .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
+	//				  .setDstArrayElement(0)
+	//				  .setDstBinding(2)
+	//				  .setDstSet(m_DescriptorSet)
+	//				  .setPImageInfo(&skyBoxSamplerDescriptor);
 
-	std::array<vk::WriteDescriptorSet, 3> writes = { uniformWriteSet, samplerWrite, skyboxSamplerWrite };
+	std::array<vk::WriteDescriptorSet, 2> writes = { uniformWriteSet, samplerWrite };
 	m_Device.GetLogicDevice().updateDescriptorSets(static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 
 	//subpass2

@@ -45,8 +45,8 @@ private:
 	std::vector<vk::ImageView> m_ImageViews;
 	vk::SampleCountFlagBits m_Samples;
 	bool m_HasDepth;
-	Image m_MultiSampleColorImage;
-	Image m_DepthImage;
+	std::vector<Image> m_ColorAttachments;
+	std::vector<Image> m_DepthAttachments;
 	std::vector<FrameBuffer> m_FrameBuffers;
 	vk::RenderPass m_RenderPass;
 };
