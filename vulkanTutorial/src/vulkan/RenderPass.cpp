@@ -19,7 +19,7 @@ void RenderPass::Create(Device& device, const std::vector<vk::AttachmentDescript
 
 void RenderPass::BuildFrameBuffer(const std::vector<std::vector<vk::ImageView>>& attachments, uint32_t width, uint32_t height)
 {
-	uint32_t frameBufferCount = attachments.size();
+	uint32_t frameBufferCount = static_cast<uint32_t>(attachments.size());
 	m_FrameBuffers.resize(frameBufferCount);
 	for (uint32_t i = 0; i < frameBufferCount; i++)
 	{

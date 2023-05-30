@@ -5,9 +5,7 @@
 #include <chrono>
 #include <unordered_map>
 #include <gtc/matrix_transform.hpp>
-#include <GLFW/glfw3.h>
-#define GLFW_EXPOSE_NATIVE_WIN32
-#include <GLFW/glfw3native.h>
+
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "../vendor/tiny_obj_loader/tiny_obj_loader.h"
 
@@ -202,24 +200,6 @@ void Application::RecordCommandBuffer(vk::CommandBuffer command, uint32_t imageI
 {
 	m_Device.GetCommandManager().CommandBegin(command);
 		vk::Extent2D extent = m_SwapChain.GetExtent();
-		/*std::array<vk::ClearValue, 3> clearValues{};
-		clearValues[0].color = vk::ClearColorValue();
-		clearValues[1].color = vk::ClearColorValue();
-		clearValues[2].depthStencil = vk::ClearDepthStencilValue(1.0f, 1);
-		
-		vk::Extent2D extent = m_SwapChain.GetExtent();
-		vk::Rect2D renderArea;
-		renderArea.setOffset(vk::Offset2D(0, 0))
-				  .setExtent(extent);
-		vk::RenderPassBeginInfo renderPassBegin;
-		renderPassBegin.sType = vk::StructureType::eRenderPassBeginInfo;
-		renderPassBegin.setClearValueCount(static_cast<uint32_t>(clearValues.size()))
-					   .setPClearValues(clearValues.data())
-					   .setFramebuffer(m_SwapChain.GetFrameBuffers()[imageIndex].GetVkFrameBuffer())
-					   .setRenderPass(m_SwapChain.GetRenderPass())
-					   .setRenderArea(renderArea);
-
-		command.beginRenderPass(&renderPassBegin, vk::SubpassContents::eInline);*/
 		DeferredRendingPass.Begin(command, imageIndex);
 			vk::Viewport viewport;
 			viewport.setX(0.0f)

@@ -1,8 +1,7 @@
 #pragma once
+
 #include "Device.h"
 #include "ImageView.h"
-#include "Image.h"
-#include "FrameBuffer.h"
 
 #include <vulkan/vulkan.hpp>
 
@@ -23,14 +22,7 @@ public:
 	vk::Extent2D GetExtent() { return m_Extent; }
 	std::vector<vk::Image> GetSwapChainImages() { return m_SwapChainImages; }
 	std::vector<ImageView> GetSwapChainImageViews() { return m_SwapChainImageViews; }
-	//vk::RenderPass GetRenderPass() { return m_RenderPass; }
-	//std::vector<FrameBuffer>& GetFrameBuffers() { return m_FrameBuffers; }
 	uint32_t GetImageCount() { return m_ImageCount; }
-private:
-	//void CreateColorAttachment();
-	//void CreateDepthStencilAttachment();
-	//void CreateFrameBuffers();
-	//void CreateRenderPass();
 private:
 	Device m_Device;
 	CommandManager m_CommandManager;
