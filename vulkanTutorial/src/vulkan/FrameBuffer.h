@@ -7,7 +7,7 @@
 class FrameBuffer
 {
 public:
-	FrameBuffer& SetAttachment(const vk::ImageView& attachment);
+	FrameBuffer& SetAttachments(const std::vector<vk::ImageView>& attachments);
 	void Create(vk::Device device, uint32_t width, uint32_t height, vk::RenderPass renderPass);
 	void Clear();
 	vk::Framebuffer GetVkFrameBuffer() const { return m_VkFrameBuffer; }

@@ -1,9 +1,9 @@
 #include "../Core.h"
 #include "FrameBuffer.h"
 
-FrameBuffer& FrameBuffer::SetAttachment(const vk::ImageView& attachment)
+FrameBuffer& FrameBuffer::SetAttachments(const std::vector<vk::ImageView>& attachments)
 {
-	m_Attachments.push_back(attachment);
+	m_Attachments.insert(m_Attachments.end(), attachments.begin(), attachments.end());
 	return *this;
 }
 

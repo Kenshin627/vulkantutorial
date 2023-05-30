@@ -144,6 +144,7 @@
     <ClCompile Include="src\vulkan\FrameBuffer.cpp" />
     <ClCompile Include="src\vulkan\Image.cpp" />
     <ClCompile Include="src\vulkan\ImageView.cpp" />
+    <ClCompile Include="src\vulkan\RenderPass.cpp" />
     <ClCompile Include="src\vulkan\SetLayout.cpp" />
     <ClCompile Include="src\vulkan\Shader.cpp" />
     <ClCompile Include="src\vulkan\SwapChain.cpp" />
@@ -162,6 +163,7 @@
     <ClInclude Include="src\vulkan\FrameBuffer.h" />
     <ClInclude Include="src\vulkan\Image.h" />
     <ClInclude Include="src\vulkan\ImageView.h" />
+    <ClInclude Include="src\vulkan\RenderPass.h" />
     <ClInclude Include="src\vulkan\SetLayout.h" />
     <ClInclude Include="src\vulkan\Shader.h" />
     <ClInclude Include="src\vulkan\SwapChain.h" />

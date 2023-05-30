@@ -9,6 +9,7 @@
 #include "vulkan/Texture.h"
 #include "vulkan/CubeMap.h"
 #include "vulkan/SetLayout.h"
+#include "vulkan/RenderPass.h"
 
 #include <vector>
 #include <optional>
@@ -96,8 +97,11 @@ public:
 	void LoadModel(const char* path, std::vector<Vertex>& vertexData, std::vector<uint32_t>& indicesData);
 	void CreateSetLayout();
 	void BuildAndUpdateDescriptorSets();
+	RenderPass& GetRenderPass() { return DeferredRendingPass; }
+	std::vector<std::vector<vk::ImageView>> PrepareFrameBufferAttachmentsData();
 private:
 	void CreatePipeLine();
+	void CreateRenderPass();
 	void CreateVertexBuffer();
 	void CreateIndexBuffer();
 	void CreateUniformBuffer();
@@ -110,6 +114,11 @@ private:
 	Window m_Window;
 	Device m_Device;
 	SwapChain m_SwapChain;
+
+	RenderPass DeferredRendingPass;
+	RenderPass renderpass1;
+	RenderPass renderpass2;
+
 	
 	vk::CommandBuffer m_CommandBuffer;
 	vk::Fence m_InFlightFence;

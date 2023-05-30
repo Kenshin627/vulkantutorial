@@ -1,7 +1,7 @@
 #pragma once
-
 #include "CommandManager.h"
 #include "Device.h"
+
 #include <vulkan/vulkan.hpp>
 
 struct Buffer

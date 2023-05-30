@@ -3,6 +3,7 @@
 #include "ImageView.h"
 #include "Image.h"
 #include "FrameBuffer.h"
+
 #include <vulkan/vulkan.hpp>
 
 class Application;
@@ -22,14 +23,14 @@ public:
 	vk::Extent2D GetExtent() { return m_Extent; }
 	std::vector<vk::Image> GetSwapChainImages() { return m_SwapChainImages; }
 	std::vector<ImageView> GetSwapChainImageViews() { return m_SwapChainImageViews; }
-	vk::RenderPass GetRenderPass() { return m_RenderPass; }
-	std::vector<FrameBuffer>& GetFrameBuffers() { return m_FrameBuffers; }
+	//vk::RenderPass GetRenderPass() { return m_RenderPass; }
+	//std::vector<FrameBuffer>& GetFrameBuffers() { return m_FrameBuffers; }
 	uint32_t GetImageCount() { return m_ImageCount; }
 private:
-	void CreateColorAttachment();
-	void CreateDepthStencilAttachment();
-	void CreateFrameBuffers();
-	void CreateRenderPass();
+	//void CreateColorAttachment();
+	//void CreateDepthStencilAttachment();
+	//void CreateFrameBuffers();
+	//void CreateRenderPass();
 private:
 	Device m_Device;
 	CommandManager m_CommandManager;
@@ -44,10 +45,10 @@ private:
 	uint32_t m_ImageCount = 0;	
 	std::vector<vk::Image> m_SwapChainImages;
 	std::vector<ImageView> m_SwapChainImageViews;
-	vk::SampleCountFlagBits m_Samples;
+	/*vk::SampleCountFlagBits m_Samples;
 	bool m_HasDepth;
 	std::vector<Image> m_ColorAttachments;
 	std::vector<Image> m_DepthAttachments;
 	std::vector<FrameBuffer> m_FrameBuffers;
-	vk::RenderPass m_RenderPass;
+	vk::RenderPass m_RenderPass;*/
 };
