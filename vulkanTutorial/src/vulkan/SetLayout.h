@@ -37,7 +37,6 @@ private:
 	vk::PipelineLayout m_PipelineLayout;
 	std::vector<vk::DescriptorSetLayoutBinding> m_Bindings;
 	std::vector<vk::DescriptorPoolSize> m_PoolSizes;
-	std::vector<vk::WriteDescriptorSet> m_SetWrites;
 	vk::DescriptorSet m_DescriptorSet;
 	std::vector<SetLayoutBinding> m_SeyLayoutBindings;
 	Device m_Device;

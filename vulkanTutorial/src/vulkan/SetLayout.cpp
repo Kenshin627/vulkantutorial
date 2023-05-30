@@ -8,7 +8,7 @@ void BindingSetLayout::Create(const Device& device, const std::vector<SetLayoutB
 	uint32_t bindingSize = m_SeyLayoutBindings.size();
 	m_Bindings.resize(bindingSize);
 	m_PoolSizes.resize(bindingSize);
-	m_SetWrites.resize(bindingSize);
+
 	for (uint32_t i = 0; i < bindingSize; i++)
 	{
 		SetLayoutBinding& currentBinding = m_SeyLayoutBindings[i];
@@ -21,21 +21,6 @@ void BindingSetLayout::Create(const Device& device, const std::vector<SetLayoutB
 
 		m_PoolSizes[i].setDescriptorCount(currentBinding.DescriptorCount)
 				      .setType(currentBinding.Type);
-
-		//m_SetWrites[i].sType = vk::StructureType::eWriteDescriptorSet;
-		//m_SetWrites[i].setDescriptorCount(currentBinding.DescriptorCount)
-		//			  .setDescriptorType(currentBinding.Type)
-		//			  .setDstArrayElement(0)
-		//			  .setDstBinding(currentBinding.Binding)
-		//			  .setDstSet(m_DescriptorSet);
-		if (currentBinding.IsBuffer())
-		{
-			m_SetWrites[i].setPBufferInfo(&currentBinding.BufferInfo);
-		}
-		else 
-		{
-			m_SetWrites[i].setPImageInfo(&currentBinding.ImageInfo);
-		}
 	}
 
 	//SetLayout
@@ -63,27 +48,26 @@ void BindingSetLayout::BuildAndUpdateSet(vk::DescriptorPool pool)
 		   .setDescriptorSetCount(1)
 		   .setPSetLayouts(&m_SetLayout);
 	VK_CHECK_RESULT(m_Device.GetLogicDevice().allocateDescriptorSets(&setInfo, &m_DescriptorSet));
-	/*for (auto& write : m_SetWrites)
-	{
-		write.setDstSet(m_DescriptorSet);
-	}*/
-	for (uint32_t i = 0; i < m_SeyLayoutBindings.size(); i++)
+	std::vector<vk::WriteDescriptorSet> writeDescriptorSets;
+	uint32_t bindingSize = m_SeyLayoutBindings.size();
+	writeDescriptorSets.resize(bindingSize);
+	for (uint32_t i = 0; i < bindingSize; i++)
 	{
 		SetLayoutBinding& currentBinding = m_SeyLayoutBindings[i];
-		m_SetWrites[i].sType = vk::StructureType::eWriteDescriptorSet;
- 		m_SetWrites[i].setDescriptorCount(currentBinding.DescriptorCount)
-					  .setDescriptorType(currentBinding.Type)
-					  .setDstArrayElement(0)
-					  .setDstBinding(currentBinding.Binding)
-					  .setDstSet(m_DescriptorSet);
+		writeDescriptorSets[i].sType = vk::StructureType::eWriteDescriptorSet;
+		writeDescriptorSets[i].setDescriptorCount(currentBinding.DescriptorCount)
+							  .setDescriptorType(currentBinding.Type)
+							  .setDstArrayElement(0)
+							  .setDstBinding(currentBinding.Binding)
+							  .setDstSet(m_DescriptorSet);
 		if (currentBinding.IsBuffer())
 		{
-			m_SetWrites[i].setPBufferInfo(&currentBinding.BufferInfo);
+			writeDescriptorSets[i].setPBufferInfo(&currentBinding.BufferInfo);
 		}
 		else
 		{
-			m_SetWrites[i].setPImageInfo(&currentBinding.ImageInfo);
+			writeDescriptorSets[i].setPImageInfo(&currentBinding.ImageInfo);
 		}
 	}
-	m_Device.GetLogicDevice().updateDescriptorSets(m_SetWrites.size(), m_SetWrites.data(), 0, nullptr);
+	m_Device.GetLogicDevice().updateDescriptorSets(writeDescriptorSets.size(), writeDescriptorSets.data(), 0, nullptr);
 }

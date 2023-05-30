@@ -103,9 +103,7 @@ private:
 	void CreateUniformBuffer();
 	void RecordCommandBuffer(vk::CommandBuffer buffer, uint32_t imageIndex);
 	void CreateAsyncObjects();
-	void CreateDescriptorPool();
-	void CreateDescriptorSet();
-	void UpdateDescriptorSet();
+
 	void DrawFrame();
 	void UpdateUniformBuffers();
 private:
@@ -121,10 +119,10 @@ private:
 	PipeLines m_PipeLines;
 
 	vk::DescriptorPool m_DescriptorPool;
-	//vk::DescriptorSet m_DescriptorSet;
+	
 	BindingSetLayout m_PushConstantSetlayout;
 	std::vector<BindingSetLayout> m_InputAttachmentSetlayouts;
-	//std::vector<vk::DescriptorSet> m_GrayScaleDescriptorSets;
+	
 	uint32_t m_SetCount = 0;
 
 	//GeometryData

@@ -36,7 +36,7 @@ void Application::InitVulkan()
 	m_SwapChain.Init(m_Device, m_Window, m_SamplerCount, false, true);
 
 	m_Texture.Create(m_Device, "resource/textures/vikingRoom.png", true);
-	m_CubeTexture.Create(m_Device, "resource/textures/cube.jpg", true);
+	m_CubeTexture.Create(m_Device, "resource/textures/nirvana.jpg", true);
 	m_SkyBoxTexture.Create(m_Device, { "resource/textures/skybox/right.jpg", "resource/textures/skybox/left.jpg", "resource/textures/skybox/top.jpg", "resource/textures/skybox/bottom.jpg", "resource/textures/skybox/front.jpg", "resource/textures/skybox/back.jpg" });
 	CreateUniformBuffer();
 
@@ -48,10 +48,6 @@ void Application::InitVulkan()
 	m_CommandBuffer = m_Device.GetCommandManager().AllocateCommandBuffer(vk::CommandBufferLevel::ePrimary, true);
 	CreateVertexBuffer();
 	CreateIndexBuffer();
-	
-	CreateDescriptorPool();
-	CreateDescriptorSet();
-	UpdateDescriptorSet();
 	CreateAsyncObjects();
 }
 
@@ -264,7 +260,8 @@ void Application::RecordCommandBuffer(vk::CommandBuffer command, uint32_t imageI
 			}
 		command.endRenderPass();
 	m_Device.GetCommandManager().CommandEnd(command);
-}				
+}			
+
 void Application::DrawFrame()
 {
 	auto fenceResult = m_Device.GetLogicDevice().waitForFences(1, &m_InFlightFence, VK_TRUE, (std::numeric_limits<uint64_t>::max)());
@@ -399,108 +396,6 @@ void Application::UpdateUniformBuffers()
 	ubo.Model = glm::rotate(glm::mat4(1.0f), time * glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
 	m_UniformBuffer.CopyFrom(&ubo, sizeof(UniformBufferObject));
-}
-
-void Application::CreateDescriptorPool()
-{
-	/*uint32_t imageCount = m_SwapChain.GetImageCount();
-	vk::DescriptorPoolSize uniformPoolSize;
-	uniformPoolSize.setDescriptorCount(1)
-				   .setType(vk::DescriptorType::eUniformBuffer);
-
-	vk::DescriptorPoolSize samplerPoolSize;
-	samplerPoolSize.setDescriptorCount(1)
-				   .setType(vk::DescriptorType::eCombinedImageSampler);
-
-	vk::DescriptorPoolSize inputAttachmentPoolSize;
-	inputAttachmentPoolSize.setDescriptorCount(imageCount * 2).setType(vk::DescriptorType::eInputAttachment);
-
-	std::array<vk::DescriptorPoolSize, 3> poolSize = { uniformPoolSize, samplerPoolSize, inputAttachmentPoolSize };
-
-	vk::DescriptorPoolCreateInfo descriptorPoolInfo;
-	descriptorPoolInfo.sType = vk::StructureType::eDescriptorPoolCreateInfo;
-	descriptorPoolInfo.setMaxSets(imageCount + 1)
-					  .setPoolSizeCount(static_cast<uint32_t>(poolSize.size()))
-					  .setPPoolSizes(poolSize.data());
-	VK_CHECK_RESULT(m_Device.GetLogicDevice().createDescriptorPool(&descriptorPoolInfo, nullptr, &m_DescriptorPool));*/
-}
-
-void Application::CreateDescriptorSet()
-{
-	/*auto setLayout1 = m_PushConstantSetlayout.GetSetLayout();
-	vk::DescriptorSetAllocateInfo setInfo;
-	setInfo.sType = vk::StructureType::eDescriptorSetAllocateInfo;
-	setInfo.setDescriptorPool(m_DescriptorPool)
-		   .setDescriptorSetCount(1)
-		   .setPSetLayouts(&setLayout1);
-	VK_CHECK_RESULT(m_Device.GetLogicDevice().allocateDescriptorSets(&setInfo, &m_DescriptorSet));
-
-	auto setLayout2 = m_InputAttachmentSetlayout.GetSetLayout();
-	vk::DescriptorSetAllocateInfo setInfo2;
-	setInfo2.sType = vk::StructureType::eDescriptorSetAllocateInfo;
-	setInfo2.setDescriptorPool(m_DescriptorPool)
-			.setDescriptorSetCount(1)
-			.setPSetLayouts(&setLayout2);
-	m_GrayScaleDescriptorSets.resize(m_SwapChain.GetImageCount());
-	for (uint32_t i = 0; i < m_GrayScaleDescriptorSets.size(); i++)
-	{
-		VK_CHECK_RESULT(m_Device.GetLogicDevice().allocateDescriptorSets(&setInfo2, &m_GrayScaleDescriptorSets[i]));
-	}*/
-}
-
-void Application::UpdateDescriptorSet()
-{
-	//vk::WriteDescriptorSet uniformWriteSet;
-	//uniformWriteSet.sType = vk::StructureType::eWriteDescriptorSet;
-	//uniformWriteSet.setDescriptorCount(1)
-	//			   .setDescriptorType(vk::DescriptorType::eUniformBuffer)
-	//			   .setDstArrayElement(0)
-	//			   .setDstBinding(0)
-	//			   .setDstSet(m_DescriptorSet)
-	//			   .setPBufferInfo(&m_UniformBuffer.m_Descriptor);
-
-	//vk::DescriptorImageInfo imageDescriptor = m_CubeTexture.GetDescriptor();
-	//vk::WriteDescriptorSet samplerWrite;
-	//samplerWrite.sType = vk::StructureType::eWriteDescriptorSet;
-	//samplerWrite.setDescriptorCount(1)
-	//			.setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
-	//			.setDstArrayElement(0)
-	//			.setDstBinding(1)
-	//			.setDstSet(m_DescriptorSet)
-	//			.setPImageInfo(&imageDescriptor);
-
-	//std::array<vk::WriteDescriptorSet, 2> writes = { uniformWriteSet, samplerWrite };
-	//m_Device.GetLogicDevice().updateDescriptorSets(static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
-
-	////subpass2
-	//for (uint32_t i = 0; i < m_SwapChain.GetImageCount(); i++)
-	//{
-	//	vk::DescriptorImageInfo colorInfo;
-	//	colorInfo.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
-	//		.setImageView(m_SwapChain.GetFrameBuffers()[i].GetAttachments()[1]);
-	//	vk::WriteDescriptorSet colorInput;
-	//	colorInput.sType = vk::StructureType::eWriteDescriptorSet;
-	//	colorInput.setDescriptorCount(1)
-	//		.setDstArrayElement(0)
-	//		.setDstBinding(0)
-	//		.setDstSet(m_GrayScaleDescriptorSets[i])
-	//		.setPImageInfo(&colorInfo)
-	//		.setDescriptorType(vk::DescriptorType::eInputAttachment);
-
-	//	vk::DescriptorImageInfo depthInfo;
-	//	depthInfo.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
-	//		.setImageView(m_SwapChain.GetFrameBuffers()[i].GetAttachments()[2]);
-	//	vk::WriteDescriptorSet depthInput;
-	//	depthInput.sType = vk::StructureType::eWriteDescriptorSet;
-	//	depthInput.setDescriptorCount(1)
-	//		.setDstArrayElement(0)
-	//		.setDstBinding(1)
-	//		.setDstSet(m_GrayScaleDescriptorSets[i])
-	//		.setPImageInfo(&depthInfo)
-	//		.setDescriptorType(vk::DescriptorType::eInputAttachment);
-	//	std::array<vk::WriteDescriptorSet, 2> sets = { colorInput, depthInput };
-	//	m_Device.GetLogicDevice().updateDescriptorSets(sets.size(), sets.data(), 0, nullptr);
-	//}
 }
 
 void Application::LoadModel(const char* path, std::vector<Vertex>& vertexData, std::vector<uint32_t>& indicesData)
