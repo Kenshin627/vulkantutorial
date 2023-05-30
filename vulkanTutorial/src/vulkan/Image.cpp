@@ -98,7 +98,7 @@ void Image::GenerateMipMaps()
 		   .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
 		   .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
 
-	for (size_t i = 1; i < m_MipLevel; i++)
+	for (uint32_t i = 1; i < m_MipLevel; i++)
 	{
 		region.setBaseMipLevel(i - 1);
 		barrier.setSubresourceRange(region)

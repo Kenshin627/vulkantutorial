@@ -20,13 +20,13 @@ public:
 	vk::Format GetFormat() { return m_Format; }
 	vk::ColorSpaceKHR GetColorSpace() { return m_ColorSpace; }
 	vk::Extent2D GetExtent() { return m_Extent; }
-	std::vector<vk::Image> GetImages() { return m_Images; }
-	std::vector<vk::ImageView> GetImageViews() { return m_ImageViews; }
+	std::vector<vk::Image> GetSwapChainImages() { return m_SwapChainImages; }
+	std::vector<ImageView> GetSwapChainImageViews() { return m_SwapChainImageViews; }
 	vk::RenderPass GetRenderPass() { return m_RenderPass; }
 	std::vector<FrameBuffer>& GetFrameBuffers() { return m_FrameBuffers; }
 	uint32_t GetImageCount() { return m_ImageCount; }
 private:
-	void CreateMultiSampleColorAttachment();
+	void CreateColorAttachment();
 	void CreateDepthStencilAttachment();
 	void CreateFrameBuffers();
 	void CreateRenderPass();
@@ -42,8 +42,8 @@ private:
 	vk::PresentModeKHR m_PresentMode = vk::PresentModeKHR::eFifo;
 	vk::Extent2D m_Extent = { 0, 0 };
 	uint32_t m_ImageCount = 0;	
-	std::vector<vk::Image> m_Images;
-	std::vector<vk::ImageView> m_ImageViews;
+	std::vector<vk::Image> m_SwapChainImages;
+	std::vector<ImageView> m_SwapChainImageViews;
 	vk::SampleCountFlagBits m_Samples;
 	bool m_HasDepth;
 	std::vector<Image> m_ColorAttachments;

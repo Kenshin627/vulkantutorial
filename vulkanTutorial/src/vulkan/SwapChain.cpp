@@ -112,36 +112,21 @@ void SwapChain::Create()
 	if (queueIndices.GraphicQueueIndex != queueIndices.PresentQueueIndex)
 	{
 		std::array<uint32_t, 2> indices = { queueIndices.GraphicQueueIndex.value(), queueIndices.PresentQueueIndex.value() };
-		swapChainInfo.setQueueFamilyIndexCount(indices.size()).setPQueueFamilyIndices(indices.data());
+		swapChainInfo.setQueueFamilyIndexCount(static_cast<uint32_t>(indices.size())).setPQueueFamilyIndices(indices.data());
 	}
 
 	VK_CHECK_RESULT(m_Device.GetLogicDevice().createSwapchainKHR(&swapChainInfo, nullptr, &m_SwapChain));
 
-	m_Images = m_Device.GetLogicDevice().getSwapchainImagesKHR(m_SwapChain);
-	m_ImageViews.resize(m_Images.size());
+	m_SwapChainImages = m_Device.GetLogicDevice().getSwapchainImagesKHR(m_SwapChain);
+	m_SwapChainImageViews.resize(m_SwapChainImages.size());
 	uint32_t imageIndex = 0;
-	for (const auto& image : m_Images)
+	for (const auto& image : m_SwapChainImages)
 	{
-		//m_ImageViews.emplace_back(m_Device.GetLogicDevice(), image, m_Format, vk::ImageAspectFlagBits::eColor, 1, vk::ImageViewType::e2D);
-		//TODO: Imageview class
-		vk::ImageSubresourceRange region;
-		region.setAspectMask(vk::ImageAspectFlagBits::eColor)
-			  .setBaseArrayLayer(0)
-			  .setBaseMipLevel(0)
-			  .setLayerCount(1)
-			  .setLevelCount(1);
-		vk::ImageViewCreateInfo viewInfo;
-		viewInfo.sType = vk::StructureType::eImageViewCreateInfo;
-		viewInfo.setComponents(vk::ComponentMapping())
-			    .setFormat(m_Format)
-			    .setImage(image)
-			    .setSubresourceRange(region)
-			    .setViewType(vk::ImageViewType::e2D);
-		VK_CHECK_RESULT(m_Device.GetLogicDevice().createImageView(&viewInfo, nullptr, &m_ImageViews[imageIndex++]));
+		m_SwapChainImageViews[imageIndex++].Create(m_Device.GetLogicDevice(), image, m_Format);
 	}
 	/*if (m_Samples != vk::SampleCountFlagBits::e1)
 	{*/
-		CreateMultiSampleColorAttachment();
+	CreateColorAttachment();
 	//}
 	if (m_HasDepth)
 	{
@@ -197,11 +182,11 @@ void SwapChain::Clear()
 		}
 	}
 
-	if (!m_ImageViews.empty())
+	if (!m_SwapChainImageViews.empty())
 	{
-		for (auto& view : m_ImageViews) 
+		for (auto& view : m_SwapChainImageViews)
 		{
-			m_Device.GetLogicDevice().destroyImageView(view);
+			view.Clear();
 		}
 		//m_ImageViews.clear();
 	}
@@ -245,7 +230,7 @@ void SwapChain::PresentImage(uint32_t imageIndex, vk::Semaphore waitDrawFinish, 
 	}
 }
 
-void SwapChain::CreateMultiSampleColorAttachment()
+void SwapChain::CreateColorAttachment()
 {
 	vk::Extent3D size(m_Extent.width, m_Extent.height, 1);
 	m_ColorAttachments.resize(m_ImageCount);
@@ -280,11 +265,11 @@ void SwapChain::CreateDepthStencilAttachment()
 void SwapChain::CreateFrameBuffers()
 {
 	vk::Device device = m_Device.GetLogicDevice();
-	m_FrameBuffers.resize(m_Images.size());
+	m_FrameBuffers.resize(m_SwapChainImages.size());
 	uint32_t index = 0;
-	for (auto& view : m_ImageViews)
+	for (auto& view : m_SwapChainImageViews)
 	{
-		m_FrameBuffers[index].SetAttachment(view);
+		m_FrameBuffers[index].SetAttachment(view.GetVkImageView());
 		/*if (m_Samples != vk::SampleCountFlagBits::e1)
 		{*/
 			m_FrameBuffers[index].SetAttachment(m_ColorAttachments[index].GetVkImageView());
@@ -357,7 +342,7 @@ void SwapChain::CreateRenderPass()
 	
 	subpassDescs[1].setColorAttachmentCount(1)
 				   .setPColorAttachments(&colorReferenceSwapchain)
-				   .setInputAttachmentCount(inputAttachments.size())
+				   .setInputAttachmentCount(static_cast<uint32_t>(inputAttachments.size()))
 				   .setPInputAttachments(inputAttachments.data())
 				   .setPipelineBindPoint(vk::PipelineBindPoint::eGraphics);
 
@@ -388,12 +373,12 @@ void SwapChain::CreateRenderPass()
 				   .setDependencyFlags(vk::DependencyFlagBits::eByRegion);
 	vk::RenderPassCreateInfo renderPassInfo;
 	renderPassInfo.sType = vk::StructureType::eRenderPassCreateInfo;
-	renderPassInfo.setAttachmentCount(attachments.size())
-				  .setDependencyCount(dependencies.size())
+	renderPassInfo.setAttachmentCount(static_cast<uint32_t>(attachments.size()))
 				  .setPAttachments(attachments.data())
+				  .setDependencyCount(static_cast<uint32_t>(dependencies.size()))
 				  .setPDependencies(dependencies.data())
-				  .setPSubpasses(subpassDescs.data())
-				  .setSubpassCount(subpassDescs.size());
+				  .setSubpassCount(static_cast<uint32_t>(subpassDescs.size()))
+				  .setPSubpasses(subpassDescs.data());
 
 	VK_CHECK_RESULT(m_Device.GetLogicDevice().createRenderPass(&renderPassInfo, nullptr, &m_RenderPass));
 }

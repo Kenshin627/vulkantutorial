@@ -15,7 +15,7 @@ void FrameBuffer::Create(vk::Device device, uint32_t width, uint32_t height, vk:
 	m_Height = height;
 	vk::FramebufferCreateInfo frameBufferInfo;
 	frameBufferInfo.sType = vk::StructureType::eFramebufferCreateInfo;
-	frameBufferInfo.setAttachmentCount(m_Attachments.size())
+	frameBufferInfo.setAttachmentCount(static_cast<uint32_t>(m_Attachments.size()))
 				   .setHeight(m_Height)
 				   .setWidth(m_Width)
 				   .setLayers(1)

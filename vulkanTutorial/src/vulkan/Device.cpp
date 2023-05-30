@@ -152,6 +152,7 @@ vk::SampleCountFlagBits Device::CalcMaxSamplerCount(vk::PhysicalDeviceProperties
 	if (count & vk::SampleCountFlagBits::e4 ) { return vk::SampleCountFlagBits::e4;  }
 	if (count & vk::SampleCountFlagBits::e2 ) { return vk::SampleCountFlagBits::e2;  }
 	if (count & vk::SampleCountFlagBits::e1 ) { return vk::SampleCountFlagBits::e1;  }
+	return vk::SampleCountFlagBits::e1;
 }
 
 vk::Fence Device::CreateFence(vk::FenceCreateFlags flags)
@@ -176,6 +177,7 @@ uint32_t Device::FindMemoryType(uint32_t memoryTypeBits, vk::MemoryPropertyFlags
 			return i;
 		}
 	}
+	throw std::runtime_error("can not found suitable memoryType!");
 }
 
 vk::Format Device::FindImageFormatDeviceSupport(const std::vector<vk::Format> formats, vk::ImageTiling tiling, vk::FormatFeatureFlags featureFlags)

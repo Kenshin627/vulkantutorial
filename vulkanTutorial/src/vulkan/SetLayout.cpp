@@ -5,7 +5,7 @@ void BindingSetLayout::Create(const Device& device, const std::vector<SetLayoutB
 {
 	m_Device = device;
 	m_SeyLayoutBindings = bindings;
-	uint32_t bindingSize = m_SeyLayoutBindings.size();
+	uint32_t bindingSize =static_cast<uint32_t>(m_SeyLayoutBindings.size());
 	m_Bindings.resize(bindingSize);
 	m_PoolSizes.resize(bindingSize);
 
@@ -49,7 +49,7 @@ void BindingSetLayout::BuildAndUpdateSet(vk::DescriptorPool pool)
 		   .setPSetLayouts(&m_SetLayout);
 	VK_CHECK_RESULT(m_Device.GetLogicDevice().allocateDescriptorSets(&setInfo, &m_DescriptorSet));
 	std::vector<vk::WriteDescriptorSet> writeDescriptorSets;
-	uint32_t bindingSize = m_SeyLayoutBindings.size();
+	uint32_t bindingSize = static_cast<uint32_t>(m_SeyLayoutBindings.size());
 	writeDescriptorSets.resize(bindingSize);
 	for (uint32_t i = 0; i < bindingSize; i++)
 	{
@@ -69,5 +69,5 @@ void BindingSetLayout::BuildAndUpdateSet(vk::DescriptorPool pool)
 			writeDescriptorSets[i].setPImageInfo(&currentBinding.ImageInfo);
 		}
 	}
-	m_Device.GetLogicDevice().updateDescriptorSets(writeDescriptorSets.size(), writeDescriptorSets.data(), 0, nullptr);
+	m_Device.GetLogicDevice().updateDescriptorSets(bindingSize, writeDescriptorSets.data(), 0, nullptr);
 }

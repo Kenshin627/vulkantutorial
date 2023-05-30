@@ -14,7 +14,7 @@ void Texture::Create(Device& device, const char* path, bool generateMipmaps)
 		throw std::runtime_error("read imagefile failed!");
 	}
 	vk::DeviceSize size = width * height * 4;
-	m_MipLevel = std::floor(std::log2((std::max)(width, height))) + 1;
+	m_MipLevel = static_cast<uint32_t>(std::floor(std::log2((std::max)(width, height))) + 1);
 	if (!generateMipmaps)
 	{
 		m_MipLevel = 1;
