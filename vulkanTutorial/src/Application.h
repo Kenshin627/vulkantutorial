@@ -90,13 +90,13 @@ public:
 	Application(int width, int height, const char* title) : m_Window(width, height, title)  {}
 	void Run();
 	void InitWindow(int width, int height, const char* title);
-	void InitVulkan();
+	void InitContext();
 	void RenderLoop();
 	void Clear();
 	void LoadModel(const char* path, std::vector<Vertex>& vertexData, std::vector<uint32_t>& indicesData);
-private:
-	void InitDevice(Window& window);
 	void CreateSetLayout();
+	void BuildAndUpdateDescriptorSets();
+private:
 	void CreatePipeLine();
 	void CreateVertexBuffer();
 	void CreateIndexBuffer();
@@ -119,7 +119,7 @@ private:
 	PipeLines m_PipeLines;
 
 	vk::DescriptorPool m_DescriptorPool;
-	
+	std::vector<vk::DescriptorPoolSize> m_PoolSizes;
 	BindingSetLayout m_PushConstantSetlayout;
 	std::vector<BindingSetLayout> m_InputAttachmentSetlayouts;
 	

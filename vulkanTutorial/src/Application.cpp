@@ -13,7 +13,7 @@
 
 void Application::Run()
 {
-	InitVulkan();
+	InitContext();
 	RenderLoop();
 	Clear();
 }
@@ -23,14 +23,9 @@ void Application::InitWindow(int width, int height, const char* title)
 	m_Window = Window(width, height, title);
 }
 
-void Application::InitDevice(Window& window)
+void Application::InitContext()
 {
-	m_Device = Device(window);
-}
-
-void Application::InitVulkan()
-{
-	InitDevice(m_Window);
+	m_Device = Device(m_Window);
 	//m_SamplerCount = m_Device.GetMaxSampleCount();
 	m_SamplerCount = vk::SampleCountFlagBits::e1;
 	m_SwapChain.Init(m_Device, m_Window, m_SamplerCount, false, true);
@@ -41,11 +36,13 @@ void Application::InitVulkan()
 	CreateUniformBuffer();
 
 	CreateSetLayout();
+	BuildAndUpdateDescriptorSets();
 	CreatePipeLine();
 	
 	LoadModel("resource/models/vikingRoom.obj", m_VertexData, m_Indices);	
 	LoadModel("resource/models/cube.obj", m_CubeVexData, m_CubeIndices);
 	m_CommandBuffer = m_Device.GetCommandManager().AllocateCommandBuffer(vk::CommandBufferLevel::ePrimary, true);
+
 	CreateVertexBuffer();
 	CreateIndexBuffer();
 	CreateAsyncObjects();
@@ -264,10 +261,11 @@ void Application::RecordCommandBuffer(vk::CommandBuffer command, uint32_t imageI
 
 void Application::DrawFrame()
 {
+
 	auto fenceResult = m_Device.GetLogicDevice().waitForFences(1, &m_InFlightFence, VK_TRUE, (std::numeric_limits<uint64_t>::max)());
 
 	uint32_t imageIndex;
-	m_SwapChain.AcquireNextImage(&imageIndex, m_WaitAcquireImageSemaphore);
+	m_SwapChain.AcquireNextImage(&imageIndex, m_WaitAcquireImageSemaphore, this);
 	
 	auto resetFenceRes = m_Device.GetLogicDevice().resetFences(1, &m_InFlightFence);
 	m_CommandBuffer.reset();
@@ -288,7 +286,7 @@ void Application::DrawFrame()
 			  .setPWaitDstStageMask(waitStages);
 	auto submitRes = m_Device.GetGraphicQueue().submit(1, &submitInfo, m_InFlightFence);
 
-	m_SwapChain.PresentImage(imageIndex, m_WaitFinishDrawSemaphore);
+	m_SwapChain.PresentImage(imageIndex, m_WaitFinishDrawSemaphore, this);
 }
 
 void Application::CreateAsyncObjects()
@@ -341,14 +339,12 @@ void Application::CreateIndexBuffer()
 
 void Application::CreateSetLayout()
 {
-	std::vector<vk::DescriptorPoolSize> poolSizes;
-
 	m_PushConstantSetlayout.Create(m_Device, { 
 		{ vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex, 0, m_UniformBuffer.m_Descriptor, {}, 1},
 		{ vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, 1 , {}, m_CubeTexture.GetDescriptor(), 1}
 	});
 	m_SetCount++;
-	poolSizes.insert(poolSizes.end(), m_PushConstantSetlayout.GetPoolSizes().begin(), m_PushConstantSetlayout.GetPoolSizes().end());
+	m_PoolSizes.insert(m_PoolSizes.end(), m_PushConstantSetlayout.GetPoolSizes().begin(), m_PushConstantSetlayout.GetPoolSizes().end());
 
 	m_InputAttachmentSetlayouts.resize(m_SwapChain.GetImageCount());
 	for (uint32_t i = 0; i < m_SwapChain.GetImageCount(); i++)
@@ -358,14 +354,17 @@ void Application::CreateSetLayout()
 			{ vk::DescriptorType::eInputAttachment, vk::ShaderStageFlagBits::eFragment, 1, {}, vk::DescriptorImageInfo({}, m_SwapChain.GetFrameBuffers()[i].GetAttachments()[2], vk::ImageLayout::eShaderReadOnlyOptimal) }
 		});
 		m_SetCount++;
-		poolSizes.insert(poolSizes.end(), m_InputAttachmentSetlayouts[i].GetPoolSizes().begin(), m_InputAttachmentSetlayouts[i].GetPoolSizes().end());
+		m_PoolSizes.insert(m_PoolSizes.end(), m_InputAttachmentSetlayouts[i].GetPoolSizes().begin(), m_InputAttachmentSetlayouts[i].GetPoolSizes().end());
 	}
-	
+}
+
+void Application::BuildAndUpdateDescriptorSets()
+{
 	vk::DescriptorPoolCreateInfo descriptorPoolInfo;
 	descriptorPoolInfo.sType = vk::StructureType::eDescriptorPoolCreateInfo;
 	descriptorPoolInfo.setMaxSets(m_SetCount)
-		.setPoolSizeCount(static_cast<uint32_t>(poolSizes.size()))
-		.setPPoolSizes(poolSizes.data());
+		.setPoolSizeCount(static_cast<uint32_t>(m_PoolSizes.size()))
+		.setPPoolSizes(m_PoolSizes.data());
 	VK_CHECK_RESULT(m_Device.GetLogicDevice().createDescriptorPool(&descriptorPoolInfo, nullptr, &m_DescriptorPool));
 
 	m_PushConstantSetlayout.BuildAndUpdateSet(m_DescriptorPool);

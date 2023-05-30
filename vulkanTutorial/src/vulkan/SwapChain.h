@@ -5,14 +5,15 @@
 #include "FrameBuffer.h"
 #include <vulkan/vulkan.hpp>
 
+class Application;
 class SwapChain
 {
 public:
 	void Init(Device& device, const Window& window, vk::SampleCountFlagBits sampleBits, bool vSync, bool hasDepth);
 	void Create();
 	void ReCreate();
-	void AcquireNextImage(uint32_t* imageIndex, vk::Semaphore waitAcquireImage);
-	void PresentImage(uint32_t imageIndex, vk::Semaphore waitDrawFinish);
+	void AcquireNextImage(uint32_t* imageIndex, vk::Semaphore waitAcquireImage, Application* app);
+	void PresentImage(uint32_t imageIndex, vk::Semaphore waitDrawFinish, Application* app);
 	~SwapChain();
 	void Clear();
 	vk::SwapchainKHR GetSwapChain() { return m_SwapChain; }
