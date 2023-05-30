@@ -11,7 +11,7 @@ void BindingSetLayout::Create(const Device& device, const std::vector<SetLayoutB
 	m_SetWrites.resize(bindingSize);
 	for (uint32_t i = 0; i < bindingSize; i++)
 	{
-		SetLayoutBinding currentBinding = m_SeyLayoutBindings[i];
+		SetLayoutBinding& currentBinding = m_SeyLayoutBindings[i];
 
 		m_Bindings[i].setBinding(currentBinding.Binding)
 					 .setDescriptorCount(currentBinding.DescriptorCount)
@@ -22,12 +22,12 @@ void BindingSetLayout::Create(const Device& device, const std::vector<SetLayoutB
 		m_PoolSizes[i].setDescriptorCount(currentBinding.DescriptorCount)
 				      .setType(currentBinding.Type);
 
-		m_SetWrites[i].sType = vk::StructureType::eWriteDescriptorSet;
-		m_SetWrites[i].setDescriptorCount(currentBinding.DescriptorCount)
-					  .setDescriptorType(currentBinding.Type)
-					  .setDstArrayElement(0)
-					  .setDstBinding(currentBinding.Binding)
-					  .setDstSet(m_DescriptorSet);
+		//m_SetWrites[i].sType = vk::StructureType::eWriteDescriptorSet;
+		//m_SetWrites[i].setDescriptorCount(currentBinding.DescriptorCount)
+		//			  .setDescriptorType(currentBinding.Type)
+		//			  .setDstArrayElement(0)
+		//			  .setDstBinding(currentBinding.Binding)
+		//			  .setDstSet(m_DescriptorSet);
 		if (currentBinding.IsBuffer())
 		{
 			m_SetWrites[i].setPBufferInfo(&currentBinding.BufferInfo);
@@ -69,8 +69,9 @@ void BindingSetLayout::BuildAndUpdateSet(vk::DescriptorPool pool)
 	}*/
 	for (uint32_t i = 0; i < m_SeyLayoutBindings.size(); i++)
 	{
-		SetLayoutBinding currentBinding = m_SeyLayoutBindings[i];
-		m_SetWrites[i].setDescriptorCount(currentBinding.DescriptorCount)
+		SetLayoutBinding& currentBinding = m_SeyLayoutBindings[i];
+		m_SetWrites[i].sType = vk::StructureType::eWriteDescriptorSet;
+ 		m_SetWrites[i].setDescriptorCount(currentBinding.DescriptorCount)
 					  .setDescriptorType(currentBinding.Type)
 					  .setDstArrayElement(0)
 					  .setDstBinding(currentBinding.Binding)

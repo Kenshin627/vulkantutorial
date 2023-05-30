@@ -265,7 +265,6 @@ void Application::RecordCommandBuffer(vk::CommandBuffer command, uint32_t imageI
 		command.endRenderPass();
 	m_Device.GetCommandManager().CommandEnd(command);
 }				
-
 void Application::DrawFrame()
 {
 	auto fenceResult = m_Device.GetLogicDevice().waitForFences(1, &m_InFlightFence, VK_TRUE, (std::numeric_limits<uint64_t>::max)());
