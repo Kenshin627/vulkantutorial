@@ -158,7 +158,6 @@ void SwapChain::Clear()
 		{
 			view.Clear();
 		}
-		//m_ImageViews.clear();
 	}
 	
 	if (m_SwapChain)
@@ -174,9 +173,7 @@ void SwapChain::AcquireNextImage(uint32_t* imageIndex, vk::Semaphore waitAcquire
 	{
 		m_Window.SetWindowResized(false);
 		ReCreate();
-		
-		//app->GetRenderPass().ReBuildFrameBuffer(app->PrepareFrameBufferAttachmentsData(), m_Extent.width, m_Extent.height);
-		app->GetRenderPass().SetRenderArea(vk::Rect2D({ 0 ,0 }, m_Extent));
+		app->RebuildFrameBuffer();
 		app->CreateSetLayout();
 		app->BuildAndUpdateDescriptorSets();
 		return;
@@ -198,8 +195,7 @@ void SwapChain::PresentImage(uint32_t imageIndex, vk::Semaphore waitDrawFinish, 
 	{
 		m_Window.SetWindowResized(false);
 		ReCreate();
-		//app->GetRenderPass().ReBuildFrameBuffer(app->PrepareFrameBufferAttachmentsData(), m_Extent.width, m_Extent.height);
-		app->GetRenderPass().SetRenderArea(vk::Rect2D({ 0 ,0 }, m_Extent));
+		app->RebuildFrameBuffer();
 		app->CreateSetLayout();
 		app->BuildAndUpdateDescriptorSets();
 	}

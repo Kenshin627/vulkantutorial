@@ -220,20 +220,6 @@ void Application::CreatePipeLine()
 void Application::RecordCommandBuffer(vk::CommandBuffer command, uint32_t imageIndex)
 {
 	m_Device.GetCommandManager().CommandBegin(command);
-		vk::Extent2D extent = m_SwapChain.GetExtent();
-		vk::Viewport viewport;
-		viewport.setX(0.0f)
-			.setY(0.0f)
-			.setWidth((float)extent.width)
-			.setHeight((float)extent.height)
-			.setMinDepth(0.0f)
-			.setMaxDepth(1.0f);
-		vk::Rect2D scissor;
-		scissor.setOffset({ 0, 0 })
-			.setExtent(extent);
-		command.setViewport(0, 1, &viewport);
-		command.setScissor(0, 1, &scissor);
-		vk::DeviceSize size(0);
 		#pragma region SUBPASS
 		//DeferredRendingPass.Begin(command, imageIndex);
 		//	vk::Viewport viewport;
@@ -276,10 +262,24 @@ void Application::RecordCommandBuffer(vk::CommandBuffer command, uint32_t imageI
 		//	
 		//DeferredRendingPass.End(command);
 		#pragma endregion
+		vk::Extent2D extent = m_SwapChain.GetExtent();
+		vk::Viewport viewport;
+		viewport.setX(0.0f)
+			.setY(0.0f)
+			.setWidth((float)extent.width)
+			.setHeight((float)extent.height)
+			.setMinDepth(0.0f)
+			.setMaxDepth(1.0f);
+		vk::Rect2D scissor;
+		scissor.setOffset({ 0, 0 })
+			.setExtent(extent);
+		vk::DeviceSize size(0);
 		//pass1
 		{
-			renderpass1.Begin(command, imageIndex);
+			renderpass1.Begin(command, imageIndex, vk::Rect2D({ 0,0 }, extent));
 				auto DescriptorSet = SetLayout1.GetDescriptorSet();
+				command.setViewport(0, 1, &viewport);
+				command.setScissor(0, 1, &scissor);
 				command.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, SetLayout1.GetPipelineLayout(), 0, 1, &DescriptorSet, 0, nullptr);
 				command.bindPipeline(vk::PipelineBindPoint::eGraphics, m_PipeLines.Phong);
 				command.bindVertexBuffers(0, 1, &m_CubeVertexBuffer.m_Buffer, &size);
@@ -294,8 +294,10 @@ void Application::RecordCommandBuffer(vk::CommandBuffer command, uint32_t imageI
 
 		//pass2
 		{
-			renderpass2.Begin(command, imageIndex);
+			renderpass2.Begin(command, imageIndex, vk::Rect2D({ 0,0 }, extent));
 				auto DescriptorSet = SetLayout2.GetDescriptorSet();
+				command.setViewport(0, 1, &viewport);
+				command.setScissor(0, 1, &scissor);
 				command.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, SetLayout2.GetPipelineLayout(), 0, 1, &DescriptorSet, 0, nullptr);
 				command.bindPipeline(vk::PipelineBindPoint::eGraphics, m_PipeLines.RpgSpliter);
 				command.draw(3, 1, 0, 0);
@@ -746,46 +748,91 @@ void Application::CreateRenderPass()
 		bufferAttachments2.push_back({ { FrameBufferAttachment::AttachmentType::Color, image } });
 	}
 	renderpass2.BuildFrameBuffer(bufferAttachments2, extent.width, extent.height);
+	m_RenderPasses.push_back(renderpass1);
+	m_RenderPasses.push_back(renderpass2);
 }
 
-void Application::PrepareFrameBufferAttachmentsData()
+void Application::RebuildFrameBuffer()
 {
-	//build color and depth attachments
-	vk::Format format = m_SwapChain.GetFormat();
-	vk::Extent2D extent = m_SwapChain.GetExtent();
-	uint32_t imageCount = m_SwapChain.GetImageCount();
+	#pragma region SUBPASS
+	////build color and depth attachments
+	//vk::Format format = m_SwapChain.GetFormat();
+	//vk::Extent2D extent = m_SwapChain.GetExtent();
+	//uint32_t imageCount = m_SwapChain.GetImageCount();
+	//vk::Format depthFormat = m_Device.FindImageFormatDeviceSupport({ vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint, vk::Format::eD24UnormS8Uint }, vk::ImageTiling::eOptimal, vk::FormatFeatureFlagBits::eDepthStencilAttachment);
+	//vk::Extent3D size(extent.width, extent.height, 1);
+	//vk::ImageAspectFlags aspectFlags = vk::ImageAspectFlagBits::eDepth;
+	//if (m_Device.HasStencil(depthFormat))
+	//{
+	//	aspectFlags |= vk::ImageAspectFlagBits::eStencil;
+	//}
+
+	//std::vector<std::vector<vk::ImageView>> bufferAttachments;
+	//bufferAttachments.resize(imageCount);
+	//for (uint32_t i = 0; i < imageCount; i++)
+	//{
+	//	//0 presentKHR
+	//	std::vector<vk::ImageView> attachments;
+	//	attachments.push_back(m_SwapChain.GetSwapChainImageViews()[i].GetVkImageView());
+
+	//	//1 color Attachment
+	//	Image colorAttachment;
+	//	colorAttachment.Create(m_Device, 1, m_SamplerCount, vk::ImageType::e2D, size, format, vk::ImageUsageFlagBits::eTransientAttachment | vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eInputAttachment, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageLayout::eUndefined, vk::SharingMode::eExclusive, 1, {});
+	//	colorAttachment.CreateImageView(format);
+	//	attachments.push_back(colorAttachment.GetVkImageView());
+
+	//	//2 depth Attachment
+	//	Image depthAttachment;
+	//	depthAttachment.Create(m_Device, 1, m_SamplerCount, vk::ImageType::e2D, size, depthFormat, vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eInputAttachment, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageLayout::eUndefined, vk::SharingMode::eExclusive, 1, {});
+
+	//	depthAttachment.CreateImageView(depthFormat, aspectFlags);
+
+	//	//TODO remove
+	//	depthAttachment.TransiationLayout(vk::PipelineStageFlagBits::eTopOfPipe, vk::AccessFlagBits::eNone, vk::ImageLayout::eUndefined, vk::PipelineStageFlagBits::eEarlyFragmentTests, vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite, vk::ImageLayout::eDepthStencilAttachmentOptimal, aspectFlags);
+	//	attachments.push_back(depthAttachment.GetVkImageView());
+	//	bufferAttachments[i] = attachments;
+	//}
+	////return bufferAttachments;
+	#pragma endregion
+
+	vk::Format colorFormat = m_SwapChain.GetFormat();
 	vk::Format depthFormat = m_Device.FindImageFormatDeviceSupport({ vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint, vk::Format::eD24UnormS8Uint }, vk::ImageTiling::eOptimal, vk::FormatFeatureFlagBits::eDepthStencilAttachment);
+	uint32_t imageCount = m_SwapChain.GetImageCount();
+	vk::Extent2D extent = m_SwapChain.GetExtent();
+	vk::Rect2D renderArea;
+	renderArea.setOffset(vk::Offset2D(0, 0))
+		.setExtent(extent);
 	vk::Extent3D size(extent.width, extent.height, 1);
 	vk::ImageAspectFlags aspectFlags = vk::ImageAspectFlagBits::eDepth;
 	if (m_Device.HasStencil(depthFormat))
 	{
 		aspectFlags |= vk::ImageAspectFlagBits::eStencil;
 	}
+	Image colorImage;
+	colorImage.Create(m_Device, 1, m_SamplerCount, vk::ImageType::e2D, size, colorFormat, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageLayout::eUndefined, vk::SharingMode::eExclusive, 1, {});
+	colorImage.CreateImageView(colorFormat);
+	colorImage.CreateSampler();
+	colorImage.CreateDescriptor();
 
-	std::vector<std::vector<vk::ImageView>> bufferAttachments;
-	bufferAttachments.resize(imageCount);
-	for (uint32_t i = 0; i < imageCount; i++)
+	//2 depth Attachment
+	Image depthImage;
+	depthImage.Create(m_Device, 1, m_SamplerCount, vk::ImageType::e2D, size, depthFormat, vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageLayout::eUndefined, vk::SharingMode::eExclusive, 1, {});
+	depthImage.CreateImageView(depthFormat, aspectFlags);
+	depthImage.CreateSampler();
+	depthImage.CreateDescriptor();
+
+	//TODO remove
+	depthImage.TransiationLayout(vk::PipelineStageFlagBits::eTopOfPipe, vk::AccessFlagBits::eNone, vk::ImageLayout::eUndefined, vk::PipelineStageFlagBits::eEarlyFragmentTests, vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite, vk::ImageLayout::eDepthStencilAttachmentOptimal, aspectFlags);
+
+	std::vector<std::vector<FrameBufferAttachment>> bufferAttachments1 = { {
+		{ FrameBufferAttachment::AttachmentType::Color, colorImage },
+		{ FrameBufferAttachment::AttachmentType::Depth, depthImage },
+	} };
+	renderpass1.ReBuildFrameBuffer(bufferAttachments1, extent.width, extent.height);
+	std::vector<std::vector<FrameBufferAttachment>> bufferAttachments2;
+	for (auto& image : m_SwapChain.GetImages())
 	{
-		//0 presentKHR
-		std::vector<vk::ImageView> attachments;
-		attachments.push_back(m_SwapChain.GetSwapChainImageViews()[i].GetVkImageView());
-
-		//1 color Attachment
-		Image colorAttachment;
-		colorAttachment.Create(m_Device, 1, m_SamplerCount, vk::ImageType::e2D, size, format, vk::ImageUsageFlagBits::eTransientAttachment | vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eInputAttachment, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageLayout::eUndefined, vk::SharingMode::eExclusive, 1, {});
-		colorAttachment.CreateImageView(format);
-		attachments.push_back(colorAttachment.GetVkImageView());
-
-		//2 depth Attachment
-		Image depthAttachment;
-		depthAttachment.Create(m_Device, 1, m_SamplerCount, vk::ImageType::e2D, size, depthFormat, vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eInputAttachment, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageLayout::eUndefined, vk::SharingMode::eExclusive, 1, {});
-
-		depthAttachment.CreateImageView(depthFormat, aspectFlags);
-
-		//TODO remove
-		depthAttachment.TransiationLayout(vk::PipelineStageFlagBits::eTopOfPipe, vk::AccessFlagBits::eNone, vk::ImageLayout::eUndefined, vk::PipelineStageFlagBits::eEarlyFragmentTests, vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite, vk::ImageLayout::eDepthStencilAttachmentOptimal, aspectFlags);
-		attachments.push_back(depthAttachment.GetVkImageView());
-		bufferAttachments[i] = attachments;
+		bufferAttachments2.push_back({ { FrameBufferAttachment::AttachmentType::Color, image } });
 	}
-	//return bufferAttachments;
+	renderpass2.ReBuildFrameBuffer(bufferAttachments2, extent.width, extent.height);
 }

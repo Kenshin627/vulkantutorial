@@ -4,7 +4,6 @@
 
 FrameBuffer& FrameBuffer::SetAttachments(std::vector<FrameBufferAttachment>& attachments)
 {
-	/*m_Attachments.insert(m_Attachments.end(), attachments.begin(), attachments.end());*/
 	for (auto& attachment : attachments)
 	{
 		if (attachment.Type == FrameBufferAttachment::AttachmentType::Color) 

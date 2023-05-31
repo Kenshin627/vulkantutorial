@@ -31,14 +31,14 @@ void RenderPass::BuildFrameBuffer(std::vector<std::vector<FrameBufferAttachment>
 	}
 }
 
-void RenderPass::Begin(vk::CommandBuffer command, uint32_t imageIndex)
+void RenderPass::Begin(vk::CommandBuffer command, uint32_t imageIndex, vk::Rect2D renderArea)
 {
 	vk::RenderPassBeginInfo renderPassBegin;
 	renderPassBegin.sType = vk::StructureType::eRenderPassBeginInfo;
 	renderPassBegin.setClearValueCount(static_cast<uint32_t>(m_ClearValues.size()))
 				   .setPClearValues(m_ClearValues.data())
 				   .setRenderPass(m_RenderPass)
-				   .setRenderArea(m_RenderArea);
+				   .setRenderArea(renderArea);
 	if (m_IsPresentPass)
 	{
 		renderPassBegin.setFramebuffer(m_FrameBuffers[imageIndex].GetVkFrameBuffer());

@@ -15,7 +15,7 @@ public:
 	void ReBuildFrameBuffer(std::vector<std::vector<FrameBufferAttachment>>& attachments, uint32_t width, uint32_t height);
 	void ClearFrameBuffer();
 	void SetRenderArea(vk::Rect2D renderArea) { m_RenderArea = renderArea; }
-	void Begin(vk::CommandBuffer command, uint32_t imageIndex);
+	void Begin(vk::CommandBuffer command, uint32_t imageIndex, vk::Rect2D renderArea);
 	void Clear();
 	void End(vk::CommandBuffer command);
 	vk::RenderPass GetVkRenderPass() { return m_RenderPass; }

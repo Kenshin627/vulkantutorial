@@ -98,8 +98,8 @@ public:
 	void LoadModel(const char* path, std::vector<Vertex>& vertexData, std::vector<uint32_t>& indicesData);
 	void CreateSetLayout();
 	void BuildAndUpdateDescriptorSets();
-	RenderPass& GetRenderPass() { return DeferredRendingPass; }
-	void PrepareFrameBufferAttachmentsData();
+	void RebuildFrameBuffer();
+	std::vector<RenderPass>& GetRenderPass() { return m_RenderPasses; }
 private:
 	void CreatePipeLine();
 	void CreateRenderPass();
@@ -120,6 +120,8 @@ private:
 	RenderPass DeferredRendingPass;
 	RenderPass renderpass1;
 	RenderPass renderpass2;
+	
+	std::vector<RenderPass> m_RenderPasses;
 
 	vk::Fence m_InFlightFence;
 	vk::Semaphore m_WaitAcquireImageSemaphore;
