@@ -38,6 +38,7 @@ private:
 	std::vector<vk::DescriptorSetLayoutBinding> m_Bindings;
 	std::vector<vk::DescriptorPoolSize> m_PoolSizes;
 	vk::DescriptorSet m_DescriptorSet;
-	std::vector<SetLayoutBinding> m_SeyLayoutBindings;
+	std::vector<SetLayoutBinding> m_BindingParams;
+	uint32_t m_BindingCount;
 	Device m_Device;
 };

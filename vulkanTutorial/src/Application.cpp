@@ -23,12 +23,12 @@ void Application::InitWindow(int width, int height, const char* title)
 
 void Application::InitContext()
 {
-	m_Device = Device(m_Window);
 	//m_SamplerCount = m_Device.GetMaxSampleCount();
+	m_Device = Device(m_Window);
 	m_SamplerCount = vk::SampleCountFlagBits::e1;
 	m_SwapChain.Init(m_Device, m_Window, m_SamplerCount, false, true);
 	CreateRenderPass();
-	m_Texture.Create(m_Device, "resource/textures/vikingRoom.png", true);
+	
 	m_CubeTexture.Create(m_Device, "resource/textures/nirvana.jpg", true);
 	m_SkyBoxTexture.Create(m_Device, { "resource/textures/skybox/right.jpg", "resource/textures/skybox/left.jpg", "resource/textures/skybox/top.jpg", "resource/textures/skybox/bottom.jpg", "resource/textures/skybox/front.jpg", "resource/textures/skybox/back.jpg" });
 	CreateUniformBuffer();
@@ -221,6 +221,19 @@ void Application::RecordCommandBuffer(vk::CommandBuffer command, uint32_t imageI
 {
 	m_Device.GetCommandManager().CommandBegin(command);
 		vk::Extent2D extent = m_SwapChain.GetExtent();
+		vk::Viewport viewport;
+		viewport.setX(0.0f)
+			.setY(0.0f)
+			.setWidth((float)extent.width)
+			.setHeight((float)extent.height)
+			.setMinDepth(0.0f)
+			.setMaxDepth(1.0f);
+		vk::Rect2D scissor;
+		scissor.setOffset({ 0, 0 })
+			.setExtent(extent);
+		command.setViewport(0, 1, &viewport);
+		command.setScissor(0, 1, &scissor);
+		vk::DeviceSize size(0);
 		#pragma region SUBPASS
 		//DeferredRendingPass.Begin(command, imageIndex);
 		//	vk::Viewport viewport;
@@ -262,23 +275,10 @@ void Application::RecordCommandBuffer(vk::CommandBuffer command, uint32_t imageI
 		//	}
 		//	
 		//DeferredRendingPass.End(command);
-
+		#pragma endregion
 		//pass1
 		{
 			renderpass1.Begin(command, imageIndex);
-				vk::Viewport viewport;
-				viewport.setX(0.0f)
-						.setY(0.0f)
-						.setWidth((float)extent.width)
-						.setHeight((float)extent.height)
-						.setMinDepth(0.0f)
-						.setMaxDepth(1.0f);
-				vk::Rect2D scissor;
-				scissor.setOffset({ 0, 0 })
-					   .setExtent(extent);
-				command.setViewport(0, 1, &viewport);
-				command.setScissor(0, 1, &scissor);
-				vk::DeviceSize size(0);
 				auto DescriptorSet = SetLayout1.GetDescriptorSet();
 				command.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, SetLayout1.GetPipelineLayout(), 0, 1, &DescriptorSet, 0, nullptr);
 				command.bindPipeline(vk::PipelineBindPoint::eGraphics, m_PipeLines.Phong);
@@ -295,44 +295,24 @@ void Application::RecordCommandBuffer(vk::CommandBuffer command, uint32_t imageI
 		//pass2
 		{
 			renderpass2.Begin(command, imageIndex);
-				vk::Viewport viewport;
-				viewport.setX(0.0f)
-						.setY(0.0f)
-						.setWidth((float)extent.width)
-						.setHeight((float)extent.height)
-						.setMinDepth(0.0f)
-						.setMaxDepth(1.0f);
-				vk::Rect2D scissor;
-				scissor.setOffset({ 0, 0 })
-					   .setExtent(extent);
-				command.setViewport(0, 1, &viewport);
-				command.setScissor(0, 1, &scissor);
-				vk::DeviceSize size(0);
 				auto DescriptorSet = SetLayout2.GetDescriptorSet();
 				command.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, SetLayout2.GetPipelineLayout(), 0, 1, &DescriptorSet, 0, nullptr);
 				command.bindPipeline(vk::PipelineBindPoint::eGraphics, m_PipeLines.RpgSpliter);
 				command.draw(3, 1, 0, 0);
 			renderpass2.End(command);
 		}
-		#pragma endregion
-
 	m_Device.GetCommandManager().CommandEnd(command);
 }			
 
 void Application::DrawFrame()
 {
-
 	auto fenceResult = m_Device.GetLogicDevice().waitForFences(1, &m_InFlightFence, VK_TRUE, (std::numeric_limits<uint64_t>::max)());
-
 	uint32_t imageIndex;
 	m_SwapChain.AcquireNextImage(&imageIndex, m_WaitAcquireImageSemaphore, this);
-	
 	auto resetFenceRes = m_Device.GetLogicDevice().resetFences(1, &m_InFlightFence);
 	m_CommandBuffer.reset();
 	RecordCommandBuffer(m_CommandBuffer, imageIndex);
-
 	UpdateUniformBuffers();
-
 	vk::PipelineStageFlags waitStages[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
 	vk::SubmitInfo submitInfo;
 	submitInfo.sType = vk::StructureType::eSubmitInfo;
@@ -345,7 +325,6 @@ void Application::DrawFrame()
 			  .setPSignalSemaphores(&m_WaitFinishDrawSemaphore)
 			  .setPWaitDstStageMask(waitStages);
 	auto submitRes = m_Device.GetGraphicQueue().submit(1, &submitInfo, m_InFlightFence);
-
 	m_SwapChain.PresentImage(imageIndex, m_WaitFinishDrawSemaphore, this);
 }
 
@@ -428,7 +407,7 @@ void Application::CreateSetLayout()
 
 
 	SetLayout2.Create(m_Device, {
-		{vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, 0, {}, m_Pass1ColorAttachment.GetDescriptor(), 1}
+		{vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, 0, {}, renderpass1.GetFrameBuffers()[0].GetColorAttachment(0).Attachment.GetDescriptor(), 1}
 	});
 	m_SetCount++;
 	m_PoolSizes.insert(m_PoolSizes.end(), SetLayout2.GetPoolSizes().begin(), SetLayout2.GetPoolSizes().end());
@@ -637,9 +616,22 @@ void Application::CreateRenderPass()
 	#pragma endregion
 
 	//renderPass1 color depth attachment
-	vk::Format format = m_SwapChain.GetFormat();
+	vk::Format colorFormat = m_SwapChain.GetFormat();
+	vk::Format depthFormat = m_Device.FindImageFormatDeviceSupport({ vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint, vk::Format::eD24UnormS8Uint }, vk::ImageTiling::eOptimal, vk::FormatFeatureFlagBits::eDepthStencilAttachment);
+	uint32_t imageCount = m_SwapChain.GetImageCount();
+	vk::Extent2D extent = m_SwapChain.GetExtent();
+	vk::Rect2D renderArea;
+	renderArea.setOffset(vk::Offset2D(0, 0))
+		.setExtent(extent);
+	vk::Extent3D size(extent.width, extent.height, 1);
+	vk::ImageAspectFlags aspectFlags = vk::ImageAspectFlagBits::eDepth;
+	if (m_Device.HasStencil(depthFormat))
+	{
+		aspectFlags |= vk::ImageAspectFlagBits::eStencil;
+	}
+
 	vk::AttachmentDescription colorAttachment;
-	colorAttachment.setFormat(format)
+	colorAttachment.setFormat(colorFormat)
 				   .setSamples(m_SamplerCount)
 				   .setInitialLayout(vk::ImageLayout::eUndefined)
 				   .setFinalLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
@@ -648,7 +640,7 @@ void Application::CreateRenderPass()
 				   .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
 				   .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare);
 
-	vk::Format depthFormat = m_Device.FindImageFormatDeviceSupport({ vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint, vk::Format::eD24UnormS8Uint }, vk::ImageTiling::eOptimal, vk::FormatFeatureFlagBits::eDepthStencilAttachment);
+	
 	vk::AttachmentDescription depthAttachment;
 	depthAttachment.setFormat(depthFormat)
 				   .setSamples(m_SamplerCount)
@@ -693,40 +685,34 @@ void Application::CreateRenderPass()
 	clearValues[0].color = vk::ClearColorValue();
 	clearValues[1].depthStencil = vk::ClearDepthStencilValue(1.0f, 1);
 
-	vk::Extent2D extent = m_SwapChain.GetExtent();
-	vk::Rect2D renderArea;
-	renderArea.setOffset(vk::Offset2D(0, 0))
-			  .setExtent(extent);
-
 	renderpass1.Create(m_Device, attachments1, subpasses1, subPassDependencies1, clearValues, renderArea);
 
-	uint32_t imageCount = m_SwapChain.GetImageCount();
-	vk::Extent3D size(extent.width, extent.height, 1);
-	vk::ImageAspectFlags aspectFlags = vk::ImageAspectFlagBits::eDepth;
-	if (m_Device.HasStencil(depthFormat))
-	{
-		aspectFlags |= vk::ImageAspectFlagBits::eStencil;
-	}
-
-	m_Pass1ColorAttachment.Create(m_Device, 1, m_SamplerCount, vk::ImageType::e2D, size, format, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageLayout::eUndefined, vk::SharingMode::eExclusive, 1, {});
-	m_Pass1ColorAttachment.CreateImageView(format);
-	m_Pass1ColorAttachment.CreateSampler();
-	m_Pass1ColorAttachment.CreateDescriptor();
+	
+	Image colorImage;
+	colorImage.Create(m_Device, 1, m_SamplerCount, vk::ImageType::e2D, size, colorFormat, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageLayout::eUndefined, vk::SharingMode::eExclusive, 1, {});
+	colorImage.CreateImageView(colorFormat);
+	colorImage.CreateSampler();
+	colorImage.CreateDescriptor();
 
 	//2 depth Attachment
-	m_Pass1DepthAttachment.Create(m_Device, 1, m_SamplerCount, vk::ImageType::e2D, size, depthFormat, vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageLayout::eUndefined, vk::SharingMode::eExclusive, 1, {});
-
-	m_Pass1DepthAttachment.CreateImageView(depthFormat, aspectFlags);
+	Image depthImage;
+	depthImage.Create(m_Device, 1, m_SamplerCount, vk::ImageType::e2D, size, depthFormat, vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageLayout::eUndefined, vk::SharingMode::eExclusive, 1, {});
+	depthImage.CreateImageView(depthFormat, aspectFlags);
+	depthImage.CreateSampler();
+	depthImage.CreateDescriptor();
 
 	//TODO remove
-	m_Pass1DepthAttachment.TransiationLayout(vk::PipelineStageFlagBits::eTopOfPipe, vk::AccessFlagBits::eNone, vk::ImageLayout::eUndefined, vk::PipelineStageFlagBits::eEarlyFragmentTests, vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite, vk::ImageLayout::eDepthStencilAttachmentOptimal, aspectFlags);
+	depthImage.TransiationLayout(vk::PipelineStageFlagBits::eTopOfPipe, vk::AccessFlagBits::eNone, vk::ImageLayout::eUndefined, vk::PipelineStageFlagBits::eEarlyFragmentTests, vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite, vk::ImageLayout::eDepthStencilAttachmentOptimal, aspectFlags);
 	
-	std::vector<std::vector<vk::ImageView>> bufferAttachments1 = { { m_Pass1ColorAttachment.GetVkImageView(), m_Pass1DepthAttachment.GetVkImageView() } };
+	std::vector<std::vector<FrameBufferAttachment>> bufferAttachments1 = { { 
+		{ FrameBufferAttachment::AttachmentType::Color, colorImage },
+		{ FrameBufferAttachment::AttachmentType::Depth, depthImage },
+	} };
 	renderpass1.BuildFrameBuffer(bufferAttachments1, extent.width, extent.height);
 
 	//renderPass2 present attachment
-	vk::AttachmentDescription colorAttachment2;
-	colorAttachment.setFormat(format)
+	vk::AttachmentDescription presentAttachment;
+	colorAttachment.setFormat(colorFormat)
 				   .setSamples(m_SamplerCount)
 				   .setInitialLayout(vk::ImageLayout::eUndefined)
 				   .setFinalLayout(vk::ImageLayout::ePresentSrcKHR)
@@ -734,7 +720,7 @@ void Application::CreateRenderPass()
 				   .setStoreOp(vk::AttachmentStoreOp::eStore)
 				   .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
 				   .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare);
-	std::vector<vk::AttachmentDescription> attachments2 = { colorAttachment2 };
+	std::vector<vk::AttachmentDescription> attachments2 = { presentAttachment };
 	vk::AttachmentReference presentReference;
 	presentReference.setAttachment(0).setLayout(vk::ImageLayout::eColorAttachmentOptimal);
 
@@ -754,16 +740,15 @@ void Application::CreateRenderPass()
 			  .setExtent(extent);
 
 	renderpass2.Create(m_Device, attachments2, subpasses2, subPassDependencies2, clearValues2, renderArea2);
-	std::vector<std::vector<vk::ImageView>> bufferAttachments2;
-	for (auto& view : m_SwapChain.GetSwapChainImageViews())
+	std::vector<std::vector<FrameBufferAttachment>> bufferAttachments2;
+	for (auto& image : m_SwapChain.GetImages())
 	{
-		std::vector<vk::ImageView> fmView = { view.GetVkImageView() };
-		bufferAttachments2.push_back(fmView);
+		bufferAttachments2.push_back({ { FrameBufferAttachment::AttachmentType::Color, image } });
 	}
 	renderpass2.BuildFrameBuffer(bufferAttachments2, extent.width, extent.height);
 }
 
-std::vector<std::vector<vk::ImageView>> Application::PrepareFrameBufferAttachmentsData()
+void Application::PrepareFrameBufferAttachmentsData()
 {
 	//build color and depth attachments
 	vk::Format format = m_SwapChain.GetFormat();
@@ -802,5 +787,5 @@ std::vector<std::vector<vk::ImageView>> Application::PrepareFrameBufferAttachmen
 		attachments.push_back(depthAttachment.GetVkImageView());
 		bufferAttachments[i] = attachments;
 	}
-	return bufferAttachments;
+	//return bufferAttachments;
 }

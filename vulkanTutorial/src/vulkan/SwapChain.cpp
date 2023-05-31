@@ -116,10 +116,16 @@ void SwapChain::Create()
 
 	m_SwapChainImages = m_Device.GetLogicDevice().getSwapchainImagesKHR(m_SwapChain);
 	m_SwapChainImageViews.resize(m_SwapChainImages.size());
+	m_Images.resize(0);
 	uint32_t imageIndex = 0;
 	for (const auto& image : m_SwapChainImages)
 	{
-		m_SwapChainImageViews[imageIndex++].Create(m_Device.GetLogicDevice(), image, m_Format);
+		Image colorImage;
+		colorImage.SetImage(image);
+		m_SwapChainImageViews[imageIndex].Create(m_Device.GetLogicDevice(), image, m_Format);
+		colorImage.SetImageView(m_SwapChainImageViews[imageIndex].GetVkImageView());
+		m_Images.push_back(colorImage);
+		imageIndex++;
 	}
 }
 
@@ -154,7 +160,7 @@ void SwapChain::Clear()
 		}
 		//m_ImageViews.clear();
 	}
-
+	
 	if (m_SwapChain)
 	{
 		m_Device.GetLogicDevice().destroySwapchainKHR(m_SwapChain);
@@ -169,7 +175,7 @@ void SwapChain::AcquireNextImage(uint32_t* imageIndex, vk::Semaphore waitAcquire
 		m_Window.SetWindowResized(false);
 		ReCreate();
 		
-		app->GetRenderPass().ReBuildFrameBuffer(app->PrepareFrameBufferAttachmentsData(), m_Extent.width, m_Extent.height);
+		//app->GetRenderPass().ReBuildFrameBuffer(app->PrepareFrameBufferAttachmentsData(), m_Extent.width, m_Extent.height);
 		app->GetRenderPass().SetRenderArea(vk::Rect2D({ 0 ,0 }, m_Extent));
 		app->CreateSetLayout();
 		app->BuildAndUpdateDescriptorSets();
@@ -192,7 +198,7 @@ void SwapChain::PresentImage(uint32_t imageIndex, vk::Semaphore waitDrawFinish, 
 	{
 		m_Window.SetWindowResized(false);
 		ReCreate();
-		app->GetRenderPass().ReBuildFrameBuffer(app->PrepareFrameBufferAttachmentsData(), m_Extent.width, m_Extent.height);
+		//app->GetRenderPass().ReBuildFrameBuffer(app->PrepareFrameBufferAttachmentsData(), m_Extent.width, m_Extent.height);
 		app->GetRenderPass().SetRenderArea(vk::Rect2D({ 0 ,0 }, m_Extent));
 		app->CreateSetLayout();
 		app->BuildAndUpdateDescriptorSets();

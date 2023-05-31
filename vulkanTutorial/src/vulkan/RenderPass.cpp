@@ -17,9 +17,13 @@ void RenderPass::Create(Device& device, const std::vector<vk::AttachmentDescript
 	VK_CHECK_RESULT(m_Device.GetLogicDevice().createRenderPass(&renderPassInfo, nullptr, &m_RenderPass));
 }
 
-void RenderPass::BuildFrameBuffer(const std::vector<std::vector<vk::ImageView>>& attachments, uint32_t width, uint32_t height)
+void RenderPass::BuildFrameBuffer(std::vector<std::vector<FrameBufferAttachment>>& attachments, uint32_t width, uint32_t height)
 {
 	uint32_t frameBufferCount = static_cast<uint32_t>(attachments.size());
+	if (frameBufferCount > 1)
+	{
+		m_IsPresentPass = true;
+	}
 	m_FrameBuffers.resize(frameBufferCount);
 	for (uint32_t i = 0; i < frameBufferCount; i++)
 	{
@@ -35,7 +39,7 @@ void RenderPass::Begin(vk::CommandBuffer command, uint32_t imageIndex)
 				   .setPClearValues(m_ClearValues.data())
 				   .setRenderPass(m_RenderPass)
 				   .setRenderArea(m_RenderArea);
-	if (m_FrameBuffers.size() > 1)
+	if (m_IsPresentPass)
 	{
 		renderPassBegin.setFramebuffer(m_FrameBuffers[imageIndex].GetVkFrameBuffer());
 	}
@@ -51,7 +55,7 @@ void RenderPass::End(vk::CommandBuffer command)
 	command.endRenderPass();
 }
 
-void RenderPass::ReBuildFrameBuffer(const std::vector<std::vector<vk::ImageView>>& attachments, uint32_t width, uint32_t height)
+void RenderPass::ReBuildFrameBuffer(std::vector<std::vector<FrameBufferAttachment>>& attachments, uint32_t width, uint32_t height)
 {
 	ClearFrameBuffer();
 	BuildFrameBuffer(attachments, width, height);
@@ -66,4 +70,10 @@ void RenderPass::ClearFrameBuffer()
 			fb.Clear();
 		}
 	}
+}
+
+void RenderPass::Clear()
+{
+	ClearFrameBuffer();
+	m_Device.GetLogicDevice().destroyRenderPass(m_RenderPass, nullptr);
 }

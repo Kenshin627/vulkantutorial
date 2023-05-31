@@ -43,31 +43,3 @@ void Texture::Clear()
 {
 	m_Image.Clear();
 }
-
-void Texture::CreateSampler()
-{
-	vk::SamplerCreateInfo samplerInfo;
-	samplerInfo.sType = vk::StructureType::eSamplerCreateInfo;
-	samplerInfo.setAddressModeU(vk::SamplerAddressMode::eRepeat)
-			   .setAddressModeV(vk::SamplerAddressMode::eRepeat)
-			   .setAddressModeW(vk::SamplerAddressMode::eRepeat)
-			   .setAnisotropyEnable(VK_FALSE)
-			   .setBorderColor(vk::BorderColor::eIntOpaqueBlack)
-			   .setCompareEnable(VK_FALSE)
-			   .setCompareOp(vk::CompareOp::eAlways)
-			   .setMagFilter(vk::Filter::eLinear)
-			   .setMinFilter(vk::Filter::eLinear)
-			   .setMipLodBias(0.0f)
-			   .setMipmapMode(vk::SamplerMipmapMode::eLinear)
-			   .setMinLod(0.0f)
-			   .setMaxLod(static_cast<float>(m_MipLevel))
-			   .setUnnormalizedCoordinates(VK_FALSE);
-	VK_CHECK_RESULT(m_Device.GetLogicDevice().createSampler(&samplerInfo, nullptr, &m_Sampler));
-}
-
-void Texture::CreateDescriptor()
-{
-	m_Descriptor.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
-		        .setImageView(m_Image.GetVkImageView())
-				.setSampler(m_Sampler);
-}

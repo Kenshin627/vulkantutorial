@@ -1,9 +1,25 @@
 #include "../Core.h"
 #include "FrameBuffer.h"
+#include <algorithm>
 
-FrameBuffer& FrameBuffer::SetAttachments(const std::vector<vk::ImageView>& attachments)
+FrameBuffer& FrameBuffer::SetAttachments(std::vector<FrameBufferAttachment>& attachments)
 {
-	m_Attachments.insert(m_Attachments.end(), attachments.begin(), attachments.end());
+	/*m_Attachments.insert(m_Attachments.end(), attachments.begin(), attachments.end());*/
+	for (auto& attachment : attachments)
+	{
+		if (attachment.Type == FrameBufferAttachment::AttachmentType::Color) 
+		{
+			m_ColorAttachments.push_back(attachment);
+		}
+		else
+		{
+			m_DepthAttachments.push_back(attachment);
+		}
+	}
+	m_Attachments.resize(attachments.size());
+	std::transform(attachments.begin(), attachments.end(), m_Attachments.begin(), [](FrameBufferAttachment& fba) {
+		return fba.Attachment.GetVkImageView();
+	});
 	return *this;
 }
 
@@ -31,4 +47,6 @@ void FrameBuffer::Clear()
 		m_Device.destroyFramebuffer(m_VkFrameBuffer, nullptr);
 	}
 	m_Attachments.clear();
+	m_ColorAttachments.clear();
+	m_DepthAttachments.clear();
 }

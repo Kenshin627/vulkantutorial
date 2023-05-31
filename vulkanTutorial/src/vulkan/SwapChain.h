@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Device.h"
+#include "Image.h"
 #include "ImageView.h"
 
 #include <vulkan/vulkan.hpp>
@@ -23,6 +24,7 @@ public:
 	std::vector<vk::Image> GetSwapChainImages() { return m_SwapChainImages; }
 	std::vector<ImageView> GetSwapChainImageViews() { return m_SwapChainImageViews; }
 	uint32_t GetImageCount() { return m_ImageCount; }
+	std::vector<Image>& GetImages() { return m_Images; }
 private:
 	Device m_Device;
 	CommandManager m_CommandManager;
@@ -37,10 +39,5 @@ private:
 	uint32_t m_ImageCount = 0;	
 	std::vector<vk::Image> m_SwapChainImages;
 	std::vector<ImageView> m_SwapChainImageViews;
-	/*vk::SampleCountFlagBits m_Samples;
-	bool m_HasDepth;
-	std::vector<Image> m_ColorAttachments;
-	std::vector<Image> m_DepthAttachments;
-	std::vector<FrameBuffer> m_FrameBuffers;
-	vk::RenderPass m_RenderPass;*/
+	std::vector<Image> m_Images;
 };

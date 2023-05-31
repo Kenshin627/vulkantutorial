@@ -6,17 +6,15 @@ class Texture
 {
 public:
 	void Create(Device& device, const char* path, bool generateMipmaps);
-	void CreateSampler();
-	void CreateDescriptor();
 	void Clear();
 	uint32_t GetMipLevel() { return m_MipLevel; }
 	Image& GetImage() { return m_Image; }
-	vk::Sampler GetSampler() { return m_Sampler; }
-	vk::DescriptorImageInfo& GetDescriptor() { return m_Descriptor; }
+	void CreateSampler() { m_Image.CreateSampler(); }
+	void CreateDescriptor() { m_Image.CreateDescriptor(); }
+	vk::DescriptorImageInfo GetDescriptor() { return m_Image.GetDescriptor(); }
+	vk::Sampler GetSampler() { return m_Image.GetSampler(); }
 private:
 	Image m_Image;
-	vk::Sampler m_Sampler;
 	uint32_t m_MipLevel;
 	Device m_Device;
-	vk::DescriptorImageInfo m_Descriptor;
 };

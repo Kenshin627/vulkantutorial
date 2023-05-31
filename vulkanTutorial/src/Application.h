@@ -99,7 +99,7 @@ public:
 	void CreateSetLayout();
 	void BuildAndUpdateDescriptorSets();
 	RenderPass& GetRenderPass() { return DeferredRendingPass; }
-	std::vector<std::vector<vk::ImageView>> PrepareFrameBufferAttachmentsData();
+	void PrepareFrameBufferAttachmentsData();
 private:
 	void CreatePipeLine();
 	void CreateRenderPass();
@@ -115,14 +115,12 @@ private:
 	Window m_Window;
 	Device m_Device;
 	SwapChain m_SwapChain;
+	vk::CommandBuffer m_CommandBuffer;
 
 	RenderPass DeferredRendingPass;
 	RenderPass renderpass1;
 	RenderPass renderpass2;
-	Image m_Pass1ColorAttachment;
-	Image m_Pass1DepthAttachment;
 
-	vk::CommandBuffer m_CommandBuffer;
 	vk::Fence m_InFlightFence;
 	vk::Semaphore m_WaitAcquireImageSemaphore;
 	vk::Semaphore m_WaitFinishDrawSemaphore;

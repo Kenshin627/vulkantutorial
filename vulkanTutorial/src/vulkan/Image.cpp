@@ -5,6 +5,7 @@ void Image::Create(Device& device, uint32_t mipLevels, vk::SampleCountFlagBits s
 {
 	m_Device = device;
 	m_Size = size;
+	m_Format = format;
 	m_MipLevel = mipLevels;
 	m_Layers = arrayLayers;
 	vk::Device vkDevice = device.GetLogicDevice();
@@ -202,4 +203,16 @@ void Image::CreateDescriptor()
 	m_Descriptor.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
 				.setImageView(m_View)
 				.setSampler(m_Sampler);
+}
+
+void Image::QueryImageType()
+{
+	//TODO::temp
+	switch (m_Format)
+	{
+	case vk::Format::eD32Sfloat:	   m_ImageType = ImageType::Depth; break;
+	case vk::Format::eD32SfloatS8Uint: m_ImageType = ImageType::Depth; break;
+	case vk::Format::eD24UnormS8Uint:  m_ImageType = ImageType::Depth; break;
+		m_ImageType = ImageType::Color;
+	}
 }

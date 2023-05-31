@@ -15,17 +15,31 @@ public:
 	vk::ImageView GetVkImageView() { return m_View; }
 	uint32_t GetMiplevel() { return m_MipLevel; }
 	vk::DescriptorImageInfo GetDescriptor() { return m_Descriptor; }
+	vk::Sampler GetSampler() { return m_Sampler; }
 	void CreateSampler();
 	void CreateDescriptor();
 	void Clear();
+	void QueryImageType();
+	//TODO:temp
+	void SetImage(vk::Image image) { m_VkImage = image; }
+	void SetImageView(vk::ImageView imageView) { m_View = imageView; }
+public:
+	enum ImageType
+	{
+		Color = 0,
+		Depth
+	};
 private:
+	Device m_Device;
 	vk::Image m_VkImage;
 	vk::DeviceMemory m_Memory;
 	vk::ImageView m_View;
-	Device m_Device;
 	vk::Extent3D m_Size;
+	vk::Format m_Format;
 	uint32_t m_MipLevel;
 	uint32_t m_Layers;
 	vk::Sampler m_Sampler;
 	vk::DescriptorImageInfo m_Descriptor;
+	//TODO:: use framebuffer attachements category
+	ImageType m_ImageType;
 };
