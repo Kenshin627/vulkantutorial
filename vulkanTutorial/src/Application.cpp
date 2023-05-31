@@ -157,8 +157,8 @@ void Application::CreatePipeLine()
 				.setPColorBlendState(&blendingInfo)
 				.setPDepthStencilState(&depthStencilInfo)
 				.setPMultisampleState(&multisamplesInfo)
-				.setLayout(m_PushConstantSetlayout.GetPipelineLayout())
-				.setRenderPass(DeferredRendingPass.GetVkRenderPass())
+				.setLayout(SetLayout1.GetPipelineLayout())
+				.setRenderPass(renderpass1.GetVkRenderPass())
 				.setSubpass(0)
 				.setPDynamicState(&dynamicState)
 				.setBasePipelineHandle(VK_NULL_HANDLE)
@@ -166,23 +166,44 @@ void Application::CreatePipeLine()
 				.setFlags(vk::PipelineCreateFlagBits::eAllowDerivatives);
 	VK_CHECK_RESULT(m_Device.GetLogicDevice().createGraphicsPipelines({}, 1, &pipelineInfo, nullptr, &m_PipeLines.Phong));
 
-	//GrayScale
 	vk::PipelineVertexInputStateCreateInfo emptyInput;
 	pipelineInfo.setFlags(vk::PipelineCreateFlagBits::eDerivative)
 				.setBasePipelineHandle(m_PipeLines.Phong)
 				.setBasePipelineIndex(-1)
 				.setPVertexInputState(&emptyInput)
-				.setSubpass(1)
-				.setLayout(m_InputAttachmentSetlayouts[0].GetPipelineLayout());
+				.setSubpass(0)
+				.setLayout(SetLayout2.GetPipelineLayout())
+				.setRenderPass(renderpass2.GetVkRenderPass())
+				.setSubpass(0);
 	rasterizationInfo.setCullMode(vk::CullModeFlagBits::eNone);
 	depthStencilInfo.setDepthWriteEnable(false);
-	vertex = Shader(m_Device.GetLogicDevice(), "resource/shaders/grayscaleVert.spv");
+	vertex = Shader(m_Device.GetLogicDevice(), "resource/shaders/rpgSpliterVert.spv");
 	vertex.SetPipelineShaderStageInfo(vk::ShaderStageFlagBits::eVertex);
-	fragment = Shader(m_Device.GetLogicDevice(), "resource/shaders/grayscaleFrag.spv");
+	fragment = Shader(m_Device.GetLogicDevice(), "resource/shaders/rpgSpliterFrag.spv");
 	fragment.SetPipelineShaderStageInfo(vk::ShaderStageFlagBits::eFragment);
 	shaders[0] = vertex.m_ShaderStage;
 	shaders[1] = fragment.m_ShaderStage;
-	VK_CHECK_RESULT(m_Device.GetLogicDevice().createGraphicsPipelines({}, 1, & pipelineInfo, nullptr, & m_PipeLines.GrayScale));
+	VK_CHECK_RESULT(m_Device.GetLogicDevice().createGraphicsPipelines({}, 1, & pipelineInfo, nullptr, & m_PipeLines.RpgSpliter));
+	 
+	//GrayScale
+	#pragma region  SUBPASS
+	//vk::PipelineVertexInputStateCreateInfo emptyInput;
+	//pipelineInfo.setFlags(vk::PipelineCreateFlagBits::eDerivative)
+	//	.setBasePipelineHandle(m_PipeLines.Phong)
+	//	.setBasePipelineIndex(-1)
+	//	.setPVertexInputState(&emptyInput)
+	//	.setSubpass(1)
+	//	.setLayout(m_InputAttachmentSetlayouts[0].GetPipelineLayout());
+	//rasterizationInfo.setCullMode(vk::CullModeFlagBits::eNone);
+	//depthStencilInfo.setDepthWriteEnable(false);
+	//vertex = Shader(m_Device.GetLogicDevice(), "resource/shaders/grayscaleVert.spv");
+	//vertex.SetPipelineShaderStageInfo(vk::ShaderStageFlagBits::eVertex);
+	//fragment = Shader(m_Device.GetLogicDevice(), "resource/shaders/grayscaleFrag.spv");
+	//fragment.SetPipelineShaderStageInfo(vk::ShaderStageFlagBits::eFragment);
+	//shaders[0] = vertex.m_ShaderStage;
+	//shaders[1] = fragment.m_ShaderStage;
+	//VK_CHECK_RESULT(m_Device.GetLogicDevice().createGraphicsPipelines({}, 1, & pipelineInfo, nullptr, & m_PipeLines.GrayScale));
+	#pragma endregion
 
 	////skyBox
 	//vertex = Shader(m_Device.GetLogicDevice(), "resource/shaders/skyboxVert.spv");
@@ -200,45 +221,101 @@ void Application::RecordCommandBuffer(vk::CommandBuffer command, uint32_t imageI
 {
 	m_Device.GetCommandManager().CommandBegin(command);
 		vk::Extent2D extent = m_SwapChain.GetExtent();
-		DeferredRendingPass.Begin(command, imageIndex);
-			vk::Viewport viewport;
-			viewport.setX(0.0f)
-					.setY(0.0f)
-					.setWidth((float)extent.width)
-					.setHeight((float)extent.height)
-					.setMinDepth(0.0f)
-					.setMaxDepth(1.0f);
-			vk::Rect2D scissor;
-			scissor.setOffset({ 0, 0 })
-				   .setExtent(extent);
-			command.setViewport(0, 1, &viewport);
-			command.setScissor(0, 1, &scissor);
-			vk::DeviceSize size(0);
+		#pragma region SUBPASS
+		//DeferredRendingPass.Begin(command, imageIndex);
+		//	vk::Viewport viewport;
+		//	viewport.setX(0.0f)
+		//			.setY(0.0f)
+		//			.setWidth((float)extent.width)
+		//			.setHeight((float)extent.height)
+		//			.setMinDepth(0.0f)
+		//			.setMaxDepth(1.0f);
+		//	vk::Rect2D scissor;
+		//	scissor.setOffset({ 0, 0 })
+		//		   .setExtent(extent);
+		//	command.setViewport(0, 1, &viewport);
+		//	command.setScissor(0, 1, &scissor);
+		//	vk::DeviceSize size(0);
 
-			//subpass 0
-			{
-				auto DescriptorSet = m_PushConstantSetlayout.GetDescriptorSet();
-				command.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_PushConstantSetlayout.GetPipelineLayout(), 0, 1, &DescriptorSet, 0, nullptr);
+		//	
+		//	//subpass 0
+		//	{
+		//		auto DescriptorSet = m_PushConstantSetlayout.GetDescriptorSet();
+		//		command.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_PushConstantSetlayout.GetPipelineLayout(), 0, 1, &DescriptorSet, 0, nullptr);
+		//		command.bindPipeline(vk::PipelineBindPoint::eGraphics, m_PipeLines.Phong);
+		//		command.bindVertexBuffers(0, 1, &m_CubeVertexBuffer.m_Buffer, &size);
+		//		command.bindIndexBuffer(m_CubeIndexBuffer.m_Buffer, 0, vk::IndexType::eUint32);
+		//		for (auto& cubeConst : CubePushConstants)
+		//		{
+		//			command.pushConstants(m_PushConstantSetlayout.GetPipelineLayout(), vk::ShaderStageFlagBits::eVertex, 0, sizeof(PushConsntantCube), &cubeConst);
+		//			command.drawIndexed(static_cast<uint32_t>(m_CubeIndices.size()), 1, 0, 0, 0);
+		//		}
+		//	}
+
+		//	//subpass 1
+		//	{
+		//		auto DescriptorSet = m_InputAttachmentSetlayouts[imageIndex].GetDescriptorSet();
+		//		command.nextSubpass(vk::SubpassContents::eInline);
+		//		command.bindPipeline(vk::PipelineBindPoint::eGraphics, m_PipeLines.GrayScale);
+		//		command.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_InputAttachmentSetlayouts[imageIndex].GetPipelineLayout(), 0, 1, &DescriptorSet, 0, nullptr);
+		//		command.draw(3, 1, 0, 0);
+		//	}
+		//	
+		//DeferredRendingPass.End(command);
+
+		//pass1
+		{
+			renderpass1.Begin(command, imageIndex);
+				vk::Viewport viewport;
+				viewport.setX(0.0f)
+						.setY(0.0f)
+						.setWidth((float)extent.width)
+						.setHeight((float)extent.height)
+						.setMinDepth(0.0f)
+						.setMaxDepth(1.0f);
+				vk::Rect2D scissor;
+				scissor.setOffset({ 0, 0 })
+					   .setExtent(extent);
+				command.setViewport(0, 1, &viewport);
+				command.setScissor(0, 1, &scissor);
+				vk::DeviceSize size(0);
+				auto DescriptorSet = SetLayout1.GetDescriptorSet();
+				command.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, SetLayout1.GetPipelineLayout(), 0, 1, &DescriptorSet, 0, nullptr);
 				command.bindPipeline(vk::PipelineBindPoint::eGraphics, m_PipeLines.Phong);
 				command.bindVertexBuffers(0, 1, &m_CubeVertexBuffer.m_Buffer, &size);
 				command.bindIndexBuffer(m_CubeIndexBuffer.m_Buffer, 0, vk::IndexType::eUint32);
 				for (auto& cubeConst : CubePushConstants)
 				{
-					command.pushConstants(m_PushConstantSetlayout.GetPipelineLayout(), vk::ShaderStageFlagBits::eVertex, 0, sizeof(PushConsntantCube), &cubeConst);
+					command.pushConstants(SetLayout1.GetPipelineLayout(), vk::ShaderStageFlagBits::eVertex, 0, sizeof(PushConsntantCube), &cubeConst);
 					command.drawIndexed(static_cast<uint32_t>(m_CubeIndices.size()), 1, 0, 0, 0);
 				}
-			}
+			renderpass1.End(command);
+		}
 
-			//subpass 1
-			{
-				auto DescriptorSet = m_InputAttachmentSetlayouts[imageIndex].GetDescriptorSet();
-				command.nextSubpass(vk::SubpassContents::eInline);
-				command.bindPipeline(vk::PipelineBindPoint::eGraphics, m_PipeLines.GrayScale);
-				command.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_InputAttachmentSetlayouts[imageIndex].GetPipelineLayout(), 0, 1, &DescriptorSet, 0, nullptr);
+		//pass2
+		{
+			renderpass2.Begin(command, imageIndex);
+				vk::Viewport viewport;
+				viewport.setX(0.0f)
+						.setY(0.0f)
+						.setWidth((float)extent.width)
+						.setHeight((float)extent.height)
+						.setMinDepth(0.0f)
+						.setMaxDepth(1.0f);
+				vk::Rect2D scissor;
+				scissor.setOffset({ 0, 0 })
+					   .setExtent(extent);
+				command.setViewport(0, 1, &viewport);
+				command.setScissor(0, 1, &scissor);
+				vk::DeviceSize size(0);
+				auto DescriptorSet = SetLayout2.GetDescriptorSet();
+				command.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, SetLayout2.GetPipelineLayout(), 0, 1, &DescriptorSet, 0, nullptr);
+				command.bindPipeline(vk::PipelineBindPoint::eGraphics, m_PipeLines.RpgSpliter);
 				command.draw(3, 1, 0, 0);
-			}
-		//command.endRenderPass();
-			DeferredRendingPass.End(command);
+			renderpass2.End(command);
+		}
+		#pragma endregion
+
 	m_Device.GetCommandManager().CommandEnd(command);
 }			
 
@@ -322,7 +399,8 @@ void Application::CreateIndexBuffer()
 
 void Application::CreateSetLayout()
 {
-	m_PushConstantSetlayout.Create(m_Device, { 
+	#pragma region SUBPASS
+	/*m_PushConstantSetlayout.Create(m_Device, { 
 		{ vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex, 0, m_UniformBuffer.m_Descriptor, {}, 1},
 		{ vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, 1 , {}, m_CubeTexture.GetDescriptor(), 1}
 	});
@@ -338,16 +416,32 @@ void Application::CreateSetLayout()
 		});
 		m_SetCount++;
 		m_PoolSizes.insert(m_PoolSizes.end(), m_InputAttachmentSetlayouts[i].GetPoolSizes().begin(), m_InputAttachmentSetlayouts[i].GetPoolSizes().end());
-	}
+	}*/
+	#pragma endregion
+
+	SetLayout1.Create(m_Device, {
+		{ vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex, 0, m_UniformBuffer.m_Descriptor, {}, 1 },
+		{ vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, 1, {}, m_CubeTexture.GetDescriptor(), 1 }
+	});
+	m_SetCount++;
+	m_PoolSizes.insert(m_PoolSizes.end(), SetLayout1.GetPoolSizes().begin(), SetLayout1.GetPoolSizes().end());
+
+
+	SetLayout2.Create(m_Device, {
+		{vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, 0, {}, m_Pass1ColorAttachment.GetDescriptor(), 1}
+	});
+	m_SetCount++;
+	m_PoolSizes.insert(m_PoolSizes.end(), SetLayout2.GetPoolSizes().begin(), SetLayout2.GetPoolSizes().end());
 }
 
 void Application::BuildAndUpdateDescriptorSets()
 {
-	vk::DescriptorPoolCreateInfo descriptorPoolInfo;
+	#pragma region SUBPASS
+	/*vk::DescriptorPoolCreateInfo descriptorPoolInfo;
 	descriptorPoolInfo.sType = vk::StructureType::eDescriptorPoolCreateInfo;
 	descriptorPoolInfo.setMaxSets(m_SetCount)
-		.setPoolSizeCount(static_cast<uint32_t>(m_PoolSizes.size()))
-		.setPPoolSizes(m_PoolSizes.data());
+					  .setPoolSizeCount(static_cast<uint32_t>(m_PoolSizes.size()))
+					  .setPPoolSizes(m_PoolSizes.data());
 	VK_CHECK_RESULT(m_Device.GetLogicDevice().createDescriptorPool(&descriptorPoolInfo, nullptr, &m_DescriptorPool));
 
 	m_PushConstantSetlayout.BuildAndUpdateSet(m_DescriptorPool);
@@ -355,7 +449,17 @@ void Application::BuildAndUpdateDescriptorSets()
 	for (uint32_t i = 0; i < m_SwapChain.GetImageCount(); i++)
 	{
 		m_InputAttachmentSetlayouts[i].BuildAndUpdateSet(m_DescriptorPool);
-	}
+	}*/
+	#pragma endregion
+
+	vk::DescriptorPoolCreateInfo descriptorPoolInfo;
+	descriptorPoolInfo.sType = vk::StructureType::eDescriptorPoolCreateInfo;
+	descriptorPoolInfo.setMaxSets(m_SetCount)
+		.setPoolSizeCount(static_cast<uint32_t>(m_PoolSizes.size()))
+		.setPPoolSizes(m_PoolSizes.data());
+	VK_CHECK_RESULT(m_Device.GetLogicDevice().createDescriptorPool(&descriptorPoolInfo, nullptr, &m_DescriptorPool));
+	SetLayout1.BuildAndUpdateSet(m_DescriptorPool);
+	SetLayout2.BuildAndUpdateSet(m_DescriptorPool);
 }
 
 void Application::CreateUniformBuffer()
@@ -422,22 +526,123 @@ void Application::LoadModel(const char* path, std::vector<Vertex>& vertexData, s
 
 void Application::CreateRenderPass()
 {
-	vk::Format format = m_SwapChain.GetFormat();
-	vk::AttachmentDescription presentAttachment;
-	presentAttachment.setFormat(format)
-					 .setSamples(vk::SampleCountFlagBits::e1)
-					 .setInitialLayout(vk::ImageLayout::eUndefined)
-					 .setFinalLayout(vk::ImageLayout::ePresentSrcKHR)
-					 .setLoadOp(vk::AttachmentLoadOp::eClear)
-					 .setStoreOp(vk::AttachmentStoreOp::eStore)
-					 .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
-					 .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare);
+	#pragma region  SUBPASS
+	//vk::Format format = m_SwapChain.GetFormat();
+	//vk::AttachmentDescription presentAttachment;
+	//presentAttachment.setFormat(format)
+	//				 .setSamples(vk::SampleCountFlagBits::e1)
+	//				 .setInitialLayout(vk::ImageLayout::eUndefined)
+	//				 .setFinalLayout(vk::ImageLayout::ePresentSrcKHR)
+	//				 .setLoadOp(vk::AttachmentLoadOp::eClear)
+	//				 .setStoreOp(vk::AttachmentStoreOp::eStore)
+	//				 .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
+	//				 .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare);
 
+	//vk::AttachmentDescription colorAttachment;
+	//colorAttachment.setFormat(format)
+	//			   .setSamples(m_SamplerCount)
+	//			   .setInitialLayout(vk::ImageLayout::eUndefined)
+	//			   .setFinalLayout(vk::ImageLayout::eColorAttachmentOptimal)
+	//			   .setLoadOp(vk::AttachmentLoadOp::eClear)
+	//			   .setStoreOp(vk::AttachmentStoreOp::eStore)
+	//			   .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
+	//			   .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare);
+
+	//vk::Format depthFormat = m_Device.FindImageFormatDeviceSupport({ vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint, vk::Format::eD24UnormS8Uint }, vk::ImageTiling::eOptimal, vk::FormatFeatureFlagBits::eDepthStencilAttachment);
+	//vk::AttachmentDescription depthAttachment;
+	//depthAttachment.setFormat(depthFormat)
+	//		       .setSamples(m_SamplerCount)
+	//		       .setInitialLayout(vk::ImageLayout::eUndefined)
+	//		       .setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
+	//		       .setLoadOp(vk::AttachmentLoadOp::eClear)
+	//		       .setStoreOp(vk::AttachmentStoreOp::eStore)
+	//		       .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
+	//		       .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare);
+
+	//std::vector<vk::AttachmentDescription> attachments = { presentAttachment, colorAttachment, depthAttachment };
+
+	//std::vector<vk::SubpassDescription> subpassDescs;
+
+	////first subpass
+	//vk::AttachmentReference colorReference;
+	//colorReference.setAttachment(1).setLayout(vk::ImageLayout::eColorAttachmentOptimal);
+	//vk::AttachmentReference depthReference;
+	//depthReference.setAttachment(2).setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
+	//vk::SubpassDescription subpass0;
+	//subpass0.setColorAttachmentCount(1)
+	//	    .setPColorAttachments(&colorReference)
+	//	    .setPDepthStencilAttachment(&depthReference)
+	//	    .setPipelineBindPoint(vk::PipelineBindPoint::eGraphics);
+	//subpassDescs.push_back(subpass0);
+
+	////second subpass
+	//vk::AttachmentReference colorReferenceSwapchain;
+	//colorReferenceSwapchain.setAttachment(0).setLayout(vk::ImageLayout::eColorAttachmentOptimal);
+	//vk::AttachmentReference colorInput;
+	//colorInput.setAttachment(1).setLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
+	//vk::AttachmentReference depthInput;
+	//depthInput.setAttachment(2).setLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
+	//std::array<vk::AttachmentReference, 2> inputAttachments = { colorInput, depthInput };
+
+	//vk::SubpassDescription subpass1;
+	//subpass1.setColorAttachmentCount(1)
+	//	    .setPColorAttachments(&colorReferenceSwapchain)
+	//	    .setInputAttachmentCount(static_cast<uint32_t>(inputAttachments.size()))
+	//	    .setPInputAttachments(inputAttachments.data())
+	//	    .setPipelineBindPoint(vk::PipelineBindPoint::eGraphics);
+	//subpassDescs.push_back(subpass1);
+
+	//std::vector<vk::SubpassDependency> dependencies;
+	//vk::SubpassDependency d1, d2, d3;
+	//d1.setSrcSubpass(VK_SUBPASS_EXTERNAL)
+	//  .setSrcStageMask(vk::PipelineStageFlagBits::eBottomOfPipe)
+	//  .setSrcAccessMask(vk::AccessFlagBits::eMemoryRead)
+	//  .setDstSubpass(0)
+	//  .setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests)
+	//  .setDstAccessMask(vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite)
+	//  .setDependencyFlags(vk::DependencyFlagBits::eByRegion);
+
+	//d2.setSrcSubpass(0)
+	//  .setDstSubpass(1)
+	//  .setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput)
+	//  .setDstStageMask(vk::PipelineStageFlagBits::eFragmentShader)
+	//  .setSrcAccessMask(vk::AccessFlagBits::eColorAttachmentWrite)
+	//  .setDstAccessMask(vk::AccessFlagBits::eShaderRead)
+	//  .setDependencyFlags(vk::DependencyFlagBits::eByRegion);
+
+
+	//d3.setSrcSubpass(0)
+	//  .setDstSubpass(VK_SUBPASS_EXTERNAL)
+	//  .setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput)
+	//  .setDstStageMask(vk::PipelineStageFlagBits::eBottomOfPipe)
+	//  .setSrcAccessMask(vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentWrite)
+	//  .setDstAccessMask(vk::AccessFlagBits::eMemoryRead)
+	//  .setDependencyFlags(vk::DependencyFlagBits::eByRegion);
+	//dependencies.push_back(d1);
+	//dependencies.push_back(d2);
+	//dependencies.push_back(d3);
+
+	//std::vector<vk::ClearValue> clearValues(3);
+	//clearValues[0].color = vk::ClearColorValue();
+	//clearValues[1].color = vk::ClearColorValue();
+	//clearValues[2].depthStencil = vk::ClearDepthStencilValue(1.0f, 1);
+
+	//vk::Extent2D extent = m_SwapChain.GetExtent();
+	//vk::Rect2D renderArea;
+	//renderArea.setOffset(vk::Offset2D(0, 0))
+	//		  .setExtent(extent);
+
+	//DeferredRendingPass.Create(m_Device, attachments, subpassDescs, dependencies, clearValues, renderArea);
+	//DeferredRendingPass.BuildFrameBuffer(PrepareFrameBufferAttachmentsData(), extent.width, extent.height);
+	#pragma endregion
+
+	//renderPass1 color depth attachment
+	vk::Format format = m_SwapChain.GetFormat();
 	vk::AttachmentDescription colorAttachment;
 	colorAttachment.setFormat(format)
 				   .setSamples(m_SamplerCount)
 				   .setInitialLayout(vk::ImageLayout::eUndefined)
-				   .setFinalLayout(vk::ImageLayout::eColorAttachmentOptimal)
+				   .setFinalLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
 				   .setLoadOp(vk::AttachmentLoadOp::eClear)
 				   .setStoreOp(vk::AttachmentStoreOp::eStore)
 				   .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
@@ -446,91 +651,116 @@ void Application::CreateRenderPass()
 	vk::Format depthFormat = m_Device.FindImageFormatDeviceSupport({ vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint, vk::Format::eD24UnormS8Uint }, vk::ImageTiling::eOptimal, vk::FormatFeatureFlagBits::eDepthStencilAttachment);
 	vk::AttachmentDescription depthAttachment;
 	depthAttachment.setFormat(depthFormat)
-			       .setSamples(m_SamplerCount)
-			       .setInitialLayout(vk::ImageLayout::eUndefined)
-			       .setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
-			       .setLoadOp(vk::AttachmentLoadOp::eClear)
-			       .setStoreOp(vk::AttachmentStoreOp::eStore)
-			       .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
-			       .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare);
-
-	std::vector<vk::AttachmentDescription> attachments = { presentAttachment, colorAttachment, depthAttachment };
-
-	std::vector<vk::SubpassDescription> subpassDescs;
-
-	//first subpass
+				   .setSamples(m_SamplerCount)
+				   .setInitialLayout(vk::ImageLayout::eUndefined)
+				   .setFinalLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
+				   .setLoadOp(vk::AttachmentLoadOp::eClear)
+				   .setStoreOp(vk::AttachmentStoreOp::eStore)
+				   .setStencilLoadOp(vk::AttachmentLoadOp::eClear)
+				   .setStencilStoreOp(vk::AttachmentStoreOp::eStore);
+	std::vector<vk::AttachmentDescription> attachments1 = { colorAttachment, depthAttachment };
 	vk::AttachmentReference colorReference;
-	colorReference.setAttachment(1).setLayout(vk::ImageLayout::eColorAttachmentOptimal);
+	colorReference.setAttachment(0).setLayout(vk::ImageLayout::eColorAttachmentOptimal);
 	vk::AttachmentReference depthReference;
-	depthReference.setAttachment(2).setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
-	vk::SubpassDescription subpass0;
-	subpass0.setColorAttachmentCount(1)
-		    .setPColorAttachments(&colorReference)
-		    .setPDepthStencilAttachment(&depthReference)
-		    .setPipelineBindPoint(vk::PipelineBindPoint::eGraphics);
-	subpassDescs.push_back(subpass0);
-
-	//second subpass
-	vk::AttachmentReference colorReferenceSwapchain;
-	colorReferenceSwapchain.setAttachment(0).setLayout(vk::ImageLayout::eColorAttachmentOptimal);
-	vk::AttachmentReference colorInput;
-	colorInput.setAttachment(1).setLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
-	vk::AttachmentReference depthInput;
-	depthInput.setAttachment(2).setLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
-	std::array<vk::AttachmentReference, 2> inputAttachments = { colorInput, depthInput };
-
+	depthReference.setAttachment(1).setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
 	vk::SubpassDescription subpass1;
 	subpass1.setColorAttachmentCount(1)
-		    .setPColorAttachments(&colorReferenceSwapchain)
-		    .setInputAttachmentCount(static_cast<uint32_t>(inputAttachments.size()))
-		    .setPInputAttachments(inputAttachments.data())
-		    .setPipelineBindPoint(vk::PipelineBindPoint::eGraphics);
-	subpassDescs.push_back(subpass1);
+			.setInputAttachmentCount(0)
+			.setPColorAttachments(&colorReference)
+			.setPDepthStencilAttachment(&depthReference)
+			.setPInputAttachments(nullptr)
+			.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics);
+	std::vector<vk::SubpassDescription> subpasses1 = { subpass1 };
 
-	std::vector<vk::SubpassDependency> dependencies;
-	vk::SubpassDependency d1, d2, d3;
-	d1.setSrcSubpass(VK_SUBPASS_EXTERNAL)
-	  .setSrcStageMask(vk::PipelineStageFlagBits::eBottomOfPipe)
-	  .setSrcAccessMask(vk::AccessFlagBits::eMemoryRead)
-	  .setDstSubpass(0)
-	  .setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests)
-	  .setDstAccessMask(vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite)
-	  .setDependencyFlags(vk::DependencyFlagBits::eByRegion);
+	std::vector<vk::SubpassDependency> subPassDependencies1;
+	subPassDependencies1.resize(2);
+	subPassDependencies1[0].setSrcSubpass(VK_SUBPASS_EXTERNAL)
+						   .setDstSubpass(0)
+						   .setSrcStageMask(vk::PipelineStageFlagBits::eFragmentShader)
+						   .setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput)
+						   .setSrcAccessMask(vk::AccessFlagBits::eShaderRead)
+						   .setDstAccessMask(vk::AccessFlagBits::eColorAttachmentWrite)
+						   .setDependencyFlags(vk::DependencyFlagBits::eByRegion);
 
-	d2.setSrcSubpass(0)
-	  .setDstSubpass(1)
-	  .setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput)
-	  .setDstStageMask(vk::PipelineStageFlagBits::eFragmentShader)
-	  .setSrcAccessMask(vk::AccessFlagBits::eColorAttachmentWrite)
-	  .setDstAccessMask(vk::AccessFlagBits::eShaderRead)
-	  .setDependencyFlags(vk::DependencyFlagBits::eByRegion);
-
-
-	d3.setSrcSubpass(0)
-	  .setDstSubpass(VK_SUBPASS_EXTERNAL)
-	  .setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput)
-	  .setDstStageMask(vk::PipelineStageFlagBits::eBottomOfPipe)
-	  .setSrcAccessMask(vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentWrite)
-	  .setDstAccessMask(vk::AccessFlagBits::eMemoryRead)
-	  .setDependencyFlags(vk::DependencyFlagBits::eByRegion);
-	dependencies.push_back(d1);
-	dependencies.push_back(d2);
-	dependencies.push_back(d3);
-
-	std::vector<vk::ClearValue> clearValues(3);
+	subPassDependencies1[1].setSrcSubpass(0)
+					       .setDstSubpass(VK_SUBPASS_EXTERNAL)
+					       .setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput)
+					       .setDstStageMask(vk::PipelineStageFlagBits::eFragmentShader)
+					       .setSrcAccessMask(vk::AccessFlagBits::eColorAttachmentWrite)
+					       .setDstAccessMask(vk::AccessFlagBits::eShaderRead)
+					       .setDependencyFlags(vk::DependencyFlagBits::eByRegion);
+	std::vector<vk::ClearValue> clearValues(2);
 	clearValues[0].color = vk::ClearColorValue();
-	clearValues[1].color = vk::ClearColorValue();
-	clearValues[2].depthStencil = vk::ClearDepthStencilValue(1.0f, 1);
+	clearValues[1].depthStencil = vk::ClearDepthStencilValue(1.0f, 1);
 
 	vk::Extent2D extent = m_SwapChain.GetExtent();
 	vk::Rect2D renderArea;
 	renderArea.setOffset(vk::Offset2D(0, 0))
 			  .setExtent(extent);
 
-	DeferredRendingPass.Create(m_Device, attachments, subpassDescs, dependencies, clearValues, renderArea);
+	renderpass1.Create(m_Device, attachments1, subpasses1, subPassDependencies1, clearValues, renderArea);
 
+	uint32_t imageCount = m_SwapChain.GetImageCount();
+	vk::Extent3D size(extent.width, extent.height, 1);
+	vk::ImageAspectFlags aspectFlags = vk::ImageAspectFlagBits::eDepth;
+	if (m_Device.HasStencil(depthFormat))
+	{
+		aspectFlags |= vk::ImageAspectFlagBits::eStencil;
+	}
 
-	DeferredRendingPass.BuildFrameBuffer(PrepareFrameBufferAttachmentsData(), extent.width, extent.height);
+	m_Pass1ColorAttachment.Create(m_Device, 1, m_SamplerCount, vk::ImageType::e2D, size, format, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageLayout::eUndefined, vk::SharingMode::eExclusive, 1, {});
+	m_Pass1ColorAttachment.CreateImageView(format);
+	m_Pass1ColorAttachment.CreateSampler();
+	m_Pass1ColorAttachment.CreateDescriptor();
+
+	//2 depth Attachment
+	m_Pass1DepthAttachment.Create(m_Device, 1, m_SamplerCount, vk::ImageType::e2D, size, depthFormat, vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageLayout::eUndefined, vk::SharingMode::eExclusive, 1, {});
+
+	m_Pass1DepthAttachment.CreateImageView(depthFormat, aspectFlags);
+
+	//TODO remove
+	m_Pass1DepthAttachment.TransiationLayout(vk::PipelineStageFlagBits::eTopOfPipe, vk::AccessFlagBits::eNone, vk::ImageLayout::eUndefined, vk::PipelineStageFlagBits::eEarlyFragmentTests, vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite, vk::ImageLayout::eDepthStencilAttachmentOptimal, aspectFlags);
+	
+	std::vector<std::vector<vk::ImageView>> bufferAttachments1 = { { m_Pass1ColorAttachment.GetVkImageView(), m_Pass1DepthAttachment.GetVkImageView() } };
+	renderpass1.BuildFrameBuffer(bufferAttachments1, extent.width, extent.height);
+
+	//renderPass2 present attachment
+	vk::AttachmentDescription colorAttachment2;
+	colorAttachment.setFormat(format)
+				   .setSamples(m_SamplerCount)
+				   .setInitialLayout(vk::ImageLayout::eUndefined)
+				   .setFinalLayout(vk::ImageLayout::ePresentSrcKHR)
+				   .setLoadOp(vk::AttachmentLoadOp::eClear)
+				   .setStoreOp(vk::AttachmentStoreOp::eStore)
+				   .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
+				   .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare);
+	std::vector<vk::AttachmentDescription> attachments2 = { colorAttachment2 };
+	vk::AttachmentReference presentReference;
+	presentReference.setAttachment(0).setLayout(vk::ImageLayout::eColorAttachmentOptimal);
+
+	vk::SubpassDescription subpass2;
+	subpass2.setColorAttachmentCount(1)
+			.setPColorAttachments(&presentReference)
+			.setPDepthStencilAttachment(nullptr)
+			.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics);
+	std::vector<vk::SubpassDescription> subpasses2 = { subpass2 };
+	std::vector<vk::SubpassDependency> subPassDependencies2;
+
+	std::vector<vk::ClearValue> clearValues2(1);
+	clearValues2[0].color = vk::ClearColorValue();
+
+	vk::Rect2D renderArea2;
+	renderArea2.setOffset(vk::Offset2D(0, 0))
+			  .setExtent(extent);
+
+	renderpass2.Create(m_Device, attachments2, subpasses2, subPassDependencies2, clearValues2, renderArea2);
+	std::vector<std::vector<vk::ImageView>> bufferAttachments2;
+	for (auto& view : m_SwapChain.GetSwapChainImageViews())
+	{
+		std::vector<vk::ImageView> fmView = { view.GetVkImageView() };
+		bufferAttachments2.push_back(fmView);
+	}
+	renderpass2.BuildFrameBuffer(bufferAttachments2, extent.width, extent.height);
 }
 
 std::vector<std::vector<vk::ImageView>> Application::PrepareFrameBufferAttachmentsData()

@@ -134,5 +134,7 @@
     <None Include="resource\shaders\skybox.frag" />
     <None Include="resource\shaders\grayscale.vert" />
     <None Include="resource\shaders\grayscale.frag" />
+    <None Include="resource\shaders\rpgSpliter.vert" />
+    <None Include="resource\shaders\rpgSpliter.frag" />
   </ItemGroup>
 </Project>

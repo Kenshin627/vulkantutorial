@@ -14,6 +14,9 @@ public:
 	vk::Image GetVkImage() { return m_VkImage; }
 	vk::ImageView GetVkImageView() { return m_View; }
 	uint32_t GetMiplevel() { return m_MipLevel; }
+	vk::DescriptorImageInfo GetDescriptor() { return m_Descriptor; }
+	void CreateSampler();
+	void CreateDescriptor();
 	void Clear();
 private:
 	vk::Image m_VkImage;
@@ -23,4 +26,6 @@ private:
 	vk::Extent3D m_Size;
 	uint32_t m_MipLevel;
 	uint32_t m_Layers;
+	vk::Sampler m_Sampler;
+	vk::DescriptorImageInfo m_Descriptor;
 };

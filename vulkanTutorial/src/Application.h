@@ -74,6 +74,7 @@ struct UniformBufferObject
 struct PipeLines
 {
 	vk::Pipeline Phong;
+	vk::Pipeline RpgSpliter;
 	vk::Pipeline GrayScale;
 	vk::Pipeline WireFrame;
 	vk::Pipeline PushConstant;
@@ -118,8 +119,9 @@ private:
 	RenderPass DeferredRendingPass;
 	RenderPass renderpass1;
 	RenderPass renderpass2;
+	Image m_Pass1ColorAttachment;
+	Image m_Pass1DepthAttachment;
 
-	
 	vk::CommandBuffer m_CommandBuffer;
 	vk::Fence m_InFlightFence;
 	vk::Semaphore m_WaitAcquireImageSemaphore;
@@ -129,9 +131,15 @@ private:
 
 	vk::DescriptorPool m_DescriptorPool;
 	std::vector<vk::DescriptorPoolSize> m_PoolSizes;
-	BindingSetLayout m_PushConstantSetlayout;
-	std::vector<BindingSetLayout> m_InputAttachmentSetlayouts;
-	
+
+	#pragma region SUBPASS DEMO
+	//BindingSetLayout m_PushConstantSetlayout;
+	//std::vector<BindingSetLayout> m_InputAttachmentSetlayouts;
+	#pragma endregion
+
+	BindingSetLayout SetLayout1;
+	BindingSetLayout SetLayout2;
+
 	uint32_t m_SetCount = 0;
 
 	//GeometryData

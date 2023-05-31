@@ -177,6 +177,8 @@
     <None Include="resource\shaders\grayscale.vert" />
     <None Include="resource\shaders\pushConstant.frag" />
     <None Include="resource\shaders\pushConstant.vert" />
+    <None Include="resource\shaders\rpgSpliter.frag" />
+    <None Include="resource\shaders\rpgSpliter.vert" />
     <None Include="resource\shaders\skybox.frag" />
     <None Include="resource\shaders\skybox.vert" />
     <None Include="resource\shaders\triangle.frag" />
