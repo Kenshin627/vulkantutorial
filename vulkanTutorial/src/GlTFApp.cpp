@@ -23,7 +23,7 @@ void GLTFApp::InitWindow(int width, int height, const char* title)
 
 void GLTFApp::InitContext()
 {
-	//m_SamplerCount = m_Device.GetMaxSampleCount();
+	m_SamplerCount = m_Device.GetMaxSampleCount();
 	m_Device = Device(m_Window);
 	m_SamplerCount = vk::SampleCountFlagBits::e1;
 	m_SwapChain.Init(m_Device, m_Window, m_SamplerCount, false, true);
@@ -136,7 +136,7 @@ void GLTFApp::CreatePipeLine()
 	multisamplesInfo.sType = vk::StructureType::ePipelineMultisampleStateCreateInfo;
 	multisamplesInfo.setRasterizationSamples(m_SamplerCount)
 					.setMinSampleShading(0.2f)
-					.setSampleShadingEnable(VK_FALSE)
+					.setSampleShadingEnable(VK_TRUE)
 					.setAlphaToCoverageEnable(VK_FALSE)
 					.setAlphaToOneEnable(VK_FALSE)
 					.setPSampleMask(nullptr);
@@ -167,14 +167,14 @@ void GLTFApp::RecordCommandBuffer(vk::CommandBuffer command, uint32_t imageIndex
 	vk::Extent2D extent = m_SwapChain.GetExtent();
 	vk::Viewport viewport;
 	viewport.setX(0.0f)
-		.setY(0.0f)
-		.setWidth((float)extent.width)
-		.setHeight((float)extent.height)
-		.setMinDepth(0.0f)
-		.setMaxDepth(1.0f);
+			.setY(0.0f)
+			.setWidth((float)extent.width)
+			.setHeight((float)extent.height)
+			.setMinDepth(0.0f)
+			.setMaxDepth(1.0f);
 	vk::Rect2D scissor;
 	scissor.setOffset({ 0, 0 })
-		.setExtent(extent);
+		   .setExtent(extent);
 	vk::DeviceSize size(0);
 	{
 		BlinnPhongPass.Begin(command, imageIndex, vk::Rect2D({ 0,0 }, extent));
@@ -449,7 +449,7 @@ void GLTFApp::CreateRenderPass()
 		aspectFlags |= vk::ImageAspectFlagBits::eStencil;
 	}
 
-	/*vk::AttachmentDescription colorAttachment;
+	vk::AttachmentDescription colorAttachment;
 	colorAttachment.setFormat(colorFormat)
 				   .setSamples(m_SamplerCount)
 				   .setInitialLayout(vk::ImageLayout::eUndefined)
@@ -457,7 +457,7 @@ void GLTFApp::CreateRenderPass()
 				   .setLoadOp(vk::AttachmentLoadOp::eClear)
 				   .setStoreOp(vk::AttachmentStoreOp::eStore)
 				   .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
-				   .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare);*/
+				   .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare);
 
 	vk::AttachmentDescription depthAttachment;
 	depthAttachment.setFormat(depthFormat)
@@ -474,24 +474,24 @@ void GLTFApp::CreateRenderPass()
 			    .setSamples(vk::SampleCountFlagBits::e1)
 			    .setInitialLayout(vk::ImageLayout::eUndefined)
 			    .setFinalLayout(vk::ImageLayout::ePresentSrcKHR)
-			    .setLoadOp(vk::AttachmentLoadOp::eClear)
-			    .setStoreOp(vk::AttachmentStoreOp::eStore)
+			    .setLoadOp(vk::AttachmentLoadOp::eDontCare)
+			    .setStoreOp(vk::AttachmentStoreOp::eDontCare)
 			    .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
 			    .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare);
-	std::vector<vk::AttachmentDescription> attachments = { colorResolve, depthAttachment  };
+	std::vector<vk::AttachmentDescription> attachments = { colorAttachment, depthAttachment, colorResolve };
 	vk::AttachmentReference colorReference;
 	colorReference.setAttachment(0).setLayout(vk::ImageLayout::eColorAttachmentOptimal);
 	vk::AttachmentReference depthReference;
 	depthReference.setAttachment(1).setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
-	//vk::AttachmentReference resolveReference;
-	//resolveReference.setAttachment(2).setLayout(vk::ImageLayout::eColorAttachmentOptimal);
+	vk::AttachmentReference resolveReference;
+	resolveReference.setAttachment(2).setLayout(vk::ImageLayout::eColorAttachmentOptimal);
 
 
 	vk::SubpassDescription subpass;
 	subpass.setColorAttachmentCount(1)
 		   .setPColorAttachments(&colorReference)
 		   .setPDepthStencilAttachment(&depthReference)
-		   //.setPResolveAttachments(&resolveReference)
+		   .setPResolveAttachments(&resolveReference)
 		   .setPipelineBindPoint(vk::PipelineBindPoint::eGraphics);
 	std::vector<vk::SubpassDescription> subpasses = { subpass };
 
@@ -511,9 +511,9 @@ void GLTFApp::CreateRenderPass()
 	BlinnPhongPass.Create(m_Device, attachments, subpasses, subPassDependencies, clearValues, renderArea);
 
 
-	//Image colorImage;
-	//colorImage.Create(m_Device, 1, m_SamplerCount, vk::ImageType::e2D, size, colorFormat, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransientAttachment, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageLayout::eUndefined, vk::SharingMode::eExclusive, 1, {});
-	//colorImage.CreateImageView(colorFormat);
+	Image colorImage;
+	colorImage.Create(m_Device, 1, m_SamplerCount, vk::ImageType::e2D, size, colorFormat, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransientAttachment, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageLayout::eUndefined, vk::SharingMode::eExclusive, 1, {});
+	colorImage.CreateImageView(colorFormat);
 
 	Image depthImage;
 	depthImage.Create(m_Device, 1, m_SamplerCount, vk::ImageType::e2D, size, depthFormat, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::ImageTiling::eOptimal, vk::MemoryPropertyFlagBits::eDeviceLocal, vk::ImageLayout::eUndefined, vk::SharingMode::eExclusive, 1, {});
@@ -526,9 +526,9 @@ void GLTFApp::CreateRenderPass()
 	for (auto& image : m_SwapChain.GetImages())
 	{
 		bufferAttachments.push_back({
-			{ FrameBufferAttachment::AttachmentType::Color, image },
-			//{ FrameBufferAttachment::AttachmentType::Color, colorImage },
-			{ FrameBufferAttachment::AttachmentType::Depth, depthImage }
+			{ FrameBufferAttachment::AttachmentType::Color, colorImage },
+			{ FrameBufferAttachment::AttachmentType::Depth, depthImage },
+			{ FrameBufferAttachment::AttachmentType::Color, image }
 		});
 	}
 	BlinnPhongPass.BuildFrameBuffer(bufferAttachments, extent.width, extent.height);
