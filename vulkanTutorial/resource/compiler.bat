@@ -16,4 +16,7 @@ C:/VulkanSDK/1.3.246.1/Bin/glslc.exe shaders/grayscale.frag -o shaders/grayscale
 C:/VulkanSDK/1.3.246.1/Bin/glslc.exe shaders/rpgSpliter.vert -o shaders/rpgSpliterVert.spv
 C:/VulkanSDK/1.3.246.1/Bin/glslc.exe shaders/rpgSpliter.frag -o shaders/rpgSpliterFrag.spv
 
+C:/VulkanSDK/1.3.246.1/Bin/glslc.exe shaders/mesh.vert -o shaders/meshVert.spv
+C:/VulkanSDK/1.3.246.1/Bin/glslc.exe shaders/mesh.frag -o shaders/meshFrag.spv
+
 pause

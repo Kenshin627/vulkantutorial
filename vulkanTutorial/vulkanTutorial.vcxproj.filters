@@ -18,9 +18,6 @@
     <ClCompile Include="src\main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\Application.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\Window.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -69,11 +66,14 @@
     <ClCompile Include="src\vulkan\glTFModel.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\GlTFApp.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="vendor\tinyglTF\tiny_gltf.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\Application.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="utils\readFile.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -128,9 +128,6 @@
     <ClInclude Include="src\vulkan\glTFModel.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\tinyglTF\22.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="vendor\tinyglTF\stb_image_write.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -138,6 +135,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="vendor\tinyglTF\tiny_gltf.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\GlTFApp.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -154,5 +154,7 @@
     <None Include="resource\shaders\grayscale.frag" />
     <None Include="resource\shaders\rpgSpliter.vert" />
     <None Include="resource\shaders\rpgSpliter.frag" />
+    <None Include="resource\shaders\mesh.vert" />
+    <None Include="resource\shaders\mesh.frag" />
   </ItemGroup>
 </Project>

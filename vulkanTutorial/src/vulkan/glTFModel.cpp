@@ -66,10 +66,10 @@ void GlTFModel::LoadImages()
 			bufferData = &gltfImage.image[0];
 			bufferSize = gltfImage.image.size() * sizeof(unsigned char);
 		}
-		m_Textures[i].FromBuffer(m_Device, bufferData, bufferSize, vk::Format::eR8G8B8A8Srgb, gltfImage.width, gltfImage.height, false);
+		m_Textures[i].Texture.FromBuffer(m_Device, bufferData, bufferSize, vk::Format::eR8G8B8A8Srgb, gltfImage.width, gltfImage.height, false);
 		if (deleteBuffer)
 		{
-			delete bufferData;
+			delete[] bufferData;
 		}
 	}
 }
@@ -258,7 +258,16 @@ void GlTFModel::DrawNode(Node* node, vk::CommandBuffer command, vk::PipelineLayo
 		for (uint32_t i = 0; i < node->NodeMesh.Primitives.size(); i++) 
 		{
 			auto& primitive = node->NodeMesh.Primitives[i];
-			command.drawIndexed(primitive.IndexCount, 1, primitive.FirstIndex, 0, 0);
+			if (primitive.IndexCount > 0)
+			{
+				ImageSet& image = m_Textures[m_Materials[primitive.MaterialIndex].BaseColorTextureIndex];
+				command.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, layout, 1, 1, &image.DescSet, 0, nullptr);
+				command.drawIndexed(primitive.IndexCount, 1, primitive.FirstIndex, 0, 0);
+			}
 		}
+	}
+	for (auto& child : node->Children)
+	{
+		DrawNode(child, command, layout);
 	}
 }

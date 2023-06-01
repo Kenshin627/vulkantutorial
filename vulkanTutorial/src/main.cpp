@@ -1,11 +1,11 @@
 #include <iostream>
-#include "Application.h"
+#include "GlTFApp.h"
 
 const static uint32_t WIDTH = 1024, HEIGHT = 728;
 
 int main()
 {
-	Application app(WIDTH, HEIGHT, "vulkan");
+	GLTFApp app(WIDTH, HEIGHT, "vulkan");
 	try
 	{
 		app.Run();

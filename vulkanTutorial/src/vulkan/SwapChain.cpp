@@ -1,6 +1,6 @@
 #include "../Core.h"
 #include "SwapChain.h"
-#include "../Application.h"
+#include "../GlTFApp.h"
 
 void SwapChain::Init(Device& device, const Window& window, vk::SampleCountFlagBits sampleBits, bool vSync, bool hasDepth)
 {
@@ -166,7 +166,7 @@ void SwapChain::Clear()
 	}
 }
 
-void SwapChain::AcquireNextImage(uint32_t* imageIndex, vk::Semaphore waitAcquireImage, Application* app)
+void SwapChain::AcquireNextImage(uint32_t* imageIndex, vk::Semaphore waitAcquireImage, GLTFApp* app)
 {
 	auto acquireImageResult = m_Device.GetLogicDevice().acquireNextImageKHR(m_SwapChain, (std::numeric_limits<uint64_t>::max)(), waitAcquireImage, VK_NULL_HANDLE, imageIndex);
 	if (acquireImageResult == vk::Result::eErrorOutOfDateKHR || acquireImageResult == vk::Result::eSuboptimalKHR || m_Window.GetWindowResized())
@@ -180,7 +180,7 @@ void SwapChain::AcquireNextImage(uint32_t* imageIndex, vk::Semaphore waitAcquire
 	}
 }
 
-void SwapChain::PresentImage(uint32_t imageIndex, vk::Semaphore waitDrawFinish, Application* app)
+void SwapChain::PresentImage(uint32_t imageIndex, vk::Semaphore waitDrawFinish, GLTFApp* app)
 {
 	vk::PresentInfoKHR presentInfo;
 	presentInfo.sType = vk::StructureType::ePresentInfoKHR;
