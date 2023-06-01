@@ -228,6 +228,37 @@ void GlTFModel::LoadNode(const tinygltf::Node& inputNode, GlTFModel::Node* paren
 	}
 	else
 	{
-		m_Modes.push_back(node);
+		m_Nodes.push_back(node);
+	}
+}
+
+void GlTFModel::Draw(vk::CommandBuffer command, vk::PipelineLayout layout)
+{
+	vk::DeviceSize offset = 0.0f;
+	command.bindVertexBuffers(0, 1, &m_VertexBuffer.m_Buffer, &offset);
+	command.bindIndexBuffer(m_IndexBuffer.m_Buffer, offset, vk::IndexType::eUint32);
+	for (auto& node : m_Nodes)
+	{
+		DrawNode(node, command, layout);
+	}
+}
+
+void GlTFModel::DrawNode(Node* node, vk::CommandBuffer command, vk::PipelineLayout layout)
+{
+	glm::mat4 modelMatrix = node->ModelMatrix;
+	Node* parent = node->Parent;
+	while (parent)
+	{
+		modelMatrix = parent->ModelMatrix * modelMatrix;
+		parent = parent->Parent;
+	}
+	if (node->NodeMesh.Primitives.size() > 0)
+	{
+		command.pushConstants(layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(glm::mat4), &modelMatrix);
+		for (uint32_t i = 0; i < node->NodeMesh.Primitives.size(); i++) 
+		{
+			auto& primitive = node->NodeMesh.Primitives[i];
+			command.drawIndexed(primitive.IndexCount, 1, primitive.FirstIndex, 0, 0);
+		}
 	}
 }

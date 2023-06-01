@@ -20,7 +20,7 @@ public:
 	GlTFModel() = default;
 
 	void LoadModel(Device& device, const std::string& filaname);
-
+	void Draw(vk::CommandBuffer command, vk::PipelineLayout layout);
 	~GlTFModel()
 	{
 		m_VertexBuffer.Clear();
@@ -81,6 +81,7 @@ private:
 	void LoadMaterials();
 	void loadTextures();
 	void LoadNode(const tinygltf::Node& inputNode, GlTFModel::Node* parent);
+	void DrawNode(Node* node, vk::CommandBuffer command, vk::PipelineLayout layout);
 private:
 	Device m_Device;
 	tinygltf::Model m_Model;
@@ -91,7 +92,7 @@ private:
 	std::vector<Texture> m_Textures;
 	std::vector<GlTFModel::TextureIndex> m_TextureIndices;
 	std::vector<Material> m_Materials;
-	std::vector<Node*> m_Modes;
+	std::vector<Node*> m_Nodes;
 	Buffer m_VertexBuffer;
 	Buffer m_IndexBuffer;
 	std::vector<uint32_t> m_Indices;
