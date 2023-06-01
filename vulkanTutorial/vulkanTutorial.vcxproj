@@ -71,7 +71,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(projectDir)vendor\GLFW\include;$(projectDir)vendor\glm;$(projectDir)vendor\tiny_obj_loader;$(projectDir)vendor\stbimage;C:\VulkanSDK\1.3.246.1\Include;$(IncludePath)</IncludePath>
+    <IncludePath>$(projectDir)vendor\GLFW\include;$(projectDir)vendor\glm;$(projectDir)vendor\tiny_obj_loader;$(projectDir)vendor\tinyglTF;$(projectDir)vendor\stbimage;C:\VulkanSDK\1.3.246.1\Include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -142,6 +142,7 @@
     <ClCompile Include="src\vulkan\DescriptorSetManager.cpp" />
     <ClCompile Include="src\vulkan\Device.cpp" />
     <ClCompile Include="src\vulkan\FrameBuffer.cpp" />
+    <ClCompile Include="src\vulkan\glTFModel.cpp" />
     <ClCompile Include="src\vulkan\Image.cpp" />
     <ClCompile Include="src\vulkan\ImageView.cpp" />
     <ClCompile Include="src\vulkan\RenderPass.cpp" />
@@ -161,6 +162,7 @@
     <ClInclude Include="src\vulkan\DescriptorSetManager.h" />
     <ClInclude Include="src\vulkan\Device.h" />
     <ClInclude Include="src\vulkan\FrameBuffer.h" />
+    <ClInclude Include="src\vulkan\glTFModel.h" />
     <ClInclude Include="src\vulkan\Image.h" />
     <ClInclude Include="src\vulkan\ImageView.h" />
     <ClInclude Include="src\vulkan\RenderPass.h" />
@@ -171,6 +173,10 @@
     <ClInclude Include="src\Window.h" />
     <ClInclude Include="utils\readFile.h" />
     <ClInclude Include="vendor\stbimage\stb_image.h" />
+    <ClInclude Include="vendor\tinyglTF\json.hpp" />
+    <ClInclude Include="vendor\tinyglTF\22.h" />
+    <ClInclude Include="vendor\tinyglTF\stb_image_write.h" />
+    <ClInclude Include="vendor\tinyglTF\tiny_gltf.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="resource\shaders\grayscale.frag" />

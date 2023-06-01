@@ -66,6 +66,9 @@
     <ClCompile Include="src\vulkan\RenderPass.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\vulkan\glTFModel.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Application.h">
@@ -120,6 +123,21 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\vulkan\RenderPass.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vulkan\glTFModel.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="vendor\tinyglTF\22.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="vendor\tinyglTF\stb_image_write.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="vendor\tinyglTF\json.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="vendor\tinyglTF\tiny_gltf.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
