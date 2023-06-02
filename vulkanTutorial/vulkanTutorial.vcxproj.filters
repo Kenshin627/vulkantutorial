@@ -69,7 +69,7 @@
     <ClCompile Include="vendor\tinyglTF\tiny_gltf.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\GlTFApp.cpp">
+    <ClCompile Include="src\examples\GlTFApp.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -140,7 +140,7 @@
     <ClInclude Include="src\AppBase.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\GlTFApp.h">
+    <ClInclude Include="src\examples\GlTFApp.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

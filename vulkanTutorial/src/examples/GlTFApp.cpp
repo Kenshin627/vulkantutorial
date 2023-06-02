@@ -1,4 +1,4 @@
-#include "Core.h"
+#include "../Core.h"
 #include "GlTFApp.h"
 #include <set>
 #include <limits>
@@ -7,7 +7,7 @@
 #include <gtc/matrix_transform.hpp>
 
 #define TINYOBJLOADER_IMPLEMENTATION
-#include "../vendor/tiny_obj_loader/tiny_obj_loader.h"
+#include "../../vendor/tiny_obj_loader/tiny_obj_loader.h"
 
 void GLTFApp::Run()
 {
@@ -185,7 +185,7 @@ void GLTFApp::RecordCommandBuffer(vk::CommandBuffer command, uint32_t imageIndex
 		command.setViewport(0, 1, &viewport);
 		command.setScissor(0, 1, &scissor);
 		command.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, PipelineLayout.GetPipelineLayout(), 0, 1, &uniformSet, 0, nullptr);
-		command.bindPipeline(vk::PipelineBindPoint::eGraphics, m_PipeLines.WireFrame);
+		command.bindPipeline(vk::PipelineBindPoint::eGraphics, m_PipeLines.BlinnPhong);
 		m_Model.Draw(command, PipelineLayout.GetPipelineLayout(), PipelineLayout.GetDescriptorSets(1));
 		BlinnPhongPass.End(command);
 	}

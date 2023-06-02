@@ -1,6 +1,6 @@
 #include <iostream>
-#include "GlTFApp.h"
-//#include "RGBSpliter2Pass.h"
+#include "examples/GlTFApp.h"
+//#include "examples/RGBSpliter2Pass.h"
 
 const static uint32_t WIDTH = 1024, HEIGHT = 728;
 

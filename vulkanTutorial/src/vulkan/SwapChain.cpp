@@ -1,6 +1,5 @@
 #include "../Core.h"
 #include "SwapChain.h"
-#include "../GlTFApp.h"
 
 void SwapChain::Init(Device& device, const Window& window, vk::SampleCountFlagBits sampleBits, bool vSync, bool hasDepth)
 {
