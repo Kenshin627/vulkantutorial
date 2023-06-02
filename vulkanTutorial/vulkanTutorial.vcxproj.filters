@@ -54,7 +54,7 @@
     <ClCompile Include="vendor\stbimage\stb_image.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\vulkan\SetLayout.cpp">
+    <ClCompile Include="src\vulkan\PipelineLayout.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\vulkan\DescriptorSetManager.cpp">
@@ -116,7 +116,7 @@
     <ClInclude Include="vendor\stbimage\stb_image.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\vulkan\SetLayout.h">
+    <ClInclude Include="src\vulkan\PipelineLayout.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\vulkan\DescriptorSetManager.h">

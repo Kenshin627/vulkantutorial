@@ -246,6 +246,7 @@ void GLTFApp::CreateVertexBuffer()
 
 void GLTFApp::CreateIndexBuffer()
 {
+
 	//vk::DeviceSize size = sizeof(uint32_t) * m_Indices.size();
 	//Buffer stagingBuffer;
 	//stagingBuffer.Create(m_Device, vk::BufferUsageFlagBits::eTransferSrc, size, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, m_Indices.data());
@@ -262,6 +263,15 @@ void GLTFApp::CreateIndexBuffer()
 
 void GLTFApp::CreateSetLayout()
 {
+	DescriptorSetLayoutCreateInfo uniformBufferLayout;
+	uniformBufferLayout.Bindings = { { vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex, 0 } };
+	uniformBufferLayout.SetCount = 1;
+	uniformBufferLayout.SetWriteData = { { { m_UniformBuffer.m_Descriptor, {}, false } } };
+
+	DescriptorSetLayoutCreateInfo samplerLayout;
+	samplerLayout.Bindings = { { vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, 0 } };
+	
+	//PipelineLayout.Create(m_Device, )
 	//BlinnPhongSetLayout.Create(m_Device, {
 	//	{ vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex, 0, m_UniformBuffer.m_Descriptor, {}, 1 },
 	//	{ vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, 1, {}, m_CubeTexture.GetDescriptor(), 1 }
@@ -303,7 +313,7 @@ void GLTFApp::BuildAndUpdateDescriptorSets()
 		setLayoutInfo.sType = vk::StructureType::eDescriptorSetLayoutCreateInfo;
 		setLayoutInfo.setBindingCount(1)
 					 .setPBindings(&setLayoutBinding);
-		VK_CHECK_RESULT(vkDevice.createDescriptorSetLayout(&setLayoutInfo, nullptr, &SetLayouts.matrices));
+		VK_CHECK_RESULT(vkDevice.createDescriptorSetLayout(&setLayoutInfo, nullptr, &SetLayout.matrices));
 	}
 	
 	 //textures
@@ -317,7 +327,7 @@ void GLTFApp::BuildAndUpdateDescriptorSets()
 		setLayoutInfo.sType = vk::StructureType::eDescriptorSetLayoutCreateInfo;
 		setLayoutInfo.setBindingCount(1)
 					 .setPBindings(&setLayoutBinding);
-		VK_CHECK_RESULT(vkDevice.createDescriptorSetLayout(&setLayoutInfo, nullptr, &SetLayouts.textures));
+		VK_CHECK_RESULT(vkDevice.createDescriptorSetLayout(&setLayoutInfo, nullptr, &SetLayout.textures));
 	}
 
 	vk::PushConstantRange pushConst;
@@ -325,7 +335,7 @@ void GLTFApp::BuildAndUpdateDescriptorSets()
 			 .setSize(sizeof(glm::mat4))
 			 .setStageFlags(vk::ShaderStageFlagBits::eVertex);
 
-	std::array<vk::DescriptorSetLayout, 2> setLayouts = { SetLayouts.matrices, SetLayouts.textures };
+	std::array<vk::DescriptorSetLayout, 2> setLayouts = { SetLayout.matrices, SetLayout.textures };
 	vk::PipelineLayoutCreateInfo pipelineInfo;
 	pipelineInfo.sType = vk::StructureType::ePipelineLayoutCreateInfo;
 	pipelineInfo.setSetLayoutCount(setLayouts.size())
@@ -338,7 +348,7 @@ void GLTFApp::BuildAndUpdateDescriptorSets()
 	allocInf.sType = vk::StructureType::eDescriptorSetAllocateInfo;
 	allocInf.setDescriptorPool(pool)
 			.setDescriptorSetCount(1)
-			.setPSetLayouts(&SetLayouts.matrices);
+			.setPSetLayouts(&SetLayout.matrices);
 	VK_CHECK_RESULT(vkDevice.allocateDescriptorSets(&allocInf, &MatricesSet));
 	vk::WriteDescriptorSet writeSet;
 	writeSet.sType = vk::StructureType::eWriteDescriptorSet;
@@ -357,7 +367,7 @@ void GLTFApp::BuildAndUpdateDescriptorSets()
 		allocInf.sType = vk::StructureType::eDescriptorSetAllocateInfo;
 		allocInf.setDescriptorPool(pool)
 				.setDescriptorSetCount(1)
-				.setPSetLayouts(&SetLayouts.textures);
+				.setPSetLayouts(&SetLayout.textures);
 		VK_CHECK_RESULT(vkDevice.allocateDescriptorSets(&allocInf, &image.DescSet));
 		vk::WriteDescriptorSet writeSet;
 		writeSet.sType = vk::StructureType::eWriteDescriptorSet;

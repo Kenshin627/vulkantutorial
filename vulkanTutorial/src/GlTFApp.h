@@ -8,7 +8,7 @@
 #include "vulkan/Image.h"
 #include "vulkan/Texture.h"
 #include "vulkan/CubeMap.h"
-#include "vulkan/SetLayout.h"
+#include "vulkan/PipelineLayout.h"
 #include "vulkan/RenderPass.h"
 
 #include "vulkan/glTFModel.h"
@@ -75,12 +75,7 @@ struct UniformBufferObject
 struct PipeLines
 {
 	vk::Pipeline BlinnPhong;
-};
-
-struct DescriptorSetLayout
-{
-	vk::DescriptorSetLayout matrices;
-	vk::DescriptorSetLayout textures;
+	vk::Pipeline WireFrame;
 };
 
 class GLTFApp
@@ -113,26 +108,26 @@ private:
 	Device m_Device;
 	SwapChain m_SwapChain;
 	vk::CommandBuffer m_CommandBuffer;
+	vk::SampleCountFlagBits m_SamplerCount = vk::SampleCountFlagBits::e1;
 
 	std::vector<RenderPass> m_RenderPasses;
 
+	PipeLines m_PipeLines;
 	RenderPass BlinnPhongPass;
-	DescriptorSetLayout SetLayouts;
+	PipeLineLayout PipelineLayout;
 	vk::PipelineLayout BlinnPhongLayout;
 	vk::DescriptorSet MatricesSet;
-	//BindingSetLayout BlinnPhongSetLayout;
 
+	//signals
 	vk::Fence m_InFlightFence;
 	vk::Semaphore m_WaitAcquireImageSemaphore;
 	vk::Semaphore m_WaitFinishDrawSemaphore;
-	vk::SampleCountFlagBits m_SamplerCount = vk::SampleCountFlagBits::e1;
-	PipeLines m_PipeLines;
 
 	vk::DescriptorPool m_DescriptorPool;
 	std::vector<vk::DescriptorPoolSize> m_PoolSizes;
-
 	uint32_t m_SetCount = 0;
 	
+	//skyboxData
 	std::vector<Vertex> m_SkyboxVexData;
 	std::vector<uint32_t> m_SkyboxIndices;
 	Buffer m_SkyboxVertexBuffer;
