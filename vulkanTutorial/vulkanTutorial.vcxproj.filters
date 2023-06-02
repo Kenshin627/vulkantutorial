@@ -66,10 +66,10 @@
     <ClCompile Include="src\vulkan\glTFModel.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\GlTFApp.cpp">
+    <ClCompile Include="vendor\tinyglTF\tiny_gltf.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="vendor\tinyglTF\tiny_gltf.cpp">
+    <ClCompile Include="src\GlTFApp.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -135,6 +135,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="vendor\tinyglTF\tiny_gltf.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\AppBase.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\GlTFApp.h">

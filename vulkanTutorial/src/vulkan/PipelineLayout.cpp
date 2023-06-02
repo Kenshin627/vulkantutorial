@@ -10,6 +10,7 @@ void PipeLineLayout::Create(const Device& device, const std::vector<DescriptorSe
 	m_SetLayouts.resize(m_SetlayoutCount);	
 	for (uint32_t i = 0; i < m_SetlayoutCount; i++)
 	{
+		m_SetCount += setLayouts[i].SetCount;
 		std::vector<vk::DescriptorSetLayoutBinding> setLayoutBindings = {};
 		uint32_t bindingCount = setLayouts[i].Bindings.size();
 		setLayoutBindings.resize(bindingCount);
@@ -46,14 +47,16 @@ void PipeLineLayout::BuildAndUpdateSet(vk::DescriptorPool pool)
 		m_DescriptorSets[i].SetLayout = m_SetLayouts[i];
 		uint32_t setCount = m_BindingParams[i].SetCount;
 		m_DescriptorSets[i].DescriptorSets.resize(setCount);
-		vk::DescriptorSetAllocateInfo setInfo;
-		setInfo.sType = vk::StructureType::eDescriptorSetAllocateInfo;
-		setInfo.setDescriptorPool(pool)
-			   .setDescriptorSetCount(setCount)
-			   .setPSetLayouts(&m_SetLayouts[i]);
-		VK_CHECK_RESULT(m_Device.GetLogicDevice().allocateDescriptorSets(&setInfo, m_DescriptorSets[i].DescriptorSets.data()));
+		
 		for (uint32_t j = 0; j < setCount; j++)
 		{
+			vk::DescriptorSetAllocateInfo setInfo;
+			setInfo.sType = vk::StructureType::eDescriptorSetAllocateInfo;
+			setInfo.setDescriptorPool(pool)
+				   .setDescriptorSetCount(1)
+				   .setPSetLayouts(&m_SetLayouts[i]);
+			VK_CHECK_RESULT(m_Device.GetLogicDevice().allocateDescriptorSets(&setInfo, &m_DescriptorSets[i].DescriptorSets[j]));
+
 			uint32_t setBindingCount = m_BindingParams[i].SetWriteData[j].size();
 			std::vector< vk::WriteDescriptorSet> writeSets;
 			writeSets.resize(setBindingCount);
@@ -61,19 +64,19 @@ void PipeLineLayout::BuildAndUpdateSet(vk::DescriptorPool pool)
 			{
 				auto& binding = m_BindingParams[i].Bindings[k];
 				auto& writeData = m_BindingParams[i].SetWriteData[j][k];
-				writeSets[i].sType = vk::StructureType::eWriteDescriptorSet;
-				writeSets[i].setDescriptorCount(binding.DescriptorCount)
+				writeSets[k].sType = vk::StructureType::eWriteDescriptorSet;
+				writeSets[k].setDescriptorCount(binding.DescriptorCount)
 							.setDescriptorType(binding.Type)
 							.setDstArrayElement(0)
 							.setDstBinding(binding.Binding)
 							.setDstSet(m_DescriptorSets[i].DescriptorSets[j]);
 				if (writeData.IsImage)
 				{
-					writeSets[i].setPImageInfo(&writeData.ImageInfo);
+					writeSets[k].setPImageInfo(&writeData.ImageInfo);
 				}
 				else
 				{
-					writeSets[i].setPBufferInfo(&writeData.BufferInfo);
+					writeSets[k].setPBufferInfo(&writeData.BufferInfo);
 				}
 			}
 			m_Device.GetLogicDevice().updateDescriptorSets(writeSets.size(), writeSets.data(), 0, nullptr);

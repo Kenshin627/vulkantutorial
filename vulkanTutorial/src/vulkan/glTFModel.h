@@ -84,26 +84,20 @@ public:
 	{
 		int32_t ImageIndex;
 	};
-
-	struct ImageSet
-	{
-		Texture Texture;
-		vk::DescriptorSet DescSet;
-	};
 public:
 	GlTFModel() = default;
 
 	void LoadModel(Device& device, const std::string& filaname);
-	void Draw(vk::CommandBuffer command, vk::PipelineLayout layout);
+	void Draw(vk::CommandBuffer command, vk::PipelineLayout layout, const std::vector<vk::DescriptorSet>& sets);
 	uint32_t GetTextureCount() { return m_Textures.size(); }
-	std::vector<ImageSet>& GetImageSet() { return m_Textures; }
+	std::vector<Texture>& GetImages() { return m_Textures; }
 	~GlTFModel()
 	{
 		m_VertexBuffer.Clear();
 		m_IndexBuffer.Clear();
 		for (auto& image : m_Textures)
 		{
-			image.Texture.Clear();
+			image.Clear();
 		}
 	}
 private:
@@ -111,7 +105,7 @@ private:
 	void LoadMaterials();
 	void loadTextures();
 	void LoadNode(const tinygltf::Node& inputNode, GlTFModel::Node* parent);
-	void DrawNode(Node* node, vk::CommandBuffer command, vk::PipelineLayout layout);
+	void DrawNode(Node* node, vk::CommandBuffer command, vk::PipelineLayout layout, const std::vector<vk::DescriptorSet>& sets);
 private:
 	Device m_Device;
 	tinygltf::Model m_Model;
@@ -119,7 +113,7 @@ private:
 	std::string err;
 	std::string warning;
 	
-	std::vector<ImageSet> m_Textures;
+	std::vector<Texture> m_Textures;
 	std::vector<GlTFModel::TextureIndex> m_TextureIndices;
 	std::vector<Material> m_Materials;
 	std::vector<Node*> m_Nodes;

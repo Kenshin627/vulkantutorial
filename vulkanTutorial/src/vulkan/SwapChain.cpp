@@ -166,7 +166,7 @@ void SwapChain::Clear()
 	}
 }
 
-void SwapChain::AcquireNextImage(uint32_t* imageIndex, vk::Semaphore waitAcquireImage, GLTFApp* app)
+void SwapChain::AcquireNextImage(uint32_t* imageIndex, vk::Semaphore waitAcquireImage, AppBase* app)
 {
 	auto acquireImageResult = m_Device.GetLogicDevice().acquireNextImageKHR(m_SwapChain, (std::numeric_limits<uint64_t>::max)(), waitAcquireImage, VK_NULL_HANDLE, imageIndex);
 	if (acquireImageResult == vk::Result::eErrorOutOfDateKHR || acquireImageResult == vk::Result::eSuboptimalKHR || m_Window.GetWindowResized())
@@ -175,12 +175,12 @@ void SwapChain::AcquireNextImage(uint32_t* imageIndex, vk::Semaphore waitAcquire
 		ReCreate();
 		app->RebuildFrameBuffer();
 		app->CreateSetLayout();
-		app->BuildAndUpdateDescriptorSets();
+		//app->BuildAndUpdateDescriptorSets();
 		return;
 	}
 }
 
-void SwapChain::PresentImage(uint32_t imageIndex, vk::Semaphore waitDrawFinish, GLTFApp* app)
+void SwapChain::PresentImage(uint32_t imageIndex, vk::Semaphore waitDrawFinish, AppBase* app)
 {
 	vk::PresentInfoKHR presentInfo;
 	presentInfo.sType = vk::StructureType::ePresentInfoKHR;
@@ -197,6 +197,6 @@ void SwapChain::PresentImage(uint32_t imageIndex, vk::Semaphore waitDrawFinish, 
 		ReCreate();
 		app->RebuildFrameBuffer();
 		app->CreateSetLayout();
-		app->BuildAndUpdateDescriptorSets();
+		//app->BuildAndUpdateDescriptorSets();
 	}
 }

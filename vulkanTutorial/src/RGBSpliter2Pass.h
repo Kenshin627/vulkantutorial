@@ -8,8 +8,9 @@
 #include "vulkan/Image.h"
 #include "vulkan/Texture.h"
 #include "vulkan/CubeMap.h"
-#include "vulkan/SetLayout.h"
+#include "vulkan/PipelineLayout.h"
 #include "vulkan/RenderPass.h"
+#include "AppBase.h"
 
 #include <vector>
 #include <optional>
@@ -86,19 +87,19 @@ struct PushConsntantCube
 	glm::vec3 Pos;
 };
 
-class Application
+class RGBSpliter2Pass : public AppBase
 {
 public:
-	Application(int width, int height, const char* title) : m_Window(width, height, title)  {}
+	RGBSpliter2Pass(int width, int height, const char* title) : m_Window(width, height, title)  {}
 	void Run();
 	void InitWindow(int width, int height, const char* title);
 	void InitContext();
 	void RenderLoop();
 	void Clear();
 	void LoadModel(const char* path, std::vector<Vertex>& vertexData, std::vector<uint32_t>& indicesData);
-	void CreateSetLayout();
+	virtual void CreateSetLayout() override;
 	void BuildAndUpdateDescriptorSets();
-	void RebuildFrameBuffer();
+	virtual void RebuildFrameBuffer() override;
 	std::vector<RenderPass>& GetRenderPass() { return m_RenderPasses; }
 private:
 	void CreatePipeLine();
@@ -137,8 +138,8 @@ private:
 	//std::vector<BindingSetLayout> m_InputAttachmentSetlayouts;
 	#pragma endregion
 
-	BindingSetLayout SetLayout1;
-	BindingSetLayout SetLayout2;
+	PipeLineLayout SetLayout1;
+	PipeLineLayout SetLayout2;
 
 	uint32_t m_SetCount = 0;
 

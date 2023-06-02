@@ -66,7 +66,7 @@ void GlTFModel::LoadImages()
 			bufferData = &gltfImage.image[0];
 			bufferSize = gltfImage.image.size() * sizeof(unsigned char);
 		}
-		m_Textures[i].Texture.FromBuffer(m_Device, bufferData, bufferSize, vk::Format::eR8G8B8A8Srgb, gltfImage.width, gltfImage.height, false);
+		m_Textures[i].FromBuffer(m_Device, bufferData, bufferSize, vk::Format::eR8G8B8A8Srgb, gltfImage.width, gltfImage.height, false);
 		if (deleteBuffer)
 		{
 			delete[] bufferData;
@@ -232,18 +232,18 @@ void GlTFModel::LoadNode(const tinygltf::Node& inputNode, GlTFModel::Node* paren
 	}
 }
 
-void GlTFModel::Draw(vk::CommandBuffer command, vk::PipelineLayout layout)
+void GlTFModel::Draw(vk::CommandBuffer command, vk::PipelineLayout layout, const std::vector<vk::DescriptorSet>& sets)
 {
 	vk::DeviceSize offset = 0.0f;
 	command.bindVertexBuffers(0, 1, &m_VertexBuffer.m_Buffer, &offset);
 	command.bindIndexBuffer(m_IndexBuffer.m_Buffer, offset, vk::IndexType::eUint32);
 	for (auto& node : m_Nodes)
 	{
-		DrawNode(node, command, layout);
+		DrawNode(node, command, layout, sets);
 	}
 }
 
-void GlTFModel::DrawNode(Node* node, vk::CommandBuffer command, vk::PipelineLayout layout)
+void GlTFModel::DrawNode(Node* node, vk::CommandBuffer command, vk::PipelineLayout layout, const std::vector<vk::DescriptorSet>& sets)
 {
 	glm::mat4 modelMatrix = node->ModelMatrix;
 	Node* parent = node->Parent;
@@ -260,14 +260,14 @@ void GlTFModel::DrawNode(Node* node, vk::CommandBuffer command, vk::PipelineLayo
 			auto& primitive = node->NodeMesh.Primitives[i];
 			if (primitive.IndexCount > 0)
 			{
-				ImageSet& image = m_Textures[m_Materials[primitive.MaterialIndex].BaseColorTextureIndex];
-				command.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, layout, 1, 1, &image.DescSet, 0, nullptr);
+				//ImageSet& image = m_Textures[m_Materials[primitive.MaterialIndex].BaseColorTextureIndex];
+				command.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, layout, 1, 1, &sets[m_Materials[primitive.MaterialIndex].BaseColorTextureIndex], 0, nullptr);
 				command.drawIndexed(primitive.IndexCount, 1, primitive.FirstIndex, 0, 0);
 			}
 		}
 	}
 	for (auto& child : node->Children)
 	{
-		DrawNode(child, command, layout);
+		DrawNode(child, command, layout, sets);
 	}
 }

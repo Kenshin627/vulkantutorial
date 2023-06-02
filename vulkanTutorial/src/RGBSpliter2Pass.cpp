@@ -1,5 +1,5 @@
 #include "Core.h"
-#include "Application.h"
+#include "RGBSpliter2Pass.h"
 #include <set>
 #include <limits>
 #include <chrono>
@@ -9,19 +9,19 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "../vendor/tiny_obj_loader/tiny_obj_loader.h"
 
-void Application::Run()
+void RGBSpliter2Pass::Run()
 {
 	InitContext();
 	RenderLoop();
 	Clear();
 }
 
-void Application::InitWindow(int width, int height, const char* title)
+void RGBSpliter2Pass::InitWindow(int width, int height, const char* title)
 {
 	m_Window = Window(width, height, title);
 }
 
-void Application::InitContext()
+void RGBSpliter2Pass::InitContext()
 {
 	//m_SamplerCount = m_Device.GetMaxSampleCount();
 	m_Device = Device(m_Window);
@@ -34,7 +34,7 @@ void Application::InitContext()
 	CreateUniformBuffer();
 
 	CreateSetLayout();
-	BuildAndUpdateDescriptorSets();
+	//BuildAndUpdateDescriptorSets();
 	CreatePipeLine();
 	
 	LoadModel("resource/models/vikingRoom.obj", m_VertexData, m_Indices);	
@@ -46,7 +46,7 @@ void Application::InitContext()
 	CreateAsyncObjects();
 }
 
-void Application::RenderLoop()
+void RGBSpliter2Pass::RenderLoop()
 {
 	while (!m_Window.ShouldClose())
 	{
@@ -56,12 +56,12 @@ void Application::RenderLoop()
 	m_Device.GetLogicDevice().waitIdle();
 }
 
-void Application::Clear()
+void RGBSpliter2Pass::Clear()
 {
 	
 }
 
-void Application::CreatePipeLine()
+void RGBSpliter2Pass::CreatePipeLine()
 {
 	//1.
 	auto bindings = Vertex::GetBindingDescription();
@@ -217,7 +217,7 @@ void Application::CreatePipeLine()
 	//VK_CHECK_RESULT(m_Device.GetLogicDevice().createGraphicsPipelines({}, 1, & pipelineInfo, nullptr, & m_PipeLines.SkyBox));
 }
 
-void Application::RecordCommandBuffer(vk::CommandBuffer command, uint32_t imageIndex)
+void RGBSpliter2Pass::RecordCommandBuffer(vk::CommandBuffer command, uint32_t imageIndex)
 {
 	m_Device.GetCommandManager().CommandBegin(command);
 		#pragma region SUBPASS
@@ -277,7 +277,7 @@ void Application::RecordCommandBuffer(vk::CommandBuffer command, uint32_t imageI
 		//pass1
 		{
 			renderpass1.Begin(command, imageIndex, vk::Rect2D({ 0,0 }, extent));
-				auto DescriptorSet = SetLayout1.GetDescriptorSet();
+				auto DescriptorSet = SetLayout1.GetDescriptorSet(0, 0);
 				command.setViewport(0, 1, &viewport);
 				command.setScissor(0, 1, &scissor);
 				command.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, SetLayout1.GetPipelineLayout(), 0, 1, &DescriptorSet, 0, nullptr);
@@ -295,7 +295,7 @@ void Application::RecordCommandBuffer(vk::CommandBuffer command, uint32_t imageI
 		//pass2
 		{
 			renderpass2.Begin(command, imageIndex, vk::Rect2D({ 0,0 }, extent));
-				auto DescriptorSet = SetLayout2.GetDescriptorSet();
+				auto DescriptorSet = SetLayout2.GetDescriptorSet(0, 0);
 				command.setViewport(0, 1, &viewport);
 				command.setScissor(0, 1, &scissor);
 				command.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, SetLayout2.GetPipelineLayout(), 0, 1, &DescriptorSet, 0, nullptr);
@@ -306,7 +306,7 @@ void Application::RecordCommandBuffer(vk::CommandBuffer command, uint32_t imageI
 	m_Device.GetCommandManager().CommandEnd(command);
 }			
 
-void Application::DrawFrame()
+void RGBSpliter2Pass::DrawFrame()
 {
 	auto fenceResult = m_Device.GetLogicDevice().waitForFences(1, &m_InFlightFence, VK_TRUE, (std::numeric_limits<uint64_t>::max)());
 	uint32_t imageIndex;
@@ -330,7 +330,7 @@ void Application::DrawFrame()
 	m_SwapChain.PresentImage(imageIndex, m_WaitFinishDrawSemaphore, this);
 }
 
-void Application::CreateAsyncObjects()
+void RGBSpliter2Pass::CreateAsyncObjects()
 {
 	vk::FenceCreateInfo fenceInfo;
 	fenceInfo.sType = vk::StructureType::eFenceCreateInfo;
@@ -344,7 +344,7 @@ void Application::CreateAsyncObjects()
 	}
 }
 
-void Application::CreateVertexBuffer()
+void RGBSpliter2Pass::CreateVertexBuffer()
 {
 	vk::DeviceSize size = sizeof(m_VertexData[0]) * m_VertexData.size();
 	Buffer stagingBuffer;
@@ -362,7 +362,7 @@ void Application::CreateVertexBuffer()
 	Buffer::CopyBuffer(cubeStagingBuffer.m_Buffer, 0, m_CubeVertexBuffer.m_Buffer, 0, cubeDatasize, m_Device.GetGraphicQueue(), m_Device.GetCommandManager());
 }
 
-void Application::CreateIndexBuffer()
+void RGBSpliter2Pass::CreateIndexBuffer()
 {
 	vk::DeviceSize size = sizeof(uint32_t) * m_Indices.size();
 	Buffer stagingBuffer;
@@ -378,7 +378,7 @@ void Application::CreateIndexBuffer()
 	Buffer::CopyBuffer(cubeStagingBuffer.m_Buffer, 0, m_CubeIndexBuffer.m_Buffer, 0, cubeDataSize, m_Device.GetGraphicQueue(), m_Device.GetCommandManager());
 }
 
-void Application::CreateSetLayout()
+void RGBSpliter2Pass::CreateSetLayout()
 {
 	#pragma region SUBPASS
 	/*m_PushConstantSetlayout.Create(m_Device, { 
@@ -400,57 +400,96 @@ void Application::CreateSetLayout()
 	}*/
 	#pragma endregion
 
-	SetLayout1.Create(m_Device, {
-		{ vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex, 0, m_UniformBuffer.m_Descriptor, {}, 1 },
-		{ vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, 1, {}, m_CubeTexture.GetDescriptor(), 1 }
-	});
-	m_SetCount++;
-	m_PoolSizes.insert(m_PoolSizes.end(), SetLayout1.GetPoolSizes().begin(), SetLayout1.GetPoolSizes().end());
+	//////////////////
+	DescriptorSetLayoutCreateInfo setlayoutInfo1;
+	setlayoutInfo1.Bindings = {
+		{ vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex, 0 },
+		{ vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, 1 }
+	};
+	setlayoutInfo1.SetCount = 1;
+	setlayoutInfo1.SetWriteData = { { 
+		{ m_UniformBuffer.m_Descriptor, {}, false },
+		{ {}, m_CubeTexture.GetDescriptor(), true }
+	} };
 
+	std::vector<DescriptorSetLayoutCreateInfo> layoutInfos = { setlayoutInfo1 };
 
-	SetLayout2.Create(m_Device, {
-		{vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, 0, {}, renderpass1.GetFrameBuffers()[0].GetColorAttachment(0).Attachment.GetDescriptor(), 1}
-	});
-	m_SetCount++;
-	m_PoolSizes.insert(m_PoolSizes.end(), SetLayout2.GetPoolSizes().begin(), SetLayout2.GetPoolSizes().end());
+	vk::PushConstantRange pushConst;
+	pushConst.setOffset(0)
+			 .setSize(sizeof(PushConsntantCube))
+			 .setStageFlags(vk::ShaderStageFlagBits::eVertex);
+	std::vector<vk::PushConstantRange> pushConstants = { pushConst };
+
+	SetLayout1.Create(m_Device, layoutInfos, pushConstants);
+	
+	/////////////////
+	DescriptorSetLayoutCreateInfo setlayoutInfo2;
+	setlayoutInfo2.Bindings = {
+		{ vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, 0 }
+	};
+	setlayoutInfo2.SetCount = 1;
+	setlayoutInfo2.SetWriteData = { {
+		{ {}, renderpass1.GetFrameBuffers()[0].GetColorAttachment(0).Attachment.GetDescriptor(), true }
+	} };
+
+	std::vector<DescriptorSetLayoutCreateInfo> layoutInfos2 = { setlayoutInfo2 };
+	SetLayout2.Create(m_Device, layoutInfos2, {});
+
+	vk::DescriptorPoolCreateInfo poolInfo1;
+	poolInfo1.sType = vk::StructureType::eDescriptorPoolCreateInfo;
+	poolInfo1.setMaxSets(SetLayout1.GetMaxSet())
+			 .setPoolSizeCount(SetLayout1.GetPoolSizes().size())
+			 .setPPoolSizes(SetLayout1.GetPoolSizes().data());
+	vk::DescriptorPool pool1;
+	VK_CHECK_RESULT(m_Device.GetLogicDevice().createDescriptorPool(&poolInfo1, nullptr, &pool1));
+	SetLayout1.BuildAndUpdateSet(pool1);
+
+	vk::DescriptorPoolCreateInfo poolInfo2;
+	poolInfo2.sType = vk::StructureType::eDescriptorPoolCreateInfo;
+	poolInfo2.setMaxSets(SetLayout2.GetMaxSet())
+		.setPoolSizeCount(SetLayout2.GetPoolSizes().size())
+		.setPPoolSizes(SetLayout2.GetPoolSizes().data());
+	vk::DescriptorPool pool2;
+	VK_CHECK_RESULT(m_Device.GetLogicDevice().createDescriptorPool(&poolInfo2, nullptr, &pool2));
+	SetLayout2.BuildAndUpdateSet(pool2);
 }
 
-void Application::BuildAndUpdateDescriptorSets()
+void RGBSpliter2Pass::BuildAndUpdateDescriptorSets()
 {
-	#pragma region SUBPASS
-	/*vk::DescriptorPoolCreateInfo descriptorPoolInfo;
-	descriptorPoolInfo.sType = vk::StructureType::eDescriptorPoolCreateInfo;
-	descriptorPoolInfo.setMaxSets(m_SetCount)
-					  .setPoolSizeCount(static_cast<uint32_t>(m_PoolSizes.size()))
-					  .setPPoolSizes(m_PoolSizes.data());
-	VK_CHECK_RESULT(m_Device.GetLogicDevice().createDescriptorPool(&descriptorPoolInfo, nullptr, &m_DescriptorPool));
+	//#pragma region SUBPASS
+	///*vk::DescriptorPoolCreateInfo descriptorPoolInfo;
+	//descriptorPoolInfo.sType = vk::StructureType::eDescriptorPoolCreateInfo;
+	//descriptorPoolInfo.setMaxSets(m_SetCount)
+	//				  .setPoolSizeCount(static_cast<uint32_t>(m_PoolSizes.size()))
+	//				  .setPPoolSizes(m_PoolSizes.data());
+	//VK_CHECK_RESULT(m_Device.GetLogicDevice().createDescriptorPool(&descriptorPoolInfo, nullptr, &m_DescriptorPool));
 
-	m_PushConstantSetlayout.BuildAndUpdateSet(m_DescriptorPool);
+	//m_PushConstantSetlayout.BuildAndUpdateSet(m_DescriptorPool);
 
-	for (uint32_t i = 0; i < m_SwapChain.GetImageCount(); i++)
-	{
-		m_InputAttachmentSetlayouts[i].BuildAndUpdateSet(m_DescriptorPool);
-	}*/
-	#pragma endregion
+	//for (uint32_t i = 0; i < m_SwapChain.GetImageCount(); i++)
+	//{
+	//	m_InputAttachmentSetlayouts[i].BuildAndUpdateSet(m_DescriptorPool);
+	//}*/
+	//#pragma endregion
 
-	vk::DescriptorPoolCreateInfo descriptorPoolInfo;
-	descriptorPoolInfo.sType = vk::StructureType::eDescriptorPoolCreateInfo;
-	descriptorPoolInfo.setMaxSets(m_SetCount)
-		.setPoolSizeCount(static_cast<uint32_t>(m_PoolSizes.size()))
-		.setPPoolSizes(m_PoolSizes.data());
-	VK_CHECK_RESULT(m_Device.GetLogicDevice().createDescriptorPool(&descriptorPoolInfo, nullptr, &m_DescriptorPool));
-	SetLayout1.BuildAndUpdateSet(m_DescriptorPool);
-	SetLayout2.BuildAndUpdateSet(m_DescriptorPool);
+	//vk::DescriptorPoolCreateInfo descriptorPoolInfo;
+	//descriptorPoolInfo.sType = vk::StructureType::eDescriptorPoolCreateInfo;
+	//descriptorPoolInfo.setMaxSets(m_SetCount)
+	//	.setPoolSizeCount(static_cast<uint32_t>(m_PoolSizes.size()))
+	//	.setPPoolSizes(m_PoolSizes.data());
+	//VK_CHECK_RESULT(m_Device.GetLogicDevice().createDescriptorPool(&descriptorPoolInfo, nullptr, &m_DescriptorPool));
+	//SetLayout1.BuildAndUpdateSet(m_DescriptorPool);
+	//SetLayout2.BuildAndUpdateSet(m_DescriptorPool);
 }
 
-void Application::CreateUniformBuffer()
+void RGBSpliter2Pass::CreateUniformBuffer()
 {
 	vk::DeviceSize size = sizeof(UniformBufferObject);
 	m_UniformBuffer.Create(m_Device, vk::BufferUsageFlagBits::eUniformBuffer, size, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, nullptr);
 	m_UniformBuffer.Map();
 }
 
-void Application::UpdateUniformBuffers()
+void RGBSpliter2Pass::UpdateUniformBuffers()
 {
 	static auto startTime = std::chrono::high_resolution_clock::now();
 	auto currentTime = std::chrono::high_resolution_clock::now();
@@ -465,7 +504,7 @@ void Application::UpdateUniformBuffers()
 	m_UniformBuffer.CopyFrom(&ubo, sizeof(UniformBufferObject));
 }
 
-void Application::LoadModel(const char* path, std::vector<Vertex>& vertexData, std::vector<uint32_t>& indicesData)
+void RGBSpliter2Pass::LoadModel(const char* path, std::vector<Vertex>& vertexData, std::vector<uint32_t>& indicesData)
 {
 	tinyobj::attrib_t attris;
 	std::vector<tinyobj::shape_t> shapes;
@@ -505,7 +544,7 @@ void Application::LoadModel(const char* path, std::vector<Vertex>& vertexData, s
 	}
 }
 
-void Application::CreateRenderPass()
+void RGBSpliter2Pass::CreateRenderPass()
 {
 	#pragma region  SUBPASS
 	//vk::Format format = m_SwapChain.GetFormat();
@@ -752,7 +791,7 @@ void Application::CreateRenderPass()
 	m_RenderPasses.push_back(renderpass2);
 }
 
-void Application::RebuildFrameBuffer()
+void RGBSpliter2Pass::RebuildFrameBuffer()
 {
 	#pragma region SUBPASS
 	////build color and depth attachments

@@ -10,8 +10,9 @@
 #include "vulkan/CubeMap.h"
 #include "vulkan/PipelineLayout.h"
 #include "vulkan/RenderPass.h"
-
 #include "vulkan/glTFModel.h"
+#include "AppBase.h"
+
 #include <vector>
 #include <optional>
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -78,7 +79,7 @@ struct PipeLines
 	vk::Pipeline WireFrame;
 };
 
-class GLTFApp
+class GLTFApp : public AppBase
 {
 public:
 	GLTFApp(int width, int height, const char* title) : m_Window(width, height, title) {}
@@ -88,9 +89,9 @@ public:
 	void RenderLoop();
 	void Clear();
 	void LoadModel(const char* path, std::vector<Vertex>& vertexData, std::vector<uint32_t>& indicesData);
-	void CreateSetLayout();
-	void BuildAndUpdateDescriptorSets();
-	void RebuildFrameBuffer();
+	virtual void CreateSetLayout() override;
+	//void BuildAndUpdateDescriptorSets();
+	virtual void RebuildFrameBuffer() override;
 	std::vector<RenderPass>& GetRenderPass() { return m_RenderPasses; }
 private:
 	void CreatePipeLine();
@@ -115,8 +116,8 @@ private:
 	PipeLines m_PipeLines;
 	RenderPass BlinnPhongPass;
 	PipeLineLayout PipelineLayout;
-	vk::PipelineLayout BlinnPhongLayout;
-	vk::DescriptorSet MatricesSet;
+	//vk::PipelineLayout BlinnPhongLayout;
+	//vk::DescriptorSet MatricesSet;
 
 	//signals
 	vk::Fence m_InFlightFence;
