@@ -72,6 +72,12 @@
     <ClCompile Include="src\examples\GlTFApp.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\AppBase.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\EditorCamera.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="utils\readFile.h">
@@ -141,6 +147,18 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\examples\GlTFApp.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\MouseCode.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\KeyCode.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\WindowsInput.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\EditorCamera.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

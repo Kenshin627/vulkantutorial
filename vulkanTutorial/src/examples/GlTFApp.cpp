@@ -16,11 +16,6 @@ void GLTFApp::Run()
 	Clear();
 }
 
-void GLTFApp::InitWindow(int width, int height, const char* title)
-{
-	m_Window = Window(width, height, title);
-}
-
 void GLTFApp::InitContext()
 {
 	m_SamplerCount = m_Device.GetMaxSampleCount();
@@ -49,6 +44,7 @@ void GLTFApp::RenderLoop()
 	while (!m_Window.ShouldClose())
 	{
 		m_Window.PollEvents();
+		m_Camera.OnUpdate();
 		DrawFrame();
 	}
 	m_Device.GetLogicDevice().waitIdle();
@@ -332,9 +328,9 @@ void GLTFApp::UpdateUniformBuffers()
 	auto currentTime = std::chrono::high_resolution_clock::now();
 	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 	CameraUniform ubo{};
-	ubo.Proj = glm::perspective(glm::radians(45.0f), m_SwapChain.GetExtent().width / (float)m_SwapChain.GetExtent().height, 0.1f, 100.0f);
-	ubo.Proj[1][1] *= -1;
-	ubo.View = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0.0, -1));
+
+	ubo.Proj = m_Camera.GetProjection();
+	ubo.View = m_Camera.GetViewMatrix();
 	ubo.Model = glm::rotate(glm::mat4(1.0f), time * glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	m_CameraUniformBuffer.CopyFrom(&ubo, sizeof(CameraUniform));
 

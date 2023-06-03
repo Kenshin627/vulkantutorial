@@ -1,5 +1,4 @@
 #pragma once
-#include "../Window.h"
 #include "../vulkan/Device.h"
 #include "../vulkan/SwapChain.h"
 #include "../vulkan/Buffer.h"
@@ -19,6 +18,7 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm.hpp>
 #include <gtx/hash.hpp>
+#include "../core/EditorCamera.h"
 
 struct Vertex
 {
@@ -88,15 +88,13 @@ struct PipeLines
 class GLTFApp : public AppBase
 {
 public:
-	GLTFApp(int width, int height, const char* title) : m_Window(width, height, title) {}
+	GLTFApp(int width, int height, const char* title):AppBase(width, height, title) {}
 	void Run();
-	void InitWindow(int width, int height, const char* title);
 	void InitContext();
 	void RenderLoop();
 	void Clear();
 	void LoadModel(const char* path, std::vector<Vertex>& vertexData, std::vector<uint32_t>& indicesData);
 	virtual void CreateSetLayout() override;
-	//void BuildAndUpdateDescriptorSets();
 	virtual void RebuildFrameBuffer() override;
 	std::vector<RenderPass>& GetRenderPass() { return m_RenderPasses; }
 private:
@@ -111,7 +109,6 @@ private:
 	void DrawFrame();
 	void UpdateUniformBuffers();
 private:
-	Window m_Window;
 	Device m_Device;
 	SwapChain m_SwapChain;
 	vk::CommandBuffer m_CommandBuffer;
@@ -141,6 +138,7 @@ private:
 	Buffer m_CameraUniformBuffer;
 	Buffer m_LightUniformBuffer;
 	GlTFModel m_Model;
+	EditorCamera m_Camera;
 };
 
 namespace std

@@ -2,7 +2,7 @@
 #include "examples/GlTFApp.h"
 //#include "examples/RGBSpliter2Pass.h"
 
-const static uint32_t WIDTH = 1024, HEIGHT = 728;
+const static uint32_t WIDTH = 1920, HEIGHT = 1080;
 
 int main()
 {

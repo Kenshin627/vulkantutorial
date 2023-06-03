@@ -134,6 +134,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\AppBase.cpp" />
+    <ClCompile Include="src\core\EditorCamera.cpp" />
     <ClCompile Include="src\examples\GlTFApp.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\vulkan\Buffer.cpp" />
@@ -157,6 +159,10 @@
   <ItemGroup>
     <ClInclude Include="src\AppBase.h" />
     <ClInclude Include="src\Core.h" />
+    <ClInclude Include="src\core\EditorCamera.h" />
+    <ClInclude Include="src\core\KeyCode.h" />
+    <ClInclude Include="src\core\MouseCode.h" />
+    <ClInclude Include="src\core\WindowsInput.h" />
     <ClInclude Include="src\examples\GlTFApp.h" />
     <ClInclude Include="src\vulkan\Buffer.h" />
     <ClInclude Include="src\vulkan\CommandManager.h" />

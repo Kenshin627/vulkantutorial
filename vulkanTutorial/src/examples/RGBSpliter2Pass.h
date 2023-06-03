@@ -113,7 +113,6 @@ private:
 	void DrawFrame();
 	void UpdateUniformBuffers();
 private:
-	Window m_Window;
 	Device m_Device;
 	SwapChain m_SwapChain;
 	vk::CommandBuffer m_CommandBuffer;

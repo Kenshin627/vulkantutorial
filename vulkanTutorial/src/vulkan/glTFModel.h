@@ -21,6 +21,7 @@ public:
 		glm::vec3 Normal;
 		glm::vec2 Coords;
 		glm::vec3 Color;
+		glm::vec4 Tangent;
 		static std::vector<vk::VertexInputBindingDescription> GetBindingDescriptions()
 		{
 			vk::VertexInputBindingDescription vertexInputBindings;
@@ -38,11 +39,13 @@ public:
 			vk::VertexInputAttributeDescription normalDesc = { 1, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, Normal) };
 			vk::VertexInputAttributeDescription coordDesc = { 2, 0, vk::Format::eR32G32Sfloat, offsetof(Vertex, Coords) };
 			vk::VertexInputAttributeDescription colorDesc = { 3, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, Color) };
+			vk::VertexInputAttributeDescription tangentDesc = { 4, 0, vk::Format::eR32G32B32A32Sfloat, offsetof(Vertex, Tangent) };
 			std::vector< vk::VertexInputAttributeDescription> res;
 			res.push_back(posDesc);
 			res.push_back(normalDesc);
 			res.push_back(coordDesc);
 			res.push_back(colorDesc);
+			res.push_back(tangentDesc);
 			return res;
 		}
 	};
