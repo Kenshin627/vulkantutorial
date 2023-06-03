@@ -5,6 +5,7 @@ layout(location = 2) in vec2 aCoord;
 layout(location = 3) in vec3 aColor;
 layout(location = 0) out vec3 vColor;
 layout(location = 1) out vec2 vCoord;
+layout(location = 2) out vec3 vNormal;
 
 layout(push_constant) uniform UniformPushConstant
 {
@@ -21,5 +22,7 @@ layout(set = 0, binding = 0) uniform UniformBufferObject
 void main() {
     vColor = aColor;
     vCoord = aCoord;   
-    gl_Position = ubo.proj * ubo.view * ubo.model * upc.model * vec4(aPosition, 1.0);
+    mat4 modelMat = ubo.model * upc.model;
+    vNormal = mat3(transpose(inverse(modelMat))) * aNormal;
+    gl_Position = ubo.proj * ubo.view * modelMat * vec4(aPosition, 1.0);
 }

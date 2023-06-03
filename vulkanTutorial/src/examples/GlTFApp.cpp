@@ -268,9 +268,15 @@ void GLTFApp::CreateIndexBuffer()
 void GLTFApp::CreateSetLayout()
 {
 	DescriptorSetLayoutCreateInfo uniformBufferLayout;
-	uniformBufferLayout.Bindings = { { vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex, 0 } };
+	uniformBufferLayout.Bindings = { 
+		{ vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex, 0 },
+		{ vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eFragment, 1 }
+	};
 	uniformBufferLayout.SetCount = 1;
-	uniformBufferLayout.SetWriteData = { { { m_UniformBuffer.m_Descriptor, {}, false } } };
+	uniformBufferLayout.SetWriteData = { { 
+		{ m_CameraUniformBuffer.m_Descriptor, {}, false },
+		{ m_LightUniformBuffer.m_Descriptor, {}, false }
+	} };
 
 	DescriptorSetLayoutCreateInfo samplerLayout;
 	uint32_t setCount = m_Model.GetTextureCount();
@@ -306,118 +312,37 @@ void GLTFApp::CreateSetLayout()
 
 //void GLTFApp::BuildAndUpdateDescriptorSets()
 //{
-//	auto vkDevice = m_Device.GetLogicDevice();
-//	std::vector<vk::DescriptorPoolSize> poolSizes = {
-//		vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, 1),
-//		vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, m_Model.GetTextureCount())
-//	};
-//	const uint32_t maxSetCount = static_cast<uint32_t>(m_Model.GetTextureCount() + 1);
-//	vk::DescriptorPoolCreateInfo poolInfo;
-//	poolInfo.sType = vk::StructureType::eDescriptorPoolCreateInfo;
-//	poolInfo.setMaxSets(maxSetCount)
-//			.setPoolSizeCount(poolSizes.size())
-//			.setPPoolSizes(poolSizes.data());
-//	vk::DescriptorPool pool;
-//	VK_CHECK_RESULT(vkDevice.createDescriptorPool(&poolInfo, nullptr, &pool));
-//
-//	{
-//		vk::DescriptorSetLayoutBinding setLayoutBinding;
-//		setLayoutBinding.setBinding(0)
-//						.setDescriptorCount(1)
-//						.setDescriptorType(vk::DescriptorType::eUniformBuffer)
-//						.setStageFlags(vk::ShaderStageFlagBits::eVertex);
-//		vk::DescriptorSetLayoutCreateInfo setLayoutInfo;
-//		setLayoutInfo.sType = vk::StructureType::eDescriptorSetLayoutCreateInfo;
-//		setLayoutInfo.setBindingCount(1)
-//					 .setPBindings(&setLayoutBinding);
-//		VK_CHECK_RESULT(vkDevice.createDescriptorSetLayout(&setLayoutInfo, nullptr, &SetLayout.matrices));
-//	}
-//	
-//	 //textures
-//	{	
-//		vk::DescriptorSetLayoutBinding setLayoutBinding;
-//		setLayoutBinding.setBinding(0)
-//						.setDescriptorCount(1)
-//						.setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
-//						.setStageFlags(vk::ShaderStageFlagBits::eFragment);
-//		vk::DescriptorSetLayoutCreateInfo setLayoutInfo;
-//		setLayoutInfo.sType = vk::StructureType::eDescriptorSetLayoutCreateInfo;
-//		setLayoutInfo.setBindingCount(1)
-//					 .setPBindings(&setLayoutBinding);
-//		VK_CHECK_RESULT(vkDevice.createDescriptorSetLayout(&setLayoutInfo, nullptr, &SetLayout.textures));
-//	}
-//
-//	vk::PushConstantRange pushConst;
-//	pushConst.setOffset(0)
-//			 .setSize(sizeof(glm::mat4))
-//			 .setStageFlags(vk::ShaderStageFlagBits::eVertex);
-//
-//	std::array<vk::DescriptorSetLayout, 2> setLayouts = { SetLayout.matrices, SetLayout.textures };
-//	vk::PipelineLayoutCreateInfo pipelineInfo;
-//	pipelineInfo.sType = vk::StructureType::ePipelineLayoutCreateInfo;
-//	pipelineInfo.setSetLayoutCount(setLayouts.size())
-//				.setPSetLayouts(setLayouts.data())
-//				.setPushConstantRangeCount(1)
-//				.setPPushConstantRanges(&pushConst);
-//	VK_CHECK_RESULT(vkDevice.createPipelineLayout(&pipelineInfo, nullptr, &BlinnPhongLayout));
-//
-//	vk::DescriptorSetAllocateInfo allocInf;
-//	allocInf.sType = vk::StructureType::eDescriptorSetAllocateInfo;
-//	allocInf.setDescriptorPool(pool)
-//			.setDescriptorSetCount(1)
-//			.setPSetLayouts(&SetLayout.matrices);
-//	VK_CHECK_RESULT(vkDevice.allocateDescriptorSets(&allocInf, &MatricesSet));
-//	vk::WriteDescriptorSet writeSet;
-//	writeSet.sType = vk::StructureType::eWriteDescriptorSet;
-//	writeSet.setDescriptorCount(1)
-//			.setDescriptorType(vk::DescriptorType::eUniformBuffer)
-//			.setDstArrayElement(0)
-//			.setDstBinding(0)
-//			.setDstSet(MatricesSet)
-//			.setPBufferInfo(&m_UniformBuffer.m_Descriptor);
-//	vkDevice.updateDescriptorSets(1, &writeSet, 0, nullptr);
-//
-//	for (auto& image : m_Model.GetImageSet())
-//	{
-//		auto imageDesc = image.Texture.GetDescriptor();
-//		vk::DescriptorSetAllocateInfo allocInf;
-//		allocInf.sType = vk::StructureType::eDescriptorSetAllocateInfo;
-//		allocInf.setDescriptorPool(pool)
-//				.setDescriptorSetCount(1)
-//				.setPSetLayouts(&SetLayout.textures);
-//		VK_CHECK_RESULT(vkDevice.allocateDescriptorSets(&allocInf, &image.DescSet));
-//		vk::WriteDescriptorSet writeSet;
-//		writeSet.sType = vk::StructureType::eWriteDescriptorSet;
-//		writeSet.setDescriptorCount(1)
-//				.setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
-//				.setDstArrayElement(0)
-//				.setDstBinding(0)
-//				.setDstSet(image.DescSet)
-//				.setPImageInfo(&imageDesc);
-//		vkDevice.updateDescriptorSets(1, &writeSet, 0, nullptr);
-//	}
 //}
 
 void GLTFApp::CreateUniformBuffer()
 {
-	vk::DeviceSize size = sizeof(UniformBufferObject);
-	m_UniformBuffer.Create(m_Device, vk::BufferUsageFlagBits::eUniformBuffer, size, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, nullptr);
-	m_UniformBuffer.Map();
+	//Camera
+	m_CameraUniformBuffer.Create(m_Device, vk::BufferUsageFlagBits::eUniformBuffer, sizeof(CameraUniform), vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, nullptr);
+	m_CameraUniformBuffer.Map();
+
+	//Light
+	m_LightUniformBuffer.Create(m_Device, vk::BufferUsageFlagBits::eUniformBuffer, sizeof(LightUniform), vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, nullptr);
+	m_LightUniformBuffer.Map();
 }
 
 void GLTFApp::UpdateUniformBuffers()
 {
+	//update Camera
 	static auto startTime = std::chrono::high_resolution_clock::now();
 	auto currentTime = std::chrono::high_resolution_clock::now();
 	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
-	UniformBufferObject ubo{};
+	CameraUniform ubo{};
 	ubo.Proj = glm::perspective(glm::radians(45.0f), m_SwapChain.GetExtent().width / (float)m_SwapChain.GetExtent().height, 0.1f, 100.0f);
 	ubo.Proj[1][1] *= -1;
 	ubo.View = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0.0, -1));
 	ubo.Model = glm::rotate(glm::mat4(1.0f), time * glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	m_CameraUniformBuffer.CopyFrom(&ubo, sizeof(CameraUniform));
 
-	m_UniformBuffer.CopyFrom(&ubo, sizeof(UniformBufferObject));
+	//update Lights
+	LightUniform light;
+	light.Color = { 1.0f, 0.2f, 1.0f };
+	light.Direction = { 1.0f, -1.0f, -1.0f };
+	m_LightUniformBuffer.CopyFrom(&light, sizeof(LightUniform));
 }
 
 void GLTFApp::LoadModel(const char* path, std::vector<Vertex>& vertexData, std::vector<uint32_t>& indicesData)

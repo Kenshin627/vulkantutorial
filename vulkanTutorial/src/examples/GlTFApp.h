@@ -66,11 +66,17 @@ struct Vertex
 	}
 };
 
-struct UniformBufferObject
+struct CameraUniform
 {
 	glm::mat4 Proj;
 	glm::mat4 View;
 	glm::mat4 Model;
+};
+
+struct LightUniform
+{
+	alignas(16) glm::vec3 Direction;
+	glm::vec3 Color;
 };
 
 struct PipeLines
@@ -110,14 +116,11 @@ private:
 	SwapChain m_SwapChain;
 	vk::CommandBuffer m_CommandBuffer;
 	vk::SampleCountFlagBits m_SamplerCount = vk::SampleCountFlagBits::e1;
-
 	std::vector<RenderPass> m_RenderPasses;
 
 	PipeLines m_PipeLines;
 	RenderPass BlinnPhongPass;
 	PipeLineLayout PipelineLayout;
-	//vk::PipelineLayout BlinnPhongLayout;
-	//vk::DescriptorSet MatricesSet;
 
 	//signals
 	vk::Fence m_InFlightFence;
@@ -135,7 +138,8 @@ private:
 	Buffer m_SkyboxIndexBuffer;
 	CubeMap m_SkyBoxTexture;
 
-	Buffer m_UniformBuffer;
+	Buffer m_CameraUniformBuffer;
+	Buffer m_LightUniformBuffer;
 	GlTFModel m_Model;
 };
 
