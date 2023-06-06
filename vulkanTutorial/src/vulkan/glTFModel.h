@@ -38,14 +38,14 @@ public:
 			vk::VertexInputAttributeDescription posDesc = { 0, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, Pos) };
 			vk::VertexInputAttributeDescription normalDesc = { 1, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, Normal) };
 			vk::VertexInputAttributeDescription coordDesc = { 2, 0, vk::Format::eR32G32Sfloat, offsetof(Vertex, Coords) };
-			vk::VertexInputAttributeDescription colorDesc = { 3, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, Color) };
-			vk::VertexInputAttributeDescription tangentDesc = { 4, 0, vk::Format::eR32G32B32A32Sfloat, offsetof(Vertex, Tangent) };
+			//vk::VertexInputAttributeDescription colorDesc = { 3, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, Color) };
+			//vk::VertexInputAttributeDescription tangentDesc = { 4, 0, vk::Format::eR32G32B32A32Sfloat, offsetof(Vertex, Tangent) };
 			std::vector< vk::VertexInputAttributeDescription> res;
 			res.push_back(posDesc);
 			res.push_back(normalDesc);
 			res.push_back(coordDesc);
-			res.push_back(colorDesc);
-			res.push_back(tangentDesc);
+			//res.push_back(colorDesc);
+			//res.push_back(tangentDesc);
 			return res;
 		}
 	};
@@ -91,7 +91,7 @@ public:
 	GlTFModel() = default;
 
 	void LoadModel(Device& device, const std::string& filaname);
-	void Draw(vk::CommandBuffer command, vk::PipelineLayout layout, const std::vector<vk::DescriptorSet>& sets);
+	void Draw(vk::CommandBuffer command);
 	uint32_t GetTextureCount() { return m_Textures.size(); }
 	std::vector<Texture>& GetImages() { return m_Textures; }
 	~GlTFModel()
@@ -108,7 +108,7 @@ private:
 	void LoadMaterials();
 	void loadTextures();
 	void LoadNode(const tinygltf::Node& inputNode, GlTFModel::Node* parent);
-	void DrawNode(Node* node, vk::CommandBuffer command, vk::PipelineLayout layout, const std::vector<vk::DescriptorSet>& sets);
+	void DrawNode(Node* node, vk::CommandBuffer command);
 private:
 	Device m_Device;
 	tinygltf::Model m_Model;

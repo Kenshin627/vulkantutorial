@@ -19,7 +19,7 @@ public:
 	const glm::mat4& GetViewMatrix() const { return m_View; }
 	const glm::mat4& GetProjection() const { return m_Projection; }
 	const glm::mat4& GetViewProjectionMatrix() const { return m_Projection * m_View; }
-
+	const glm::vec3& GetPosition() const { return m_Position; }
 	void UpdateView();
 	void UpdateProjection();
 
@@ -43,7 +43,7 @@ public:
 
 private:
 	float m_Fov = 45.0f, m_AspectRatio = 1.778f, m_Near = 0.01f, m_Far = 1000.0f;
-	float m_Distance = 1.0f;
+	float m_Distance = 10.0f;
 	glm::vec3 m_FocalPoint{ 0.0f }, m_Position{ 1.0f };
 	uint32_t m_ViewportWidth = 1920, m_ViewportHeight = 1080;
 	float m_Pitch = 0.0f, m_Yaw = 0.0f;

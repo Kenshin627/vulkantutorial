@@ -182,8 +182,8 @@ void GlTFModel::LoadNode(const tinygltf::Node& inputNode, GlTFModel::Node* paren
 					vertex.Pos = glm::vec4(glm::make_vec3(&positionBuffer[i * 3]), 1.0f);
 					vertex.Normal = glm::normalize(glm::vec3(normalBuffer ? glm::make_vec3(&normalBuffer[i * 3]) : glm::vec3(0.0f)));
 					vertex.Coords = texCoordBuffer ? glm::make_vec2(&texCoordBuffer[i * 2]) : glm::vec2(0.0f, 0.0f);
-					vertex.Color = glm::vec3(1.0f);
-					vertex.Tangent = tangentBuffer ? glm::make_vec4(&tangentBuffer[i * 4]) : glm::vec4(0.0);
+		/*			vertex.Color = glm::vec3(1.0f);
+					vertex.Tangent = tangentBuffer ? glm::make_vec4(&tangentBuffer[i * 4]) : glm::vec4(0.0);*/
 					m_Vertices.push_back(vertex);
 				}
 			}
@@ -241,18 +241,18 @@ void GlTFModel::LoadNode(const tinygltf::Node& inputNode, GlTFModel::Node* paren
 	}
 }
 
-void GlTFModel::Draw(vk::CommandBuffer command, vk::PipelineLayout layout, const std::vector<vk::DescriptorSet>& sets)
+void GlTFModel::Draw(vk::CommandBuffer command)
 {
 	vk::DeviceSize offset = 0.0f;
 	command.bindVertexBuffers(0, 1, &m_VertexBuffer.m_Buffer, &offset);
 	command.bindIndexBuffer(m_IndexBuffer.m_Buffer, offset, vk::IndexType::eUint32);
 	for (auto& node : m_Nodes)
 	{
-		DrawNode(node, command, layout, sets);
+		DrawNode(node, command);
 	}
 }
 
-void GlTFModel::DrawNode(Node* node, vk::CommandBuffer command, vk::PipelineLayout layout, const std::vector<vk::DescriptorSet>& sets)
+void GlTFModel::DrawNode(Node* node, vk::CommandBuffer command)
 {
 	glm::mat4 modelMatrix = node->ModelMatrix;
 	Node* parent = node->Parent;
@@ -263,20 +263,17 @@ void GlTFModel::DrawNode(Node* node, vk::CommandBuffer command, vk::PipelineLayo
 	}
 	if (node->NodeMesh.Primitives.size() > 0)
 	{
-		command.pushConstants(layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(glm::mat4), &modelMatrix);
 		for (uint32_t i = 0; i < node->NodeMesh.Primitives.size(); i++) 
 		{
 			auto& primitive = node->NodeMesh.Primitives[i];
 			if (primitive.IndexCount > 0)
 			{
-				//ImageSet& image = m_Textures[m_Materials[primitive.MaterialIndex].BaseColorTextureIndex];
-				command.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, layout, 1, 1, &sets[m_Materials[primitive.MaterialIndex].BaseColorTextureIndex], 0, nullptr);
 				command.drawIndexed(primitive.IndexCount, 1, primitive.FirstIndex, 0, 0);
 			}
 		}
 	}
 	for (auto& child : node->Children)
 	{
-		DrawNode(child, command, layout, sets);
+		DrawNode(child, command);
 	}
 }

@@ -11,14 +11,38 @@
 #include "../vulkan/RenderPass.h"
 #include "../vulkan/glTFModel.h"
 #include "../AppBase.h"
+#include "../core/EditorCamera.h"
 
+#include <string>
 #include <vector>
 #include <optional>
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm.hpp>
 #include <gtx/hash.hpp>
-#include "../core/EditorCamera.h"
+
+#define GRID_DIM 7
+#define OBJ_DIM  0.05f
+
+struct Material
+{
+	struct PushBlock
+	{
+		float roughness;
+		float metallic;
+		float r, g, b;
+	} params;
+	std::string name;
+	Material() {};
+	Material(std::string n, glm::vec3 c, float r, float m) : name(n)
+	{
+		params.roughness = r;
+		params.metallic = m;
+		params.r = c.r;
+		params.g = c.g;
+		params.b = c.b;
+	}
+};
 
 struct Vertex
 {
@@ -71,12 +95,20 @@ struct CameraUniform
 	glm::mat4 Proj;
 	glm::mat4 View;
 	glm::mat4 Model;
+	glm::vec3 Pos;
 };
 
 struct LightUniform
 {
 	alignas(16) glm::vec3 Direction;
 	glm::vec3 Color;
+};
+
+struct SphereMat
+{
+	float roughness;
+	float metalness;
+	glm::vec3 Pos;
 };
 
 struct PipeLines
@@ -130,6 +162,7 @@ private:
 	Buffer m_LightUniformBuffer;
 	GlTFModel m_Model;
 	EditorCamera m_Camera;
+	std::vector<Material> m_Materials;
 };
 
 namespace std

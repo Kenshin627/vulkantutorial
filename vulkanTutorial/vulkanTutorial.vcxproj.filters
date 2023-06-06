@@ -177,5 +177,7 @@
     <None Include="resource\shaders\rpgSpliter.frag" />
     <None Include="resource\shaders\mesh.vert" />
     <None Include="resource\shaders\mesh.frag" />
+    <None Include="resource\shaders\pbrbasic.vert" />
+    <None Include="resource\shaders\pbrbasic.frag" />
   </ItemGroup>
 </Project>
