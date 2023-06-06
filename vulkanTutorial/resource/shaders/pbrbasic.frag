@@ -16,7 +16,7 @@ layout(set = 0, binding = 0) uniform UniformBufferObject
 
 layout(set = 0, binding = 1) uniform Light
 {
-    vec3 Direction;
+    vec3 Pos;
     vec3 Color;
 } lightUBO;
 
@@ -91,9 +91,11 @@ void main() {
    vec3 V = normalize(ubo.Pos - vWorldPos);
 
    vec3 Lo = vec3(0.0);
-   vec3 L = normalize(-lightUBO.Direction);
+   vec3 L = normalize(lightUBO.Pos - vWorldPos);
    vec3 H = normalize(L + V);
-
+   float distance = length(lightUBO.Pos - vWorldPos);
+   float attenuation = 1.0 / (distance * distance);
+   vec3 radiance =  albedo;
    vec3 F0 = vec3(0.04);
    F0 = mix(F0, albedo, material.metallic);
    vec3 F = fresnelSchlick(max(dot(N, V), 0.0), F0);
@@ -108,9 +110,9 @@ void main() {
    kD *= 1.0 - material.metallic;
 
    float NDotL = max(dot(N, L), 0.0);
-   Lo += (kD * albedo / PI + specular) * lightUBO.Color * NDotL;
+   Lo += (kD * albedo / PI + specular) * radiance * NDotL;
 
-   vec3 ambient = vec3(0.03) * albedo * 0.5;
+   vec3 ambient = vec3(0.03) * albedo;
    vec3 color = ambient + Lo;
    color  = pow(color, vec3(0.4545));
    outColor = vec4(color, 1.0);

@@ -321,7 +321,7 @@ void PBRBasic::UpdateUniformBuffers()
 	//update Lights
 	LightUniform light;
 	light.Color = { 1.0f, 1.0f, 1.0f };
-	light.Direction = { 1.0f, -1.0f, -1.0f };
+	light.Pos = { -15.0f, -15.0 * 0.5f, -15.0f };
 	m_LightUniformBuffer.CopyFrom(&light, sizeof(LightUniform));
 }
 

@@ -100,7 +100,7 @@ struct CameraUniform
 
 struct LightUniform
 {
-	alignas(16) glm::vec3 Direction;
+	alignas(16) glm::vec3 Pos;
 	glm::vec3 Color;
 };
 
