@@ -20,8 +20,8 @@ public:
 		glm::vec3 Pos;
 		glm::vec3 Normal;
 		glm::vec2 Coords;
-		glm::vec3 Color;
-		glm::vec4 Tangent;
+	/*	glm::vec3 Color;
+		glm::vec4 Tangent;*/
 		static std::vector<vk::VertexInputBindingDescription> GetBindingDescriptions()
 		{
 			vk::VertexInputBindingDescription vertexInputBindings;

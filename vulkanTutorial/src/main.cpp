@@ -1,13 +1,11 @@
 #include <iostream>
-#include "examples/GlTFApp.h"
-//#include "examples/RGBSpliter2Pass.h"
+#include "examples/PBRBasic.h"
 
 const static uint32_t WIDTH = 1920, HEIGHT = 1080;
 
 int main()
 {
-	//RGBSpliter2Pass app(WIDTH, HEIGHT, "RGBSpliter");
-	GLTFApp app(WIDTH, HEIGHT, "vulkan");
+	PBRBasic app(WIDTH, HEIGHT, "vulkan");
 	try
 	{
 		app.Run();
