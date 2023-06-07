@@ -18,16 +18,16 @@ void PBRTexture::Run()
 
 void PBRTexture::InitContext()
 {
-	//m_SamplerCount = m_Device.GetMaxSampleCount();
 	m_Device = Device(m_Window);
-	m_SamplerCount = vk::SampleCountFlagBits::e1;
+	m_SamplerCount = m_Device.GetMaxSampleCount();
+	//m_SamplerCount = vk::SampleCountFlagBits::e1;
 	m_SwapChain.Init(m_Device, m_Window, m_SamplerCount, false, true);
 	CreateRenderPass();
 
 	m_Model.LoadModel(m_Device, "resource/models/sphere.gltf");
 
-	m_PbrTextures.Ao.Create(m_Device, "resource/textures/dull-brass-bl/ao.png", vk::Format::eR8G8B8A8Srgb, false);
-	m_PbrTextures.Albedo.Create(m_Device, "resource/textures/dull-brass-bl/albedo.png", vk::Format::eR8G8B8A8Unorm, false);
+	m_PbrTextures.Ao.Create(m_Device, "resource/textures/dull-brass-bl/ao.png", vk::Format::eR8G8B8A8Unorm, false);
+	m_PbrTextures.Albedo.Create(m_Device, "resource/textures/dull-brass-bl/albedo.png", vk::Format::eR8G8B8A8Srgb, false);
 	m_PbrTextures.Metallic.Create(m_Device, "resource/textures/dull-brass-bl/metallic.png", vk::Format::eR8G8B8A8Unorm, false);
 	m_PbrTextures.Roughness.Create(m_Device, "resource/textures/dull-brass-bl/roughness.png", vk::Format::eR8G8B8A8Unorm, false);
 
@@ -133,7 +133,7 @@ void PBRTexture::CreatePipeLine()
 	multisamplesInfo.sType = vk::StructureType::ePipelineMultisampleStateCreateInfo;
 	multisamplesInfo.setRasterizationSamples(m_SamplerCount)
 		.setMinSampleShading(0.2f)
-		.setSampleShadingEnable(VK_TRUE)
+		.setSampleShadingEnable(VK_FALSE)
 		.setAlphaToCoverageEnable(VK_FALSE)
 		.setAlphaToOneEnable(VK_FALSE)
 		.setPSampleMask(nullptr);

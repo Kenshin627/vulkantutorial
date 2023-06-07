@@ -181,9 +181,9 @@ void Image::CreateSampler()
 {
 	vk::SamplerCreateInfo samplerInfo;
 	samplerInfo.sType = vk::StructureType::eSamplerCreateInfo;
-	samplerInfo.setAddressModeU(vk::SamplerAddressMode::eClampToEdge)
-			   .setAddressModeV(vk::SamplerAddressMode::eClampToEdge)
-			   .setAddressModeW(vk::SamplerAddressMode::eClampToEdge)
+	samplerInfo.setAddressModeU(vk::SamplerAddressMode::eRepeat)
+			   .setAddressModeV(vk::SamplerAddressMode::eRepeat)
+			   .setAddressModeW(vk::SamplerAddressMode::eRepeat)
 			   .setAnisotropyEnable(VK_FALSE)
 			   .setBorderColor(vk::BorderColor::eIntOpaqueBlack)
 			   .setCompareEnable(VK_FALSE)

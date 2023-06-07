@@ -84,8 +84,8 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
 //}
 
 void main() {
-//   vec3 albedo =  pow(texture(albedoSampler, vCoord).rgb, vec3(2.2));
-    vec3 albedo = texture(albedoSampler, vCoord).rgb;
+   vec3 albedo =  pow(texture(albedoSampler, vCoord).rgb, vec3(2.2));
+//    vec3 albedo = texture(albedoSampler, vCoord).rgb;
    float metallic = texture(metallicSampler, vCoord).r;
    float roughness = texture(roughnessSampler, vCoord).r;
    float ao = texture(aoSampler, vCoord).r;
@@ -94,6 +94,7 @@ void main() {
    vec3 V = normalize(ubo.Pos - vWorldPos);
 
    vec3 Lo = vec3(0.0);
+    
    for(int i = 0; i < 4; i++)
    {
          vec3 L = normalize(lightUBO.lights[i].Pos.xyz - vWorldPos);
@@ -119,7 +120,7 @@ void main() {
    }
 
    vec3 ambient = vec3(0.03) * albedo * ao;
-   vec3 color = ambient + Lo;
+   vec3 color =  Lo + ambient;
    color = color / (color + vec3(1.0));
    color  = pow(color, vec3(0.4545));
    outColor = vec4(color, 1.0);
