@@ -3,7 +3,7 @@
 #include "stb_image.h"
 #include "Buffer.h"
 
-void Texture::Create(Device& device, const char* path, bool generateMipmaps)
+void Texture::Create(Device& device, const char* path, vk::Format format, bool generateMipmaps)
 {
 	
 	int width, height, channel;
@@ -13,7 +13,7 @@ void Texture::Create(Device& device, const char* path, bool generateMipmaps)
 	{
 		throw std::runtime_error("read imagefile failed!");
 	}
-	FromBuffer(device, pixels, width * height * 4, vk::Format::eR8G8B8A8Srgb, width, height, generateMipmaps);
+	FromBuffer(device, pixels, width * height * 4, format, width, height, generateMipmaps);
 }
 
 void Texture::FromBuffer(Device& device, void* data, vk::DeviceSize size, vk::Format format, uint32_t texWidth, uint32_t texHeight, bool generateMipmaps)
