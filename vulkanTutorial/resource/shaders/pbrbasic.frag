@@ -102,7 +102,7 @@ void main() {
          vec3 H = normalize(L + V);
          float distance = length(lightUBO.lights[i].Pos.xyz - vWorldPos);
          float attenuation = 1.0 / (distance * distance);
-         vec3 radiance =  lightUBO.lights[i].Color.rgb;
+         vec3 radiance =  lightUBO.lights[i].Color.rgb * attenuation;
          vec3 F0 = vec3(0.04);
          F0 = mix(F0, albedo, material.metallic);
          vec3 F = fresnelSchlick(max(dot(N, V), 0.0), F0);
@@ -122,6 +122,7 @@ void main() {
 
    vec3 ambient = vec3(0.03) * albedo;
    vec3 color = ambient + Lo;
+   color = color / (color + vec3(1.0));
    color  = pow(color, vec3(0.4545));
    outColor = vec4(color, 1.0);
 }

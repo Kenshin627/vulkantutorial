@@ -26,6 +26,7 @@ void PBRBasic::InitContext()
 
 	m_Model.LoadModel(m_Device, "resource/models/sphere.gltf");
 
+	m_Materials.push_back(Material("Red", glm::vec3(1.0f, 0.0f, 0.0f), 0.1f, 1.0f));
 	m_Materials.push_back(Material("Gold", glm::vec3(1.0f, 0.765557f, 0.336057f), 0.1f, 1.0f));
 	m_Materials.push_back(Material("Copper", glm::vec3(0.955008f, 0.637427f, 0.538163f), 0.1f, 1.0f));
 	m_Materials.push_back(Material("Chromium", glm::vec3(0.549585f, 0.556114f, 0.554256f), 0.1f, 1.0f));
@@ -321,16 +322,16 @@ void PBRBasic::UpdateUniformBuffers()
 	const float p = 15.0f;
 	//update Lights
 	LightUniforms lights;
-	lights.lights[0].Color = {1.0f, 1.0f, 1.0f, 1.0};
+	lights.lights[0].Color = {300.0f, 300.0f, 300.0f, 1.0};
 	lights.lights[0].Pos = glm::vec4(-p, -p * 0.5f, -p, 1.0f);
 
-	lights.lights[1].Color = { 1.0f, 1.0f, 1.0f, 1.0 };
+	lights.lights[1].Color = { 300.0f, 300.0f, 300.0f, 1.0 };
 	lights.lights[1].Pos = glm::vec4(-p, -p * 0.5f, p, 1.0f);
 
-	lights.lights[2].Color = { 1.0f, 1.0f, 1.0f, 1.0 };
+	lights.lights[2].Color = { 300.0f, 300.0f, 300.0f, 1.0 };
 	lights.lights[2].Pos = glm::vec4(p, -p * 0.5f, p, 1.0f);
 
-	lights.lights[3].Color = { 0.0f, 0.0f, 0.0f, 1.0 };
+	lights.lights[3].Color = { 300.0f, 300.0f, 300.0f, 1.0 };
 	lights.lights[3].Pos = glm::vec4(p, -p * 0.5f, -p, 1.0f);
 	m_LightUniformBuffer.CopyFrom(&lights, sizeof(LightUniforms));
 }
