@@ -300,7 +300,7 @@ void PBRBasic::CreateUniformBuffer()
 	m_CameraUniformBuffer.Map();
 
 	//Light
-	m_LightUniformBuffer.Create(m_Device, vk::BufferUsageFlagBits::eUniformBuffer, sizeof(LightUniform), vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, nullptr);
+	m_LightUniformBuffer.Create(m_Device, vk::BufferUsageFlagBits::eUniformBuffer, sizeof(LightUniforms), vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, nullptr);
 	m_LightUniformBuffer.Map();
 }
 
@@ -318,11 +318,21 @@ void PBRBasic::UpdateUniformBuffers()
 	ubo.Pos = m_Camera.GetPosition();
 	m_CameraUniformBuffer.CopyFrom(&ubo, sizeof(CameraUniform));
 
+	const float p = 15.0f;
 	//update Lights
-	LightUniform light;
-	light.Color = { 1.0f, 1.0f, 1.0f };
-	light.Pos = { -15.0f, -15.0 * 0.5f, -15.0f };
-	m_LightUniformBuffer.CopyFrom(&light, sizeof(LightUniform));
+	LightUniforms lights;
+	lights.lights[0].Color = {1.0f, 1.0f, 1.0f, 1.0};
+	lights.lights[0].Pos = glm::vec4(-p, -p * 0.5f, -p, 1.0f);
+
+	lights.lights[1].Color = { 1.0f, 1.0f, 1.0f, 1.0 };
+	lights.lights[1].Pos = glm::vec4(-p, -p * 0.5f, p, 1.0f);
+
+	lights.lights[2].Color = { 1.0f, 1.0f, 1.0f, 1.0 };
+	lights.lights[2].Pos = glm::vec4(p, -p * 0.5f, p, 1.0f);
+
+	lights.lights[3].Color = { 0.0f, 0.0f, 0.0f, 1.0 };
+	lights.lights[3].Pos = glm::vec4(p, -p * 0.5f, -p, 1.0f);
+	m_LightUniformBuffer.CopyFrom(&lights, sizeof(LightUniforms));
 }
 
 void PBRBasic::LoadModel(const char* path, std::vector<Vertex>& vertexData, std::vector<uint32_t>& indicesData)

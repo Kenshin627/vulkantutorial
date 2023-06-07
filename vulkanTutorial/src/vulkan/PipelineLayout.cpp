@@ -22,7 +22,7 @@ void PipeLineLayout::Create(const Device& device, const std::vector<DescriptorSe
 							    .setDescriptorType(currentBinding.Type)
 							    .setPImmutableSamplers(nullptr)
 							    .setStageFlags(currentBinding.ShaderStage);
-			m_PoolSizes.emplace_back(currentBinding.Type, setLayouts[i].SetCount);
+			m_PoolSizes.emplace_back(currentBinding.Type, setLayouts[i].SetCount * currentBinding.DescriptorCount);
 		}
 		vk::DescriptorSetLayoutCreateInfo setLayoutInfo;
 		setLayoutInfo.sType = vk::StructureType::eDescriptorSetLayoutCreateInfo;

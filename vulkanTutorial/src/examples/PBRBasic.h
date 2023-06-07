@@ -98,10 +98,15 @@ struct CameraUniform
 	glm::vec3 Pos;
 };
 
-struct LightUniform
+struct Light
 {
-	alignas(16) glm::vec3 Pos;
-	glm::vec3 Color;
+	alignas(16) glm::vec4 Pos;
+	alignas(16) glm::vec4 Color;
+};
+
+struct LightUniforms
+{
+	Light lights[4];
 };
 
 struct SphereMat
