@@ -33,6 +33,10 @@ void GlTFModel::LoadModel(Device& device, const std::string& filaname)
 	indexStagingBuffer.Create(m_Device, vk::BufferUsageFlagBits::eTransferSrc, indexBufferSize, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, m_Indices.data());
 	m_IndexBuffer.Create(m_Device, vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst, indexBufferSize, vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eDeviceLocal, nullptr);
 	Buffer::CopyBuffer(indexStagingBuffer.m_Buffer, 0, m_IndexBuffer.m_Buffer, 0, indexBufferSize, m_Device.GetGraphicQueue(), m_Device.GetCommandManager());
+
+	m_UniformBuffer.Create(m_Device, vk::BufferUsageFlagBits::eUniformBuffer, sizeof(PBRFactor), vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, nullptr);
+	m_UniformBuffer.Map();
+	BuildDescriptorSets();
 }
 
 void GlTFModel::LoadImages()
@@ -78,17 +82,44 @@ void GlTFModel::LoadMaterials()
 {
 	uint32_t materialCount = m_Model.materials.size();
 	m_Materials.resize(materialCount);
+	m_PBRFactors.resize(materialCount);
 	for (uint32_t i = 0; i < materialCount; i++)
 	{
 		tinygltf::Material& gltfMat = m_Model.materials[i];
-		if (gltfMat.values.find("baseColorFactor") != gltfMat.values.end())
+		glm::vec4 baseColor = glm::make_vec4(gltfMat.pbrMetallicRoughness.baseColorFactor.data());
+		m_Materials[i].BaseColorFactor = baseColor;
+		m_PBRFactors[i].BaseColorFactor = baseColor;
+		if (gltfMat.pbrMetallicRoughness.baseColorTexture.index >= 0)
 		{
-			m_Materials[i].BaseColorFactor = glm::make_vec4(gltfMat.values["baseColorFactor"].ColorFactor().data());
+			m_Materials[i].BaseColorTextureIndex = static_cast<uint32_t>(gltfMat.pbrMetallicRoughness.baseColorTexture.index);
 		}
+		m_Materials[i].MetallicFactor = static_cast<float>(gltfMat.pbrMetallicRoughness.metallicFactor);
+		m_PBRFactors[i].MetallicFactor = m_Materials[i].MetallicFactor;
 
-		if (gltfMat.values.find("baseColorTexture") != gltfMat.values.end())
+		m_Materials[i].RoughnessFactor = static_cast<float>(gltfMat.pbrMetallicRoughness.roughnessFactor);
+		m_PBRFactors[i].RoughnessFactor = m_Materials[i].RoughnessFactor;
+		if (gltfMat.pbrMetallicRoughness.metallicRoughnessTexture.index >= 0)
 		{
-			m_Materials[i].BaseColorTextureIndex = static_cast<uint32_t>(gltfMat.values["baseColorTexture"].TextureIndex());
+			m_Materials[i].MetallicRoughnessTextureIndex = static_cast<uint32_t>(gltfMat.pbrMetallicRoughness.metallicRoughnessTexture.index);
+		}
+		m_Materials[i].OcclustionStrength = static_cast<float>(gltfMat.occlusionTexture.strength);
+		m_PBRFactors[i].OcclustionStrength = m_Materials[i].OcclustionStrength;
+
+		if (gltfMat.occlusionTexture.index >= 0)
+		{
+			m_Materials[i].OcclusionTextureIndex = static_cast<uint32_t>(gltfMat.occlusionTexture.index);
+		}
+		if (gltfMat.normalTexture.index >= 0)
+		{
+			m_Materials[i].NormalScale = gltfMat.normalTexture.scale;
+			m_Materials[i].NormalMapTextureIndex = static_cast<uint32_t>(gltfMat.normalTexture.index);
+			m_PBRFactors[i].NormalScale = m_Materials[i].NormalScale;
+		}
+		if (gltfMat.emissiveTexture.index >= 0)
+		{
+			m_Materials[i].EmissiveFactor = glm::make_vec3(gltfMat.emissiveFactor.data());
+			m_Materials[i].EmissiveTextureIndex = static_cast<uint32_t>(gltfMat.emissiveTexture.index);
+			m_PBRFactors[i].EmissiveFactor = m_Materials[i].EmissiveFactor;
 		}
 	}
 }
@@ -241,18 +272,18 @@ void GlTFModel::LoadNode(const tinygltf::Node& inputNode, GlTFModel::Node* paren
 	}
 }
 
-void GlTFModel::Draw(vk::CommandBuffer command)
+void GlTFModel::Draw(vk::CommandBuffer command, PipeLineLayout& layout)
 {
 	vk::DeviceSize offset = 0.0f;
 	command.bindVertexBuffers(0, 1, &m_VertexBuffer.m_Buffer, &offset);
 	command.bindIndexBuffer(m_IndexBuffer.m_Buffer, offset, vk::IndexType::eUint32);
 	for (auto& node : m_Nodes)
 	{
-		DrawNode(node, command);
+		DrawNode(node, command, layout);
 	}
 }
 
-void GlTFModel::DrawNode(Node* node, vk::CommandBuffer command)
+void GlTFModel::DrawNode(Node* node, vk::CommandBuffer command, PipeLineLayout& layout)
 {
 	glm::mat4 modelMatrix = node->ModelMatrix;
 	Node* parent = node->Parent;
@@ -268,12 +299,45 @@ void GlTFModel::DrawNode(Node* node, vk::CommandBuffer command)
 			auto& primitive = node->NodeMesh.Primitives[i];
 			if (primitive.IndexCount > 0)
 			{
+				//bindSets
+				uint32_t materialIndex = primitive.MaterialIndex;
+				auto set = layout.GetDescriptorSet(1, materialIndex);
+				command.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, layout.GetPipelineLayout(), 0, 1, &set, 0, nullptr);
+				UpdateUniforms(materialIndex);
 				command.drawIndexed(primitive.IndexCount, 1, primitive.FirstIndex, 0, 0);
 			}
 		}
 	}
 	for (auto& child : node->Children)
 	{
-		DrawNode(child, command);
+		DrawNode(child, command, layout);
+	}
+}
+
+void GlTFModel::UpdateUniforms(uint32_t matId)
+{
+	m_UniformBuffer.CopyFrom(&m_PBRFactors[matId], sizeof(PBRFactor));
+}
+
+void GlTFModel::BuildDescriptorSets()
+{
+	m_DescriptorSetLayout.Bindings = {
+		{ vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eFragment, 0 }, //pbrFactor
+		{ vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, 1 }, //BaseColorTextureIndex
+		{ vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, 2 }, //MetallicRoughnessTextureIndex
+		{ vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, 3 }, //OcclusionTextureIndex
+		//{ vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, 4 }, //NormalMapTextureIndex
+		//{ vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, 5 }, //EmissiveTextureIndex
+	};
+	uint32_t setCount = m_Materials.size();
+	m_DescriptorSetLayout.SetCount = setCount;
+	for (uint32_t i = 0; i < setCount; i++)
+	{
+		m_DescriptorSetLayout.SetWriteData.push_back({
+			{ m_UniformBuffer.m_Descriptor, {}, false },
+			{ {}, m_Textures[m_TextureIndices[m_Materials[i].BaseColorTextureIndex].ImageIndex].GetDescriptor(), true },
+			{ {}, m_Textures[m_TextureIndices[m_Materials[i].MetallicRoughnessTextureIndex].ImageIndex].GetDescriptor(), true },
+			{ {}, m_Textures[m_TextureIndices[m_Materials[i].OcclusionTextureIndex].ImageIndex].GetDescriptor(), true },
+		});
 	}
 }

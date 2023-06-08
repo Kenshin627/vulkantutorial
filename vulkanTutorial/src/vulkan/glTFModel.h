@@ -3,7 +3,7 @@
 #include "Device.h"
 #include "Texture.h"
 #include "Buffer.h"
-
+#include "PipelineLayout.h"
 #define TINYGLTF_NO_STB_IMAGE_WRITE
 #include "tiny_gltf.h"
 #include <glm.hpp>
@@ -20,8 +20,8 @@ public:
 		glm::vec3 Pos;
 		glm::vec3 Normal;
 		glm::vec2 Coords;
-	/*	glm::vec3 Color;
-		glm::vec4 Tangent;*/
+		/*	glm::vec3 Color;
+			glm::vec4 Tangent;*/
 		static std::vector<vk::VertexInputBindingDescription> GetBindingDescriptions()
 		{
 			vk::VertexInputBindingDescription vertexInputBindings;
@@ -79,8 +79,27 @@ public:
 
 	struct Material
 	{
-		glm::vec4 BaseColorFactor = glm::vec4(1.0f);
+		glm::vec4 BaseColorFactor;
 		uint32_t  BaseColorTextureIndex;
+		float MetallicFactor;
+		float RoughnessFactor;
+		uint32_t  MetallicRoughnessTextureIndex;
+		float OcclustionStrength;
+		uint32_t OcclusionTextureIndex;
+		float NormalScale;
+		uint32_t  NormalMapTextureIndex;
+		glm::vec3 EmissiveFactor;
+		uint32_t EmissiveTextureIndex;
+	};
+
+	struct PBRFactor
+	{
+		glm::vec4 BaseColorFactor;
+		float MetallicFactor;
+		float RoughnessFactor;
+		float OcclustionStrength;
+		float NormalScale;
+		glm::vec3 EmissiveFactor;
 	};
 
 	struct TextureIndex
@@ -91,9 +110,10 @@ public:
 	GlTFModel() = default;
 
 	void LoadModel(Device& device, const std::string& filaname);
-	void Draw(vk::CommandBuffer command);
+	void Draw(vk::CommandBuffer command, PipeLineLayout& layout);
 	uint32_t GetTextureCount() { return m_Textures.size(); }
 	std::vector<Texture>& GetImages() { return m_Textures; }
+	DescriptorSetLayoutCreateInfo GetDescriptorSet() { return m_DescriptorSetLayout; }
 	~GlTFModel()
 	{
 		m_VertexBuffer.Clear();
@@ -108,20 +128,26 @@ private:
 	void LoadMaterials();
 	void loadTextures();
 	void LoadNode(const tinygltf::Node& inputNode, GlTFModel::Node* parent);
-	void DrawNode(Node* node, vk::CommandBuffer command);
+	void DrawNode(Node* node, vk::CommandBuffer command, PipeLineLayout& layout);
+	void UpdateUniforms(uint32_t matId);
+	void BuildDescriptorSets();
+	
 private:
 	Device m_Device;
 	tinygltf::Model m_Model;
 	tinygltf::TinyGLTF m_Contenxt;
 	std::string err;
 	std::string warning;
-	
+	DescriptorSetLayoutCreateInfo m_DescriptorSetLayout;
 	std::vector<Texture> m_Textures;
 	std::vector<GlTFModel::TextureIndex> m_TextureIndices;
 	std::vector<Material> m_Materials;
+	std::vector<PBRFactor> m_PBRFactors;
 	std::vector<Node*> m_Nodes;
 	Buffer m_VertexBuffer;
 	Buffer m_IndexBuffer;
+	Buffer m_UniformBuffer;
+
 	std::vector<uint32_t> m_Indices;
 	std::vector<GlTFModel::Vertex> m_Vertices;
 };

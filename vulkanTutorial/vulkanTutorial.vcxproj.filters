@@ -75,7 +75,7 @@
     <ClCompile Include="src\core\EditorCamera.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\examples\PBRTexture.cpp">
+    <ClCompile Include="src\examples\PBRModel.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -158,7 +158,7 @@
     <ClInclude Include="src\core\EditorCamera.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\examples\PBRTexture.h">
+    <ClInclude Include="src\examples\PBRModel.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

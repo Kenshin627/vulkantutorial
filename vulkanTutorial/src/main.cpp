@@ -1,11 +1,11 @@
 #include <iostream>
-#include "examples/PBRTexture.h"
+#include "examples/PBRModel.h"
 
 const static uint32_t WIDTH = 1920, HEIGHT = 1080;
 
 int main()
 {
-	PBRTexture app(WIDTH, HEIGHT, "vulkan");
+	PBRModel app(WIDTH, HEIGHT, "vulkan");
 	try
 	{
 		app.Run();
