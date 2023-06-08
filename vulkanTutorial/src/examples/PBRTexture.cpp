@@ -26,10 +26,10 @@ void PBRTexture::InitContext()
 
 	m_Model.LoadModel(m_Device, "resource/models/sphere.gltf");
 
-	m_PbrTextures.Ao.Create(m_Device, "resource/textures/dull-brass-bl/ao.png", vk::Format::eR8G8B8A8Unorm, false);
+	m_PbrTextures.Ao.Create(m_Device, "resource/textures/dull-brass-bl/ao.png", vk::Format::eR8G8B8A8Srgb, false);
 	m_PbrTextures.Albedo.Create(m_Device, "resource/textures/dull-brass-bl/albedo.png", vk::Format::eR8G8B8A8Srgb, false);
-	m_PbrTextures.Metallic.Create(m_Device, "resource/textures/dull-brass-bl/metallic.png", vk::Format::eR8G8B8A8Unorm, false);
-	m_PbrTextures.Roughness.Create(m_Device, "resource/textures/dull-brass-bl/roughness.png", vk::Format::eR8G8B8A8Unorm, false);
+	m_PbrTextures.Metallic.Create(m_Device, "resource/textures/dull-brass-bl/metallic.png", vk::Format::eR8G8B8A8Srgb, false);
+	m_PbrTextures.Roughness.Create(m_Device, "resource/textures/dull-brass-bl/roughness.png", vk::Format::eR8G8B8A8Srgb, false);
 
 	CreateUniformBuffer();
 	CreateSetLayout();	
@@ -306,6 +306,7 @@ void PBRTexture::UpdateUniformBuffers()
 	const float p = 15.0f;
 	//update Lights
 	LightUniforms lights;
+	lights.exposure = 1.0f;
 	lights.lights[0].Color = {300.0f, 300.0f, 300.0f, 1.0};
 	lights.lights[0].Pos = glm::vec4(-p, -p * 0.5f, -p, 1.0f);
 
@@ -495,7 +496,7 @@ void PBRTexture::RebuildFrameBuffer()
 		bufferAttachments.push_back({
 			{ FrameBufferAttachment::AttachmentType::Color, colorImage },
 			{ FrameBufferAttachment::AttachmentType::Depth, depthImage },
-			{ FrameBufferAttachment::AttachmentType::Color, image      } ,
+			{ FrameBufferAttachment::AttachmentType::Color, image      },
 			});
 	}
 	BlinnPhongPass.ReBuildFrameBuffer(bufferAttachments, extent.width, extent.height);

@@ -23,6 +23,7 @@ struct light
 layout(set = 0, binding = 1) uniform UniformLight
 {
     light lights[4];
+    float exposure;
 } lightUBO;
 
 layout(set = 0, binding = 2) uniform sampler2D aoSampler;
@@ -121,7 +122,11 @@ void main() {
 
    vec3 ambient = vec3(0.03) * albedo * ao;
    vec3 color =  Lo + ambient;
-   color = color / (color + vec3(1.0));
+   //reinhard
+   //color = color / (color + vec3(1.0));
+
+   //
+   color = vec3(1.0) - exp(-color*lightUBO.exposure);
    color  = pow(color, vec3(0.4545));
    outColor = vec4(color, 1.0);
 }

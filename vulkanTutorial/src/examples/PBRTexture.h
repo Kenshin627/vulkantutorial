@@ -96,6 +96,7 @@ struct Light
 struct LightUniforms
 {
 	Light lights[4];
+	float exposure;
 };
 
 struct SphereMat
