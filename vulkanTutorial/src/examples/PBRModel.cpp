@@ -66,9 +66,9 @@ void PBRModel::CreatePipeLine()
 				.setPrimitiveRestartEnable(VK_FALSE);
 
 	//3.
-	Shader vertex(m_Device.GetLogicDevice(), "resource/shaders/pbrTextureVert.spv");
+	Shader vertex(m_Device.GetLogicDevice(), "resource/shaders/pbrModelVert.spv");
 	vertex.SetPipelineShaderStageInfo(vk::ShaderStageFlagBits::eVertex);
-	Shader fragment(m_Device.GetLogicDevice(), "resource/shaders/pbrTextureFrag.spv");
+	Shader fragment(m_Device.GetLogicDevice(), "resource/shaders/pbrModelFrag.spv");
 	fragment.SetPipelineShaderStageInfo(vk::ShaderStageFlagBits::eFragment);
 	vk::PipelineShaderStageCreateInfo shaders[] = { vertex.m_ShaderStage, fragment.m_ShaderStage };
 

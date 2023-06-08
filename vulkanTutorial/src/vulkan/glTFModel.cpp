@@ -36,6 +36,14 @@ void GlTFModel::LoadModel(Device& device, const std::string& filaname)
 
 	m_UniformBuffer.Create(m_Device, vk::BufferUsageFlagBits::eUniformBuffer, sizeof(PBRFactor), vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, nullptr);
 	m_UniformBuffer.Map();
+
+	m_ModelMatrixs.resize(m_Materials.size());
+	for (uint32_t i = 0; i < m_Materials.size(); i++)
+	{
+		m_ModelMatrixs[i].Create(m_Device, vk::BufferUsageFlagBits::eUniformBuffer, sizeof(ModelMatrix), vk::SharingMode::eExclusive, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, nullptr);
+		m_ModelMatrixs[i].Map();
+	}
+	
 	BuildDescriptorSets();
 }
 
@@ -301,9 +309,9 @@ void GlTFModel::DrawNode(Node* node, vk::CommandBuffer command, PipeLineLayout& 
 			{
 				//bindSets
 				uint32_t materialIndex = primitive.MaterialIndex;
-				auto set = layout.GetDescriptorSet(1, materialIndex);
-				command.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, layout.GetPipelineLayout(), 0, 1, &set, 0, nullptr);
-				UpdateUniforms(materialIndex);
+				vk::DescriptorSet set = layout.GetDescriptorSet(1, materialIndex);
+				command.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, layout.GetPipelineLayout(), 1, 1, &set, 0, nullptr);
+				UpdateUniforms(materialIndex, modelMatrix);
 				command.drawIndexed(primitive.IndexCount, 1, primitive.FirstIndex, 0, 0);
 			}
 		}
@@ -314,15 +322,19 @@ void GlTFModel::DrawNode(Node* node, vk::CommandBuffer command, PipeLineLayout& 
 	}
 }
 
-void GlTFModel::UpdateUniforms(uint32_t matId)
+void GlTFModel::UpdateUniforms(uint32_t matId, glm::mat4 modelMatrix)
 {
-	m_UniformBuffer.CopyFrom(&m_PBRFactors[matId], sizeof(PBRFactor));
+	//m_UniformBuffer.CopyFrom(&m_PBRFactors[matId], sizeof(PBRFactor));
+	ModelMatrix mat;
+	mat.matrix = modelMatrix;
+	m_ModelMatrixs[matId].CopyFrom(&mat, sizeof(ModelMatrix));
 }
 
 void GlTFModel::BuildDescriptorSets()
 {
 	m_DescriptorSetLayout.Bindings = {
-		{ vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eFragment, 0 }, //pbrFactor
+		//{ vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eFragment, 0 }, //pbrFactor
+		{ vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex, 0 },
 		{ vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, 1 }, //BaseColorTextureIndex
 		{ vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, 2 }, //MetallicRoughnessTextureIndex
 		{ vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, 3 }, //OcclusionTextureIndex
@@ -334,7 +346,8 @@ void GlTFModel::BuildDescriptorSets()
 	for (uint32_t i = 0; i < setCount; i++)
 	{
 		m_DescriptorSetLayout.SetWriteData.push_back({
-			{ m_UniformBuffer.m_Descriptor, {}, false },
+			//{ m_UniformBuffer.m_Descriptor, {}, false },
+			{ m_ModelMatrixs[i].m_Descriptor, {}, false},
 			{ {}, m_Textures[m_TextureIndices[m_Materials[i].BaseColorTextureIndex].ImageIndex].GetDescriptor(), true },
 			{ {}, m_Textures[m_TextureIndices[m_Materials[i].MetallicRoughnessTextureIndex].ImageIndex].GetDescriptor(), true },
 			{ {}, m_Textures[m_TextureIndices[m_Materials[i].OcclusionTextureIndex].ImageIndex].GetDescriptor(), true },

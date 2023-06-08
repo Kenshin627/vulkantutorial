@@ -16,9 +16,13 @@ layout(set = 0, binding = 0) uniform UniformBufferObject
     vec3 Pos;
 } ubo;
 
+layout(set = 1, binding = 0) uniform UniformBufferModelMatrix {
+    mat4 modelMatrix;
+} modelUBO;
+
 void main() {
     vCoord = aCoord;   
-    vWorldPos = vec3(ubo.model * vec4(aPosition, 1.0));
-    vNormal = mat3(transpose(inverse(ubo.model))) * aNormal;
+    vWorldPos = vec3(ubo.model * modelUBO.modelMatrix * vec4(aPosition, 1.0));
+    vNormal = mat3(transpose(inverse(ubo.model * modelUBO.modelMatrix))) * aNormal;
     gl_Position = ubo.proj * ubo.view  * vec4(vWorldPos, 1.0);
 }

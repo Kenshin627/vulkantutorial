@@ -25,4 +25,7 @@ C:/VulkanSDK/1.3.246.1/Bin/glslc.exe shaders/pbrbasic.frag -o shaders/pbrbasicFr
 C:/VulkanSDK/1.3.246.1/Bin/glslc.exe shaders/pbrTexture.vert -o shaders/pbrTextureVert.spv
 C:/VulkanSDK/1.3.246.1/Bin/glslc.exe shaders/pbrTexture.frag -o shaders/pbrTextureFrag.spv
 
+C:/VulkanSDK/1.3.246.1/Bin/glslc.exe shaders/pbrModel.vert -o shaders/pbrModelVert.spv
+C:/VulkanSDK/1.3.246.1/Bin/glslc.exe shaders/pbrModel.frag -o shaders/pbrModelFrag.spv
+
 pause

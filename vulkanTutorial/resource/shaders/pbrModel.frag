@@ -26,15 +26,15 @@ layout(set = 0, binding = 1) uniform UniformLight
     float exposure;
 } lightUBO;
 
-layout(set = 1, binding = 0) uniform UniformPBRFactor
-{
-        vec4 BaseColorFactor;
-		float MetallicFactor;
-		float RoughnessFactor;
-		float OcclustionStrength;
-		float NormalScale;
-		vec3 EmissiveFactor;
-} factorUBO;
+//layout(set = 1, binding = 0) uniform UniformPBRFactor
+//{
+//        vec4 BaseColorFactor;
+//		float MetallicFactor;
+//		float RoughnessFactor;
+//		float OcclustionStrength;
+//		float NormalScale;
+//		vec3 EmissiveFactor;
+//} factorUBO;
 
 layout(set = 1, binding = 1) uniform sampler2D BaseColorTexture;
 layout(set = 1, binding = 2) uniform sampler2D MetallicRoughnessTexture;
@@ -94,7 +94,6 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
 
 void main() {
    vec3 albedo =  pow(texture(BaseColorTexture, vCoord).rgb, vec3(2.2));
-//    vec3 albedo = texture(albedoSampler, vCoord).rgb;
    vec4 metallicRoughness = texture(MetallicRoughnessTexture, vCoord);
    float metallic = metallicRoughness.b;
    float roughness = metallicRoughness.g;

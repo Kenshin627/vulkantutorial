@@ -92,6 +92,11 @@ public:
 		uint32_t EmissiveTextureIndex;
 	};
 
+	struct ModelMatrix
+	{
+		glm::mat4 matrix;
+	};
+
 	struct PBRFactor
 	{
 		glm::vec4 BaseColorFactor;
@@ -129,7 +134,7 @@ private:
 	void loadTextures();
 	void LoadNode(const tinygltf::Node& inputNode, GlTFModel::Node* parent);
 	void DrawNode(Node* node, vk::CommandBuffer command, PipeLineLayout& layout);
-	void UpdateUniforms(uint32_t matId);
+	void UpdateUniforms(uint32_t matId, glm::mat4 modelMatrix);
 	void BuildDescriptorSets();
 	
 private:
@@ -147,7 +152,7 @@ private:
 	Buffer m_VertexBuffer;
 	Buffer m_IndexBuffer;
 	Buffer m_UniformBuffer;
-
+	std::vector<Buffer> m_ModelMatrixs;
 	std::vector<uint32_t> m_Indices;
 	std::vector<GlTFModel::Vertex> m_Vertices;
 };
