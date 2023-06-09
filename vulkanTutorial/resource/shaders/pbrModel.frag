@@ -3,6 +3,7 @@
 layout(location = 0) in vec3 vWorldPos;
 layout(location = 1) in vec2 vCoord;
 layout(location = 2) in vec3 vNormal;
+layout(location = 3) in vec4 vTangent;
 
 layout(location = 0) out vec4 outColor;
 
@@ -39,6 +40,7 @@ layout(set = 0, binding = 1) uniform UniformLight
 layout(set = 1, binding = 1) uniform sampler2D BaseColorTexture;
 layout(set = 1, binding = 2) uniform sampler2D MetallicRoughnessTexture;
 layout(set = 1, binding = 3) uniform sampler2D OcclusionTexture;
+layout(set = 1, binding = 4) uniform sampler2D NormalMapTexture;
 
 const float PI = 3.14159265358979;
 
@@ -93,13 +95,20 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
 //}
 
 void main() {
+   
+   vec3 N1 = normalize(vNormal);
+   vec3 T = normalize(vTangent.xyz);
+   vec3 B = cross(N1, T) * vTangent.w;
+   mat3 TBN = mat3(T, B, N1);
+   vec3 localNormal = texture(NormalMapTexture, vCoord).xyz * 2.0 - vec3(1.0);
+   vec3 N = TBN * normalize(localNormal);
+
    vec3 albedo =  pow(texture(BaseColorTexture, vCoord).rgb, vec3(2.2));
    vec4 metallicRoughness = texture(MetallicRoughnessTexture, vCoord);
    float metallic = metallicRoughness.b;
    float roughness = metallicRoughness.g;
    float ao = texture(OcclusionTexture, vCoord).r;
-
-   vec3 N = normalize(vNormal);
+  
    vec3 V = normalize(ubo.Pos - vWorldPos);
 
    vec3 Lo = vec3(0.0);

@@ -221,8 +221,7 @@ void GlTFModel::LoadNode(const tinygltf::Node& inputNode, GlTFModel::Node* paren
 					vertex.Pos = glm::vec4(glm::make_vec3(&positionBuffer[i * 3]), 1.0f);
 					vertex.Normal = glm::normalize(glm::vec3(normalBuffer ? glm::make_vec3(&normalBuffer[i * 3]) : glm::vec3(0.0f)));
 					vertex.Coords = texCoordBuffer ? glm::make_vec2(&texCoordBuffer[i * 2]) : glm::vec2(0.0f, 0.0f);
-		/*			vertex.Color = glm::vec3(1.0f);
-					vertex.Tangent = tangentBuffer ? glm::make_vec4(&tangentBuffer[i * 4]) : glm::vec4(0.0);*/
+					vertex.Tangent = tangentBuffer ? glm::make_vec4(&tangentBuffer[i * 4]) : glm::vec4(0.0);
 					m_Vertices.push_back(vertex);
 				}
 			}
@@ -338,7 +337,7 @@ void GlTFModel::BuildDescriptorSets()
 		{ vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, 1 }, //BaseColorTextureIndex
 		{ vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, 2 }, //MetallicRoughnessTextureIndex
 		{ vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, 3 }, //OcclusionTextureIndex
-		//{ vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, 4 }, //NormalMapTextureIndex
+		{ vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, 4 }, //NormalMapTextureIndex
 		//{ vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment, 5 }, //EmissiveTextureIndex
 	};
 	uint32_t setCount = m_Materials.size();
@@ -351,6 +350,7 @@ void GlTFModel::BuildDescriptorSets()
 			{ {}, m_Textures[m_TextureIndices[m_Materials[i].BaseColorTextureIndex].ImageIndex].GetDescriptor(), true },
 			{ {}, m_Textures[m_TextureIndices[m_Materials[i].MetallicRoughnessTextureIndex].ImageIndex].GetDescriptor(), true },
 			{ {}, m_Textures[m_TextureIndices[m_Materials[i].OcclusionTextureIndex].ImageIndex].GetDescriptor(), true },
+			{ {}, m_Textures[m_TextureIndices[m_Materials[i].NormalMapTextureIndex].ImageIndex].GetDescriptor(), true }
 		});
 	}
 }

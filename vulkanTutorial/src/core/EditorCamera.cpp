@@ -129,7 +129,7 @@ float EditorCamera::RotateSpeed() const
 
 float EditorCamera::ZoomSpeed() const
 {
-	float distance = std::max(m_Distance * 0.1f, 0.0f);
+	float distance = std::max(m_Distance * 0.05f, 0.0f);
 	float speed = std::min(distance * distance, 100.0f);
 	return speed;
 }
