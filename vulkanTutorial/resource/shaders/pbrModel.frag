@@ -101,7 +101,7 @@ void main() {
    vec3 B = cross(N1, T) * vTangent.w;
    mat3 TBN = mat3(T, B, N1);
    vec3 localNormal = texture(NormalMapTexture, vCoord).xyz * 2.0 - vec3(1.0);
-   vec3 N = TBN * normalize(localNormal);
+   vec3 N = N1;
 
    vec3 albedo =  pow(texture(BaseColorTexture, vCoord).rgb, vec3(2.2));
    vec4 metallicRoughness = texture(MetallicRoughnessTexture, vCoord);
