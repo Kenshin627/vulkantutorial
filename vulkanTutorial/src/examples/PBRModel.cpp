@@ -307,46 +307,6 @@ void PBRModel::UpdateUniformBuffers()
 	m_LightUniformBuffer.CopyFrom(&lights, sizeof(LightUniforms));
 }
 
-void PBRModel::LoadModel(const char* path, std::vector<Vertex>& vertexData, std::vector<uint32_t>& indicesData)
-{
-	tinyobj::attrib_t attris;
-	std::vector<tinyobj::shape_t> shapes;
-	std::vector<tinyobj::material_t> materials;
-	std::string warn;
-	std::string error;
-	bool res = tinyobj::LoadObj(&attris, &shapes, &materials, &warn, &error, path);
-	if (!res)
-	{
-		throw std::runtime_error("load model failed!");
-	}
-	std::unordered_map<Vertex, uint32_t> uniqueVertices{};
-	for (auto& shape : shapes)
-	{
-		for (auto& index : shape.mesh.indices)
-		{
-			Vertex vertex{};
-			vertex.Position = {
-				attris.vertices[3 * index.vertex_index + 0],
-				attris.vertices[3 * index.vertex_index + 1],
-				attris.vertices[3 * index.vertex_index + 2]
-			};
-
-			vertex.Coord = {
-				attris.texcoords[2 * index.texcoord_index + 0],
-				1.0f - attris.texcoords[2 * index.texcoord_index + 1]
-			};
-
-			vertex.Color = { 1.0f, 1.0f, 1.0f };
-			if (uniqueVertices.count(vertex) == 0)
-			{
-				uniqueVertices[vertex] = static_cast<uint32_t>(vertexData.size());
-				vertexData.push_back(vertex);
-			}
-			indicesData.push_back(uniqueVertices[vertex]);
-		}
-	}
-}
-
 void PBRModel::CreateRenderPass()
 {
 	vk::Format colorFormat = m_SwapChain.GetFormat();

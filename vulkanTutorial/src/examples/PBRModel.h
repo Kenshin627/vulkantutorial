@@ -25,16 +25,14 @@
 #define OBJ_DIM  0.05f
 
 
-struct Vertex
+struct SkyBoxVertex
 {
 	glm::vec3 Position;
-	glm::vec3 Color;
-	glm::vec2 Coord;
 	static vk::VertexInputBindingDescription GetBindingDescription()
 	{
 		vk::VertexInputBindingDescription desc;
 		desc.setBinding(0)
-			.setStride(sizeof(Vertex))
+			.setStride(sizeof(SkyBoxVertex))
 			.setInputRate(vk::VertexInputRate::eVertex);
 		return desc;
 	}
@@ -46,28 +44,14 @@ struct Vertex
 		positionAttribute.setBinding(0)
 			.setFormat(vk::Format::eR32G32B32Sfloat)
 			.setLocation(0)
-			.setOffset(offsetof(Vertex, Position));
+			.setOffset(offsetof(SkyBoxVertex, Position));
 		result.push_back(positionAttribute);
-
-		vk::VertexInputAttributeDescription colorAttribute;
-		colorAttribute.setBinding(0)
-			.setFormat(vk::Format::eR32G32B32Sfloat)
-			.setLocation(1)
-			.setOffset(offsetof(Vertex, Color));
-		result.push_back(colorAttribute);
-
-		vk::VertexInputAttributeDescription coordAttribute;
-		coordAttribute.setBinding(0)
-			.setFormat(vk::Format::eR32G32Sfloat)
-			.setLocation(2)
-			.setOffset(offsetof(Vertex, Coord));
-		result.push_back(coordAttribute);
 		return result;
 	}
 
-	bool operator==(const Vertex& other) const
+	bool operator==(const SkyBoxVertex& other) const
 	{
-		return Position == other.Position && Color == other.Color && Coord == other.Coord;
+		return Position == other.Position;
 	}
 };
 
@@ -120,7 +104,6 @@ public:
 	void InitContext();
 	void RenderLoop();
 	void Clear();
-	void LoadModel(const char* path, std::vector<Vertex>& vertexData, std::vector<uint32_t>& indicesData);
 	virtual void CreateSetLayout() override;
 	virtual void RebuildFrameBuffer() override;
 private:
@@ -163,13 +146,11 @@ private:
 namespace std
 {
 	template<>
-	struct hash<Vertex>
+	struct hash<SkyBoxVertex>
 	{
-		size_t operator()(const Vertex& vertex) const
+		size_t operator()(const SkyBoxVertex& vertex) const
 		{
-			return ((hash<glm::vec3>()(vertex.Position) ^
-				(hash<glm::vec3>()(vertex.Color) << 1)) >> 1) ^
-				(hash<glm::vec2>()(vertex.Coord) << 1);
+			return hash<glm::vec3>()(vertex.Position);
 		}
 	};
 }
