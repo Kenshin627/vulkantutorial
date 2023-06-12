@@ -292,7 +292,7 @@ void PBRModel::UpdateUniformBuffers()
 	const float p = 15.0f;
 	//update Lights
 	LightUniforms lights;
-	lights.exposure = 0.8f;
+	lights.exposure = 0.81f;
 	lights.lights[0].Color = {300.0f, 300.0f, 300.0f, 1.0};
 	lights.lights[0].Pos = glm::vec4(-p, -p * 0.5f, -p, 1.0f);
 
