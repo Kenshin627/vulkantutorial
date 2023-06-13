@@ -289,7 +289,7 @@ void PBRModel::UpdateUniformBuffers()
 	ubo.Pos = m_Camera.GetPosition();
 	m_CameraUniformBuffer.CopyFrom(&ubo, sizeof(CameraUniform));
 
-	const float p = 15.0f;
+	const float p = 15.00f;
 	//update Lights
 	LightUniforms lights;
 	lights.exposure = 0.81f;
